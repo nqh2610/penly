@@ -2915,54 +2915,80 @@ function loadUI(){
 
 // ── MOBILE KEYBOARD DETECTION ──
 (function(){
-  if(!window.visualViewport) return;
   if(window.innerWidth > 640) return;
 
-  const toolbar = document.querySelector('.toolbar');
-  const acBar   = document.getElementById('acBar');
-  let baseH = 0;
+  const toolbar    = document.querySelector('.toolbar');
+  const acBar      = document.getElementById('acBar');
+  const editorPane = document.getElementById('editorPane');
+  const editorEl   = document.getElementById('editor');
+  const topicEl    = document.getElementById('topicInput');
 
-  function updateKb(){
-    const vvH = window.visualViewport.height;
-    if(!baseH || vvH > baseH) { baseH = vvH; } // always track max height as base
-    const kbH = Math.max(0, baseH - vvH);
-    const kbOpen = kbH > 100;
-    document.body.classList.toggle('kb-open', kbOpen);
-    if(kbOpen){
-      toolbar.style.setProperty('bottom', kbH + 'px', 'important');
-      const tbH = toolbar.offsetHeight || 48;
-      if(acBar) acBar.style.setProperty('bottom', (kbH + tbH) + 'px', 'important');
-    } else {
-      toolbar.style.removeProperty('bottom');
-      if(acBar) acBar.style.removeProperty('bottom');
-    }
+  // Detect keyboard via visualViewport if supported (Chrome)
+  let vvSupported = false;
+  if(window.visualViewport){
+    let baseH = 0;
+    window.addEventListener('load', () => { baseH = window.visualViewport.height; });
+    window.visualViewport.addEventListener('resize', () => {
+      const vvH = window.visualViewport.height;
+      if(!baseH || vvH > baseH) { baseH = vvH; return; }
+      const kbH = Math.max(0, baseH - vvH);
+      if(kbH > 100){
+        vvSupported = true;
+        applyKb(kbH);
+      } else {
+        resetKb();
+      }
+    });
+  }
+
+  // Fallback: focus/blur detection for Samsung Internet
+  function onFocus(){
+    if(vvSupported) return;
+    // estimate keyboard height as ~45% of screen
+    const estimated = Math.round(window.innerHeight * 0.45);
+    setTimeout(() => applyKb(estimated), 300);
+  }
+  function onBlur(){
+    if(vvSupported) return;
+    setTimeout(resetKb, 100);
+  }
+
+  function applyKb(kbH){
+    document.body.classList.add('kb-open');
+    toolbar.style.setProperty('bottom', kbH + 'px', 'important');
+    editorPane.style.setProperty('padding-bottom', (kbH + 56) + 'px', 'important');
+    const tbH = toolbar.offsetHeight || 48;
+    if(acBar) acBar.style.setProperty('bottom', (kbH + tbH) + 'px', 'important');
+    syncACBar();
+  }
+  function resetKb(){
+    document.body.classList.remove('kb-open');
+    toolbar.style.removeProperty('bottom');
+    editorPane.style.removeProperty('padding-bottom');
+    if(acBar) acBar.style.removeProperty('bottom');
     syncACBar();
   }
 
-  // set baseH after full load when layout is stable
-  window.addEventListener('load', () => {
-    baseH = window.visualViewport.height;
-    window.visualViewport.addEventListener('resize', updateKb);
-    window.visualViewport.addEventListener('scroll', updateKb);
-  });
-  window.addEventListener('orientationchange', () => {
-    setTimeout(() => { baseH = window.visualViewport.height; }, 400);
-  });
+  if(editorEl)  { editorEl.addEventListener('focus', onFocus);  editorEl.addEventListener('blur', onBlur); }
+  if(topicEl)   { topicEl.addEventListener('focus', onFocus);   topicEl.addEventListener('blur', onBlur); }
+
+  window.addEventListener('orientationchange', () => setTimeout(resetKb, 400));
 })();
 
 // ── PWA INSTALL BANNER ──
 (function(){
-  if(window.innerWidth > 640) return; // mobile only
-  // already installed as PWA
+  // already installed as PWA — don't show
   if(window.matchMedia('(display-mode: standalone)').matches) return;
   if(window.navigator.standalone) return; // iOS PWA
-  // user dismissed before — use sessionStorage so it resets each visit for testing
+  // only show on touch devices (mobile/tablet)
+  if(!('ontouchstart' in window)) return;
+  // user permanently dismissed
   if(localStorage.getItem('pwa_dismissed') === 'forever') return;
 
   let deferredPrompt = null;
-  const banner  = document.getElementById('pwaBanner');
-  const btnInstall  = document.getElementById('pwaBannerInstall');
-  const btnDismiss  = document.getElementById('pwaBannerDismiss');
+  const banner     = document.getElementById('pwaBanner');
+  const btnInstall = document.getElementById('pwaBannerInstall');
+  const btnDismiss = document.getElementById('pwaBannerDismiss');
 
   // Chrome/Edge: capture beforeinstallprompt
   window.addEventListener('beforeinstallprompt', e => {
@@ -2978,7 +3004,6 @@ function loadUI(){
       deferredPrompt = null;
       if(outcome === 'accepted') localStorage.setItem('pwa_dismissed', 'forever');
     } else {
-      // Samsung Internet / iOS: no prompt API, show manual instructions
       toast('Bấm menu trình duyệt → "Thêm vào màn hình chính"', '');
     }
     banner.classList.remove('show');
@@ -2989,7 +3014,13 @@ function loadUI(){
     localStorage.setItem('pwa_dismissed', 'forever');
   });
 
-  // Samsung Internet doesn't fire beforeinstallprompt — show banner after delay
+  // Samsung Internet / iOS: no beforeinstallprompt — show banner after 3s
+  setTimeout(() => {
+    if(!window.matchMedia('(display-mode: standalone)').matches &&
+       localStorage.getItem('pwa_dismissed') !== 'forever'){
+      banner.classList.add('show');
+    }
+  }, 3000);
   setTimeout(() => {
     if(!window.matchMedia('(display-mode: standalone)').matches &&
        localStorage.getItem('pwa_dismissed') !== 'forever'){

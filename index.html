@@ -1862,7 +1862,7 @@ editor.addEventListener('input', () => {
   acSeq++; // invalidate any in-flight AC request
   const txt = editor.innerText.trim();
   // trigger AC after 1s pause — even for the very first sentence
-  if(txt.length > 3) acTimer = setTimeout(() => doAC(txt), 1000);
+  if(txt.length > 3) acTimer = setTimeout(() => doAC(txt), 2000);
 });
 
 editor.addEventListener('paste', e => {
@@ -1985,6 +1985,7 @@ const MODEL_CHAIN = [
   'openai/gpt-oss-120b',
   'openai/gpt-oss-20b',
   'llama-3.3-70b-versatile',
+  'qwen/qwen3-8b',
   'llama-3.1-8b-instant',
 ];
 // Human-readable tier labels (no technical names)
@@ -1992,7 +1993,8 @@ const MODEL_LABELS = {
   'openai/gpt-oss-120b':    { text: '✦ Cấp 1', cls: 'tier-1', title: 'Đang dùng AI cấp cao nhất' },
   'openai/gpt-oss-20b':     { text: '⚡ Cấp 2', cls: 'tier-2', title: 'Đang dùng AI cấp 2 do cấp 1 bận' },
   'llama-3.3-70b-versatile':{ text: '⚡ Cấp 3', cls: 'tier-3', title: 'Đang dùng AI cấp 3 do cấp trên bận' },
-  'llama-3.1-8b-instant':   { text: '⚡ Cấp 4', cls: 'tier-4', title: 'Đang dùng AI cấp 4 do cấp trên bận' },
+  'qwen/qwen3-8b':           { text: '⚡ Cấp 4', cls: 'tier-4', title: 'Đang dùng AI cấp 4 do cấp trên bận' },
+  'llama-3.1-8b-instant':   { text: '⚡ Cấp 5', cls: 'tier-4', title: 'Đang dùng AI cấp 5 do cấp trên bận' },
 };
 
 function setModelChip(model){

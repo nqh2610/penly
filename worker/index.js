@@ -18,6 +18,7 @@ const ALLOWED_MODELS = new Set([
   "openai/gpt-oss-120b",
   "openai/gpt-oss-20b",
   "llama-3.3-70b-versatile",
+  "qwen/qwen3-8b",
   "llama-3.1-8b-instant",
 ]);
 const ALLOWED_ORIGIN = "*";

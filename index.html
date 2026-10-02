@@ -1260,21 +1260,6 @@ Gợi ý:
           </div>
         </div>
 
-        <div class="sd-row" style="flex-direction:column;align-items:stretch;gap:.4rem">
-          <div class="sd-label" id="lbl-sd-groq">Groq API Key <span style="font-weight:400;color:var(--muted)">(AI)</span></div>
-          <div style="display:flex;gap:.4rem">
-            <input type="password" id="groqKeyInput"
-              style="flex:1;padding:.45rem .7rem;font-size:.78rem;font-family:monospace;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none"
-              placeholder="gsk_..." autocomplete="off" spellcheck="false"
-              oninput="document.getElementById('groqKeySave').disabled=false">
-            <button id="groqKeySave" class="phb" style="padding:.45rem .8rem;background:var(--accent);color:#fff;border-radius:8px;font-size:.78rem;font-weight:700;white-space:nowrap" onclick="saveGroqKey()" disabled>Lưu</button>
-          </div>
-          <div id="groqKeyStatus" style="font-size:.72rem;color:var(--muted)"></div>
-          <div style="font-size:.7rem;color:var(--muted2);line-height:1.5" id="lbl-sd-groq-hint">
-            Tạo key miễn phí tại <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent)">console.groq.com</a>
-          </div>
-        </div>
-
       </div>
     </div>
 
@@ -1312,19 +1297,8 @@ Gợi ý:
 
 <script>
 // ── CONFIG ──
-const API_MODEL = "openai/gpt-oss-20b";
-const GROQ_STORE = 'penly_gk';
-
-function getGroqKey(){ return localStorage.getItem(GROQ_STORE) || ''; }
-function saveGroqKey(){
-  const v = document.getElementById('groqKeyInput').value.trim();
-  if(!v){ toast('Vui lòng nhập API key','d'); return; }
-  localStorage.setItem(GROQ_STORE, v);
-  document.getElementById('groqKeySave').disabled = true;
-  document.getElementById('groqKeyStatus').textContent = uiLang==='en' ? '✓ Saved' : '✓ Đã lưu';
-  setTimeout(()=>{ document.getElementById('groqKeyStatus').textContent=''; }, 2500);
-  toast(uiLang==='en' ? 'API key saved' : 'Đã lưu API key', 's');
-}
+// Replace with your deployed Cloudflare Worker URL after deployment
+const WORKER_URL = "https://penly-proxy.YOUR_SUBDOMAIN.workers.dev";
 
 // ── LICENSE SYSTEM ──
 // SHA-256 hashes of valid license keys (format: PENLY-XXXX-XXXX-XXXX)
@@ -1951,26 +1925,17 @@ async function callAI(prompt, btnId, silent=false, noPanel=false){
     document.getElementById('licenseGate').classList.remove('hidden');
     return null;
   }
-  // groq key gate
-  const gk = getGroqKey();
-  if(!gk){
-    if(!silent) setBusy(btnId, false, !noPanel);
-    toast(uiLang==='en'
-      ? 'Please add your Groq API key in Settings ⚙'
-      : 'Vui lòng nhập Groq API key trong Cài đặt ⚙', 'd');
-    return null;
-  }
   if(!silent) setBusy(btnId, true, !noPanel);
   try{
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions",{
+    const res = await fetch(WORKER_URL, {
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${gk}`},
-      body:JSON.stringify({model:API_MODEL,messages:[{role:"user",content:prompt}],temperature:.7,max_tokens:2000})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000 })
     });
     const d = await res.json();
     if(!silent) setBusy(btnId, false, !noPanel);
-    if(d.choices?.[0]?.message?.content) return d.choices[0].message.content;
-    const err = d.error?.message || JSON.stringify(d);
+    if(d.content) return d.content;
+    const err = d.error || JSON.stringify(d);
     if(!silent) toast((uiLang==='en'?'Error: ':'Lỗi: ') + err.substring(0,100), 'd');
     return null;
   }catch{
@@ -2876,9 +2841,6 @@ function loadUI(){
   if(window.innerWidth <= 640){
     document.getElementById('sidebar').style.width = '';
   }
-  // load Groq key into settings input
-  const gkEl = document.getElementById('groqKeyInput');
-  if(gkEl){ const gk = getGroqKey(); if(gk) gkEl.value = gk; }
 }
 
 // ── MOBILE KEYBOARD DETECTION ──

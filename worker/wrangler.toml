@@ -1,0 +1,7 @@
+name = "penly-proxy"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+# KEY_MAP được set qua Cloudflare dashboard > Workers > Settings > Variables
+# KHÔNG đặt KEY_MAP ở đây vì file này sẽ lên GitHub

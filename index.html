@@ -2096,59 +2096,55 @@ function setBusy(id, on, openPanel=true){
 
 // ── AUTOCOMPLETE ──
 async function doAC(txt){
-  const seq = acSeq; // snapshot — discard result if user types more before API returns
-  const lines = txt.split(/\n+/).filter(Boolean);
-  const totalParas = lines.length;
+  const seq = acSeq;
+  const tp = topic();
   const wordCount = txt.trim().split(/\s+/).filter(Boolean).length;
   const endsWithPunct = /[.!?]$/.test(txt.trim());
-  const tp = topic();
 
-  // Count sentences in current paragraph to know if we should wrap up or keep developing
-  const currentPara = lines[lines.length - 1] || '';
+  // Parse paragraphs — each newline = new idea
+  const paras = txt.split(/\n+/).filter(p => p.trim());
+  const totalParas = paras.length;
+  const currentPara = paras[totalParas - 1] || '';
+  const prevParas = paras.slice(0, -1);
   const sentencesInPara = (currentPara.match(/[.!?]+/g) || []).length;
 
-  // Full essay context (cap at 600 words to stay within token budget)
-  const words = txt.trim().split(/\s+/);
-  const fullContext = words.length <= 600 ? txt.trim() : '...' + words.slice(-600).join(' ');
+  // Paragraph role
+  const paraRole = totalParas === 1 ? 'opening paragraph (introduce the topic)'
+    : totalParas === 2 ? 'second paragraph (first body idea)'
+    : sentencesInPara >= 3 ? `paragraph ${totalParas} — already ${sentencesInPara} sentences, consider wrapping up this idea or transitioning to the next`
+    : `paragraph ${totalParas} (body — develop this idea further)`;
 
-  // Determine position hint
-  const positionHint = totalParas <= 1
-    ? 'This is the opening paragraph — help establish the topic.'
-    : totalParas <= 2
-    ? 'This is early in the essay — help develop main ideas.'
-    : sentencesInPara >= 3
-    ? 'The current paragraph already has several sentences — consider suggesting a concluding sentence for this paragraph or a transition to a new idea.'
-    : 'This is a middle paragraph — suggest a sentence that adds a new supporting detail, example, or feeling.';
+  const prevSummary = prevParas.length
+    ? `Previous paragraphs already covered:\n${prevParas.map((p,i)=>`- Paragraph ${i+1}: "${p.trim().slice(0,120)}${p.length>120?'...':''}"`).join('\n')}`
+    : '';
 
   const prompt = wordCount < 5
     ? `You are an English writing assistant.
 Topic: "${tp||'general'}"
 ${ctx()}
 What they wrote: "${txt.trim()}"
-Task: Suggest ONE natural continuation that fits the audience, tone, and level.
+Task: Suggest ONE natural continuation sentence.
 Rules:
-- Match the Level exactly in vocabulary and sentence length
-- NO em dash (—), NO semicolons unless level is C1/C2
-- NO quotes, NO explanation — output the suggestion text only`
+- Match the Level exactly
+- NO em dash (—), NO quotes, NO explanation — output the text only`
 
     : endsWithPunct
-    ? `You are an English writing assistant helping develop ideas logically.
+    ? `You are an English writing assistant helping develop ideas paragraph by paragraph.
 Topic: "${tp||'general'}"
 ${ctx()}
 
-Full essay so far:
-"""
-${fullContext}
-"""
+Current paragraph (${paraRole}):
+"${currentPara.trim()}"
 
-Position: ${positionHint}
+${prevSummary}
 
-Task: Write ONE next sentence that develops the essay logically.
+Task: Write ONE next sentence that continues the CURRENT paragraph's idea logically.
 Rules:
-- Read the FULL essay above — do NOT repeat any idea already written
-- Suggest a sentence that adds new information: a reason, example, detail, feeling, or transition
+- Stay focused on the current paragraph's idea — do NOT jump to a new topic
+- Do NOT repeat anything from previous paragraphs
+- ${sentencesInPara >= 3 ? 'This paragraph is getting long — suggest a concluding sentence for it, OR a short transition sentence to signal a new idea is coming next.' : 'Add a supporting detail, reason, example, or feeling that develops the current idea.'}
 - Match EXACTLY the vocabulary level and sentence length of the existing text
-- For A1/A2: short simple sentence (max 10 words), basic words only
+- For A1/A2: max 10 words, basic vocabulary only
 - For B1/B2: 12–18 words, connectors like because/when/although are fine
 - For C1/C2: complex structures welcome
 - NO em dash (—), NO quotes, NO explanation — output the sentence only`
@@ -2156,14 +2152,12 @@ Rules:
     : `You are an English writing assistant.
 Topic: "${tp||'general'}"
 ${ctx()}
-Text ending with: "...${txt.trim().split(/\s+/).slice(-12).join(' ')}"
+Current paragraph: "...${currentPara.trim().split(/\s+/).slice(-12).join(' ')}"
 Task: Complete this unfinished sentence naturally.
 Rules:
-- Add only the missing words to finish the current sentence
-- Match the vocabulary and complexity of the existing text exactly
-- For A1/A2: keep it simple, use "and / but / so"
-- NO em dash (—), no complex punctuation unless already in the text
-- NO quotes, NO explanation — output the completion words only`;
+- Add only the missing words to finish the sentence
+- Match vocabulary and complexity of the existing text
+- NO em dash (—), NO quotes, NO explanation — output the completion words only`;
 
   const r = await callAI(prompt, null, true);
   if(seq !== acSeq) return;
@@ -2306,57 +2300,58 @@ async function callSuggest(){
   const text = editor.innerText.trim();
   if(!text) return toast(t('no-text-short'));
 
-  const lines = text.split(/\n+/).filter(Boolean);
-  const totalParas = lines.length;
-  const currentPara = lines[lines.length - 1] || '';
+  // Parse paragraphs — each newline = new idea
+  const paras = text.split(/\n+/).filter(p => p.trim());
+  const totalParas = paras.length;
+  const currentPara = paras[totalParas - 1] || '';
+  const prevParas = paras.slice(0, -1);
   const sentencesInPara = (currentPara.match(/[.!?]+/g) || []).length;
-  const wordCount = text.split(/\s+/).filter(Boolean).length;
 
-  // Full essay for context, capped at 600 words
-  const words = text.split(/\s+/);
-  const fullContext = words.length <= 600 ? text : '...' + words.slice(-600).join(' ');
+  const paraRole = totalParas === 1 ? 'opening paragraph'
+    : totalParas === 2 ? 'second paragraph (first body idea)'
+    : `paragraph ${totalParas} (body)`;
 
-  // Position-aware instruction
-  const positionHint = totalParas <= 1
-    ? 'The writer is in the opening paragraph. Suggest sentences that introduce or expand the main idea.'
-    : sentencesInPara >= 3
-    ? 'The current paragraph is nearly complete. One direction should wrap up this paragraph; one should transition to a new supporting idea.'
-    : wordCount > 120
-    ? 'The writer is developing the body. Suggest sentences that add depth: a reason, a contrast, or a specific example.'
-    : 'The writer is building their essay. Help them develop ideas with more detail or a new angle.';
+  const prevSummary = prevParas.length
+    ? `Previous paragraphs already covered:\n${prevParas.map((p,i)=>`- Paragraph ${i+1}: "${p.trim().slice(0,120)}${p.length>120?'...':''}"`).join('\n')}`
+    : '';
+
+  const wrapHint = sentencesInPara >= 3
+    ? 'The current paragraph already has several sentences. One suggestion should wrap up this paragraph; one should be a transition to a NEW idea for the next paragraph.'
+    : 'The current paragraph is still developing. Suggest sentences that add depth to the current idea.';
 
   const r = await callAI(
-`You are an English writing coach helping develop ideas logically.
+`You are an English writing coach helping develop a logical, well-structured essay.
 
 Topic: "${topic()||'not specified'}"
 ${ctx()}
 
-Full essay so far:
-"""
-${fullContext}
-"""
+Current paragraph (${paraRole}):
+"${currentPara.trim()}"
 
-${positionHint}
+${prevSummary}
 
-Generate exactly 3 different next sentences. Each must:
-1. Read the FULL essay above — do NOT repeat or restate any idea already written
-2. Offer a genuinely different direction:
-   - Sentence 1: add a specific detail, fact, or example that supports the current idea
-   - Sentence 2: add a personal feeling, reaction, or opinion related to the topic
-   - Sentence 3: introduce a NEW related idea or make a transition to develop the essay further
-3. STRICTLY match the student's level:
-   - A1/A2: max 8–10 words, only basic vocabulary, only "and / but / so" connectors
+${wrapHint}
+
+Generate exactly 3 different next sentences for the CURRENT paragraph. Each must:
+1. Stay focused on the current paragraph's idea — do NOT introduce a completely unrelated topic
+2. Do NOT repeat or restate anything from previous paragraphs
+3. Offer 3 different angles:
+   - Sentence 1: add a specific detail, fact, or example that supports this paragraph's idea
+   - Sentence 2: add a personal feeling, reaction, or opinion about this idea
+   - Sentence 3: ${sentencesInPara >= 3 ? 'a concluding sentence for this paragraph OR a transition to signal the next idea' : 'push the idea further with a reason, contrast, or consequence'}
+4. STRICTLY match the student's level:
+   - A1/A2: max 8–10 words, basic vocabulary only, "and / but / so" connectors only
    - B1/B2: 12–18 words, varied vocab, "because / when / after / although" are fine
    - C1/C2: 15–25 words, rich vocabulary, complex structures welcome
-4. Sound natural and personal — NOT textbook-formal
-5. NO em dash (—) at all. Use comma or "and/but" instead.
-6. Vietnamese translation must be natural spoken Vietnamese with appropriate pronouns
+5. Sound natural and personal — NOT textbook-formal
+6. NO em dash (—). Use comma or "and/but" instead.
+7. Vietnamese translation: natural spoken Vietnamese with appropriate pronouns
 
 Return ONLY a valid JSON array, no other text:
 [
-  {"en": "Specific detail or example sentence.", "vi": "Bản dịch tự nhiên."},
+  {"en": "Detail or example sentence.", "vi": "Bản dịch tự nhiên."},
   {"en": "Feeling or reaction sentence.", "vi": "Bản dịch tự nhiên."},
-  {"en": "New idea or transition sentence.", "vi": "Bản dịch tự nhiên."}
+  {"en": "${sentencesInPara >= 3 ? 'Concluding or transition sentence.' : 'Reason, contrast, or consequence sentence.'}", "vi": "Bản dịch tự nhiên."}
 ]`,
     'btn-suggest'
   );

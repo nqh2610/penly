@@ -1971,12 +1971,33 @@ function topic(){
 }
 
 // ── API ──
-const FALLBACK_MODEL = 'llama-3.3-70b-versatile';
-let _usingFallback = false;
-let _fallbackUntil = 0; // timestamp — stay on fallback for 2 minutes after rate limit
+const MODEL_CHAIN = [
+  'openai/gpt-oss-120b',
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+];
+// per-model cooldown: if rate limited, skip that model for 2 minutes
+const _modelCooldown = {}; // model -> timestamp until which it's blocked
+
+function _pickModel(){
+  const now = Date.now();
+  for(const m of MODEL_CHAIN){
+    if(!_modelCooldown[m] || now > _modelCooldown[m]) return m;
+  }
+  // all models rate limited — return last one anyway and let it fail gracefully
+  return MODEL_CHAIN[MODEL_CHAIN.length - 1];
+}
+
+async function _callWorker(lk, prompt, model){
+  const res = await fetch(WORKER_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000, model })
+  });
+  return res.json();
+}
 
 async function callAI(prompt, btnId, silent=false, noPanel=false){
-  // license gate
   const lk = getLicenseKey();
   if(!lk || !(await isValidKey(lk))){
     if(!silent) setBusy(btnId, false, !noPanel);
@@ -1985,45 +2006,52 @@ async function callAI(prompt, btnId, silent=false, noPanel=false){
   }
   if(!silent) setBusy(btnId, true, !noPanel);
 
-  // use fallback model if still within cooldown window
   const now = Date.now();
-  const model = now < _fallbackUntil ? FALLBACK_MODEL : undefined;
+  for(let i = 0; i < MODEL_CHAIN.length; i++){
+    const model = MODEL_CHAIN[i];
+    if(_modelCooldown[model] && now < _modelCooldown[model]) continue;
 
-  try{
-    const res = await fetch(WORKER_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000, ...(model ? {model} : {}) })
-    });
-    const d = await res.json();
-    if(!silent) setBusy(btnId, false, !noPanel);
-    if(d.content) return d.content;
+    try{
+      const d = await _callWorker(lk, prompt, model);
 
-    // rate limit detected — switch to fallback and retry once
-    if(d.rate_limited && !model){
-      _fallbackUntil = Date.now() + 2 * 60 * 1000; // fallback for 2 minutes
-      if(!silent) toast(uiLang==='en' ? 'Switching to backup model…' : 'Đang chuyển sang model dự phòng…', '');
-      const res2 = await fetch(WORKER_URL, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000, model: FALLBACK_MODEL })
-      });
-      const d2 = await res2.json();
+      if(d.content){
+        if(!silent) setBusy(btnId, false, !noPanel);
+        return d.content;
+      }
+
+      if(d.rate_limited){
+        _modelCooldown[model] = Date.now() + 2 * 60 * 1000;
+        const next = MODEL_CHAIN[i + 1];
+        if(next){
+          const msg = uiLang === 'en'
+            ? `Model busy, switching to backup…`
+            : `Model bận, chuyển sang model dự phòng…`;
+          toast(msg, '');
+          continue; // try next model
+        } else {
+          // all exhausted
+          if(!silent) setBusy(btnId, false, !noPanel);
+          toast(uiLang==='en' ? 'All models busy, please wait a moment.' : 'Tất cả model đang bận, vui lòng thử lại sau ít phút.', 'd');
+          return null;
+        }
+      }
+
+      // other error
       if(!silent) setBusy(btnId, false, !noPanel);
-      if(d2.content) return d2.content;
-      const err2 = d2.error || JSON.stringify(d2);
-      if(!silent) toast((uiLang==='en'?'Error: ':'Lỗi: ') + err2.substring(0,100), 'd');
+      const err = d.error || JSON.stringify(d);
+      if(!silent) toast((uiLang==='en'?'Error: ':'Lỗi: ') + err.substring(0,100), 'd');
+      return null;
+
+    }catch{
+      if(!silent) setBusy(btnId, false, !noPanel);
+      if(!silent) toast(uiLang==='en'?'Connection error.':'Lỗi kết nối.', 'd');
       return null;
     }
-
-    const err = d.error || JSON.stringify(d);
-    if(!silent) toast((uiLang==='en'?'Error: ':'Lỗi: ') + err.substring(0,100), 'd');
-    return null;
-  }catch{
-    if(!silent) setBusy(btnId, false, !noPanel);
-    if(!silent) toast(uiLang==='en'?'Connection error.':'Lỗi kết nối.', 'd');
-    return null;
   }
+
+  if(!silent) setBusy(btnId, false, !noPanel);
+  toast(uiLang==='en' ? 'All models busy, please try again shortly.' : 'Tất cả model đang bận, vui lòng thử lại sau ít phút.', 'd');
+  return null;
 }
 function strip(s){ return s.replace(/```[\w]*\n?/g,'').replace(/```/g,'').trim(); }
 

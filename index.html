@@ -2071,64 +2071,59 @@ Rules:
 async function callOutline(){
   const tp = topic(); if(!tp) return toast(t('no-topic'));
   const r = await callAI(
-`Bạn là giáo viên tiếng Anh giàu kinh nghiệm và am hiểu tâm lý học sinh. Hãy lập dàn ý bài viết thật cụ thể, sáng tạo và phù hợp với người học.
+`You are an experienced ESL teacher creating a writing outline for a student.
 
-Chủ đề: "${tp}"
+Topic: "${tp}"
 ${ctx()}
 
-⚠️ Yêu cầu bắt buộc:
-- Tất cả ví dụ tiếng Anh PHẢI phù hợp đúng trình độ đã chỉ định — A1/A2 dùng từ rất đơn giản, câu ngắn; B1/B2 dùng câu phức vừa phải; C1/C2 mới dùng cấu trúc phức tạp
-- Ví dụ câu phải gắn trực tiếp với chủ đề "${tp}", không dùng ví dụ chung chung
-- Tuyệt đối không dùng dấu — (em dash). Dùng dấu phẩy hoặc "and/but/so" thay thế
-
----
-
-## 🧭 Góc nhìn về chủ đề
-*(Tiếng Việt — 2–3 câu)* Điểm thú vị của chủ đề này là gì? Học sinh nên khai thác khía cạnh nào để bài viết có cảm xúc và ấn tượng nhất?
+Rules:
+- ALL English examples must match the level exactly
+- Examples must be about "${tp}", not generic
+- NO em dash (—). Use comma or and/but/so instead
+- Be concise: students need to act, not read long explanations
 
 ---
 
 ## 1️⃣ Mở bài
-**Mục tiêu:** Tạo ấn tượng đầu tiên, dẫn dắt người đọc vào câu chuyện.
 
-**2 cách mở bài gợi ý** *(chọn 1 cái phù hợp nhất với chủ đề và độc giả)*:
-1. *(ví dụ câu mở tiếng Anh — đúng trình độ, gắn với chủ đề)*
-2. *(ví dụ câu mở tiếng Anh — đúng trình độ, gắn với chủ đề)*
-
-**Câu chủ đề gợi ý:**
-> *(1 câu tiếng Anh nêu ý chính — đúng trình độ)*
+**Chọn 1 câu để bắt đầu bài viết:**
+1. *(câu mở — đúng trình độ, gắn chủ đề)*
+2. *(câu mở — đúng trình độ, gắn chủ đề)*
 
 ---
 
 ## 2️⃣ Thân bài
 
-### 📌 Đoạn 1 — [Đặt tên ý chính cụ thể liên quan chủ đề]
-- **Ý chính:** *(1 câu)*
-- **Chi tiết/ví dụ cụ thể gắn với chủ đề:** *(mô tả ngắn)*
-- **✍️ Câu mẫu:** *(tiếng Anh — đúng trình độ)*
-- **Từ nối phù hợp:** *(2–3 lựa chọn)*
+### 📌 Đoạn 1 — [tên ý chính]
+- **Viết về:** *(1 câu tiếng Việt — nói học sinh viết về điều gì cụ thể)*
+- **Câu mẫu:** *(1 câu tiếng Anh hoàn chỉnh — đúng trình độ)*
+- **Từ nối:** *(2–3 từ phù hợp trình độ)*
 
-### 📌 Đoạn 2 — [Đặt tên ý chính cụ thể]
-*(cấu trúc tương tự — ý chính khác biệt, bổ sung cho đoạn 1)*
+### 📌 Đoạn 2 — [tên ý chính khác]
+- **Viết về:** *(1 câu tiếng Việt)*
+- **Câu mẫu:** *(1 câu tiếng Anh)*
+- **Từ nối:** *(2–3 từ)*
 
-### 📌 Đoạn 3 — [Đặt tên ý chính cụ thể] *(chỉ thêm nếu phù hợp với trình độ B1 trở lên)*
-*(cấu trúc tương tự)*
+### 📌 Đoạn 3 — [tên ý chính] *(chỉ thêm nếu B1 trở lên)*
+- **Viết về:** *(1 câu tiếng Việt)*
+- **Câu mẫu:** *(1 câu tiếng Anh)*
+- **Từ nối:** *(2–3 từ)*
 
 ---
 
 ## 3️⃣ Kết bài
-**Mục tiêu:** Kết thúc ấn tượng, để lại cảm xúc cho người đọc.
 
-**✍️ Câu kết gợi ý:**
-> *(1–2 câu tiếng Anh hoàn chỉnh, đúng trình độ, gắn với chủ đề)*
+**Chọn 1 câu kết:**
+1. *(câu kết — đúng trình độ, gắn chủ đề)*
+2. *(câu kết — đúng trình độ, gắn chủ đề)*
 
 ---
 
-## 📚 Từ vựng chủ chốt cho chủ đề này
+## 📚 Từ vựng cần biết
 
-| Từ / Cụm từ | Nghĩa tiếng Việt | Ví dụ câu ngắn gắn với chủ đề |
+| Từ / Cụm từ | Nghĩa | Ví dụ |
 |---|---|---|
-*(8–10 từ — ưu tiên từ thực dụng, hay dùng, phù hợp trình độ)*`,
+*(6–8 từ thực dụng, phù hợp trình độ, gắn với chủ đề)*`,
     'btn-outline'
   );
   if(r) openPanel(t('panel-outline'), r, null);

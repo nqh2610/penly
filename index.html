@@ -437,6 +437,14 @@ body{
   flex:1;min-width:0;
 }
 .ac-chip.show{opacity:1;pointer-events:auto}
+.model-chip{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 7px;border-radius:8px;font-size:.68rem;font-weight:700;
+  white-space:nowrap;
+}
+.model-chip.tier-2{background:#fef3c7;color:#92400e} /* amber — cấp 2 */
+.model-chip.tier-3{background:#fee2e2;color:#991b1b} /* đỏ nhạt — cấp 3 */
+.model-chip.tier-4{background:#fecaca;color:#7f1d1d} /* đỏ đậm — cấp 4 */
 .sb-r{margin-left:auto}
 
 /* ═══ RESULT PANEL ═══ */
@@ -1151,6 +1159,7 @@ Gợi ý:
           <span id="acText"></span>
           <kbd style="background:var(--accent);color:#fff;border:none;border-radius:3px;padding:1px 5px;font-size:.62rem">Tab</kbd>
         </span>
+        <span id="modelChip" class="model-chip" style="display:none"></span>
         <div class="sb-r" id="wc">0 từ</div>
       </div>
 
@@ -1977,6 +1986,24 @@ const MODEL_CHAIN = [
   'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
 ];
+// Human-readable tier labels (no technical names)
+const MODEL_LABELS = {
+  'openai/gpt-oss-120b':    null,                            // tier 1 — default, no badge
+  'openai/gpt-oss-20b':     { text: '⚡ Cấp 2',  cls: 'tier-2', title: 'Đang dùng AI cấp 2 do cấp 1 bận' },
+  'llama-3.3-70b-versatile':{ text: '⚡ Cấp 3',  cls: 'tier-3', title: 'Đang dùng AI cấp 3 do cấp trên bận' },
+  'llama-3.1-8b-instant':   { text: '⚡ Cấp 4',  cls: 'tier-4', title: 'Đang dùng AI cấp 4 do cấp trên bận' },
+};
+
+function setModelChip(model){
+  const chip = document.getElementById('modelChip');
+  if(!chip) return;
+  const info = MODEL_LABELS[model];
+  if(!info){ chip.style.display = 'none'; return; }
+  chip.textContent = info.text;
+  chip.className = 'model-chip ' + info.cls;
+  chip.title = info.title;
+  chip.style.display = 'inline-flex';
+}
 // per-model cooldown: if rate limited, skip that model for 2 minutes
 const _modelCooldown = {}; // model -> timestamp until which it's blocked
 
@@ -2017,6 +2044,7 @@ async function callAI(prompt, btnId, silent=false, noPanel=false){
 
       if(d.content){
         if(!silent) setBusy(btnId, false, !noPanel);
+        setModelChip(model);
         return d.content;
       }
 

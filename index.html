@@ -209,7 +209,7 @@ body{
   display:none;position:fixed;
   background:var(--surface);border:1px solid var(--border);
   border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);
-  min-width:160px;z-index:200;padding:4px;
+  width:160px;z-index:200;padding:4px;
 }
 .doc-dropdown.open{display:block}
 /* always show delete on mobile */
@@ -1810,7 +1810,10 @@ function renderDocList(){
       const dd = div.querySelector('.doc-dropdown');
       const rect = e.currentTarget.getBoundingClientRect();
       dd.style.top = (rect.bottom + 4) + 'px';
-      dd.style.left = Math.min(rect.left, window.innerWidth - 170) + 'px';
+      // align right edge of dropdown to right edge of button, clamp to viewport
+      const ddW = 160;
+      const rightAligned = rect.right - ddW;
+      dd.style.left = Math.max(4, rightAligned) + 'px';
       dd.classList.toggle('open');
     });
     div.querySelector('.doc-dd-rename').addEventListener('click', e => {

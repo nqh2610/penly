@@ -808,6 +808,9 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     white-space:nowrap;overflow:hidden;
     max-width:56px;text-overflow:ellipsis;
   }
+  .tb-btn .tb-label[data-mobile]::before{content:attr(data-mobile)}
+  .tb-btn .tb-label[data-mobile]{font-size:0;max-width:none}
+  .tb-btn .tb-label[data-mobile]::before{font-size:.65rem;font-weight:600}
   .tb-sep2{display:none}
 
   /* primary button spans 2 cols so it stands out */
@@ -1129,26 +1132,26 @@ Gợi ý:
       <!-- SINGLE TOOLBAR — replaces both quick-strip and action bar -->
       <div class="toolbar">
         <button class="tb-btn primary" id="btn-outline" onclick="callOutline()">
-          <i class="bi bi-list-task"></i><span class="tb-label" id="lbl-btn-outline"> Lập dàn ý</span>
+          <i class="bi bi-list-task"></i><span class="tb-label" id="lbl-btn-outline" data-mobile="Dàn ý"> Lập dàn ý</span>
         </button>
         <button class="tb-btn" id="btn-vocab" onclick="callVocab()">
-          <i class="bi bi-book"></i><span class="tb-label" id="lbl-btn-vocab"> Từ vựng</span>
+          <i class="bi bi-book"></i><span class="tb-label" id="lbl-btn-vocab" data-mobile="Từ vựng"> Từ vựng</span>
         </button>
         <div class="tb-sep2"></div>
         <button class="tb-btn c-grammar" id="btn-grammar" onclick="callGrammar()">
-          <i class="bi bi-spellcheck"></i><span class="tb-label" id="lbl-btn-grammar"> Kiểm tra lỗi</span>
+          <i class="bi bi-spellcheck"></i><span class="tb-label" id="lbl-btn-grammar" data-mobile="Lỗi"> Kiểm tra lỗi</span>
         </button>
         <button class="tb-btn" id="btn-suggest" onclick="callSuggest()">
-          <i class="bi bi-chat-dots"></i><span class="tb-label" id="lbl-btn-suggest"> Gợi ý câu</span>
+          <i class="bi bi-chat-dots"></i><span class="tb-label" id="lbl-btn-suggest" data-mobile="Gợi ý"> Gợi ý câu</span>
         </button>
         <button class="tb-btn c-improve" id="btn-improve" onclick="callImprove()">
-          <i class="bi bi-magic"></i><span class="tb-label" id="lbl-btn-improve"> Nâng cấp</span>
+          <i class="bi bi-magic"></i><span class="tb-label" id="lbl-btn-improve" data-mobile="Nâng cấp"> Nâng cấp</span>
         </button>
         <button class="tb-btn c-review" id="btn-review" onclick="callReview()">
-          <i class="bi bi-award"></i><span class="tb-label" id="lbl-btn-review"> Nhận xét</span>
+          <i class="bi bi-award"></i><span class="tb-label" id="lbl-btn-review" data-mobile="Nhận xét"> Nhận xét</span>
         </button>
         <button class="tb-btn c-translate" id="btn-translate" onclick="callTranslate()">
-          <i class="bi bi-translate"></i><span class="tb-label" id="lbl-btn-translate"> Dịch Việt</span>
+          <i class="bi bi-translate"></i><span class="tb-label" id="lbl-btn-translate" data-mobile="Dịch"> Dịch Việt</span>
         </button>
       </div>
     </div>
@@ -2904,16 +2907,36 @@ function loadUI(){
 // ── MOBILE KEYBOARD DETECTION ──
 (function(){
   if(!window.visualViewport) return;
+  const toolbar = document.querySelector('.toolbar');
+  const acBar   = document.getElementById('acBar');
   let baseH = window.visualViewport.height;
-  window.visualViewport.addEventListener('resize', () => {
-    const h = window.visualViewport.height;
-    const kbOpen = h < baseH * 0.75;
+
+  function updateKb(){
+    const vvH    = window.visualViewport.height;
+    const vvTop  = window.visualViewport.offsetTop;
+    const kbOpen = vvH < baseH * 0.75;
     document.body.classList.toggle('kb-open', kbOpen);
-    if(!kbOpen) baseH = h;
+    if(!kbOpen){
+      baseH = vvH;
+      toolbar.style.bottom = '';
+      toolbar.style.transform = '';
+      if(acBar) { acBar.style.bottom = ''; acBar.style.transform = ''; }
+    } else {
+      // keyboard height = window height - visualViewport height - offsetTop
+      const kbH = window.innerHeight - vvH - vvTop;
+      toolbar.style.bottom = kbH + 'px';
+      toolbar.style.transform = 'none';
+      const hasAc = document.body.classList.contains('has-ac');
+      const tbH = toolbar.offsetHeight || 44;
+      if(acBar) acBar.style.bottom = (kbH + tbH) + 'px';
+    }
     syncACBar();
-  });
+  }
+
+  window.visualViewport.addEventListener('resize', updateKb);
+  window.visualViewport.addEventListener('scroll', updateKb);
   window.addEventListener('orientationchange', () => {
-    setTimeout(() => { baseH = window.visualViewport.height; syncACBar(); }, 300);
+    setTimeout(() => { baseH = window.visualViewport.height; updateKb(); }, 400);
   });
 })();
 

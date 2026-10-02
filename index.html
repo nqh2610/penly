@@ -18,6 +18,9 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg?v=2">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -61,7 +64,7 @@
   /* editor typography */
   --ed-fs:17px;
   --ed-lh:1.9;
-  --ed-font:"Georgia",serif;
+  --ed-font:"Be Vietnam Pro",system-ui,sans-serif;
 
   /* panel width */
   --panel-w:420px;
@@ -1222,6 +1225,7 @@ Gợi ý:
         <div class="sd-row">
           <div class="sd-label" id="lbl-sd-font">Font chữ soạn thảo</div>
           <select class="sd-select" id="fontSel" onchange="setFont(this.value)">
+            <option value='"Be Vietnam Pro",system-ui,sans-serif' id="font-bevietnam">Be Vietnam Pro — tiếng Việt đẹp</option>
             <option value='"Georgia",serif' id="font-georgia">Georgia — dễ đọc</option>
             <option value='system-ui,-apple-system,sans-serif' id="font-system">System Sans — hiện đại</option>
             <option value='"Segoe UI",Tahoma,sans-serif'>Segoe UI</option>
@@ -2840,7 +2844,7 @@ function loadUI(){
   const lh = +(localStorage.getItem('ui_lh') || 1.8);
   document.getElementById('lhRange').value = lh; setLH(lh);
 
-  const font = localStorage.getItem('ui_font') || '"Georgia",serif';
+  const font = localStorage.getItem('ui_font') || '"Be Vietnam Pro",system-ui,sans-serif';
   document.getElementById('fontSel').value = font; setFont(font);
 
   const pw = +(localStorage.getItem('ui_pw') || 420);
@@ -2952,7 +2956,7 @@ const LANG = {
     'aud-children':'Trẻ em','aud-friends':'Bạn bè','aud-public':'Phổ thông','aud-pro':'Chuyên gia',
     'tone-story':'Kể chuyện','tone-casual':'Tự nhiên','tone-humor':'Hài hước',
     'tone-pro':'Chuyên nghiệp','tone-persuade':'Thuyết phục','tone-emo':'Cảm xúc',
-    'font-georgia':'Georgia — dễ đọc','font-system':'System Sans — hiện đại','font-courier':'Courier — đánh máy',
+    'font-bevietnam':'Be Vietnam Pro — tiếng Việt đẹp','font-georgia':'Georgia — dễ đọc','font-system':'System Sans — hiện đại','font-courier':'Courier — đánh máy',
     'topicInput-ph':'Nhập chủ đề bài viết…',
     'untitled':'(Chưa đặt tên)',
     'editor-ph':'Bắt đầu viết tiếng Anh tại đây…\n\nGợi ý:\n  • Nhập chủ đề ở trên → nhấn [Lập dàn ý]\n  • Viết từng đoạn theo dàn ý\n  • Nhấn [Kiểm tra lỗi] sau mỗi đoạn\n  • Nhấn Tab để chấp nhận gợi ý tự động',
@@ -3034,7 +3038,7 @@ const LANG = {
     'aud-children':'Children','aud-friends':'Friends','aud-public':'General','aud-pro':'Experts',
     'tone-story':'Storytelling','tone-casual':'Casual','tone-humor':'Humorous',
     'tone-pro':'Professional','tone-persuade':'Persuasive','tone-emo':'Emotional',
-    'font-georgia':'Georgia — readable','font-system':'System Sans — modern','font-courier':'Courier — typewriter',
+    'font-bevietnam':'Be Vietnam Pro — Vietnamese','font-georgia':'Georgia — readable','font-system':'System Sans — modern','font-courier':'Courier — typewriter',
     'topicInput-ph':'Enter writing topic…',
     'untitled':'(Untitled)',
     'editor-ph':'Start writing English here…\n\nTips:\n  • Enter a topic above → click [Outline]\n  • Write each paragraph following the outline\n  • Click [Check errors] after each paragraph\n  • Press Tab to accept autocomplete suggestions',
@@ -3109,7 +3113,7 @@ function setLang(lang){
     'lbl-pad-c','lbl-pad-n','lbl-pad-w',
     'aud-children','aud-friends','aud-public','aud-pro',
     'tone-story','tone-casual','tone-humor','tone-pro','tone-persuade','tone-emo',
-    'font-georgia','font-system','font-courier',
+    'font-bevietnam','font-georgia','font-system','font-courier',
   ];
   ids.forEach(id => {
     const el = document.getElementById(id);

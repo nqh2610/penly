@@ -851,9 +851,9 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 
   .toast-wrap{bottom:5rem;right:0.5rem}
 
-  /* ac-bar sits above fixed toolbar */
-  .ac-bar{bottom:3.2rem}
-  body.has-ac .ac-bar.show{bottom:3.2rem;z-index:46}
+  /* ac-bar sits above sticky toolbar */
+  .ac-bar{bottom:calc(2.75rem + 12px + env(safe-area-inset-bottom,0px))}
+  body.has-ac .ac-bar.show{bottom:calc(2.75rem + 12px + env(safe-area-inset-bottom,0px));z-index:46}
 
   /* improve confirm bar */
   .improve-confirm-btns{flex-direction:column}

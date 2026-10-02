@@ -2705,10 +2705,10 @@ function loadUI(){
   const uifs = +(localStorage.getItem('ui_uifs') || 15);
   document.getElementById('uiFsRange').value = uifs; setUIFs(uifs);
 
-  const edfs = +(localStorage.getItem('ui_edfs') || 17);
+  const edfs = +(localStorage.getItem('ui_edfs') || 18);
   document.getElementById('edFsRange').value = edfs; setEdFs(edfs);
 
-  const lh = +(localStorage.getItem('ui_lh') || 1.9);
+  const lh = +(localStorage.getItem('ui_lh') || 1.8);
   document.getElementById('lhRange').value = lh; setLH(lh);
 
   const font = localStorage.getItem('ui_font') || '"Georgia",serif';
@@ -2729,8 +2729,8 @@ function loadUI(){
     document.querySelectorAll('.sw').forEach(s => s.classList.toggle('on', s.dataset.a === acc));
   }
 
-  // language: default EN, remember choice
-  setLang(localStorage.getItem('ui_lang') || 'en');
+  // language: default Vietnamese
+  setLang(localStorage.getItem('ui_lang') || 'vi');
 
   // File System Access API
   initFSA();

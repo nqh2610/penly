@@ -85,19 +85,19 @@
 
 /* ── Global font scale: html font-size drives ALL rem values ── */
 html{
-  font-size:var(--ui-fs);   /* ← single source of truth: rem = --ui-fs */
+  font-size:var(--ui-fs);
   height:100%;
-  height:-webkit-fill-available;
+  height:100dvh;
   overflow:hidden;
 }
 body{
   font-family:system-ui,-apple-system,sans-serif;
-  font-size:1rem;           /* inherits from html → scales with --ui-fs */
+  font-size:1rem;
   background:var(--bg);
   color:var(--text);
   line-height:1.5;
   height:100%;
-  height:-webkit-fill-available;
+  height:100dvh;
   overflow:hidden;
   transition:background .2s;
 }
@@ -790,9 +790,9 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   #editor{font-size:16px;line-height:1.75}
   #editor:empty::before{font-size:16px;line-height:1.75}
 
-  /* toolbar: sticky at bottom of flex column, never fixed */
+  /* toolbar: sticky at bottom, always visible above keyboard */
   .toolbar{
-    position:relative;
+    position:sticky;bottom:0;
     flex-shrink:0;
     z-index:45;
     display:flex;flex-wrap:nowrap;
@@ -2881,33 +2881,22 @@ function loadUI(){
 }
 
 // ── MOBILE KEYBOARD DETECTION ──
-// Samsung Internet and older browsers don't support interactive-widget.
-// Solution: resize .main to visualViewport.height so toolbar stays in view.
+// html/body use 100dvh which shrinks when keyboard opens on modern browsers.
+// This block only handles ac-bar positioning and kb-open class.
 (function(){
   if(!window.visualViewport) return;
   if(window.innerWidth > 640) return;
 
-  const main   = document.querySelector('.main');
   const acBar  = document.getElementById('acBar');
   const toolbar = document.querySelector('.toolbar');
 
   function updateKb(){
-    const vvH   = window.visualViewport.height;
-    const vvTop = window.visualViewport.offsetTop;
-    // resize .main to exactly the visible area
-    main.style.height = vvH + 'px';
-    main.style.position = 'fixed';
-    main.style.top = vvTop + 'px';
-    main.style.left = '0';
-    main.style.right = '0';
-
-    const kbH = Math.max(0, window.innerHeight - vvH - vvTop);
+    const kbH = Math.max(0, window.innerHeight - window.visualViewport.height);
     const kbOpen = kbH > 80;
     document.body.classList.toggle('kb-open', kbOpen);
-
     const tbH = toolbar ? toolbar.offsetHeight || 48 : 48;
     if(acBar){
-      if(kbOpen && document.body.classList.contains('has-ac')){
+      if(document.body.classList.contains('has-ac')){
         acBar.style.setProperty('bottom', tbH + 'px', 'important');
       } else {
         acBar.style.removeProperty('bottom');
@@ -2917,10 +2906,7 @@ function loadUI(){
   }
 
   window.visualViewport.addEventListener('resize', updateKb);
-  window.visualViewport.addEventListener('scroll', updateKb);
   window.addEventListener('orientationchange', () => setTimeout(updateKb, 400));
-  // run once after load
-  window.addEventListener('load', updateKb);
 })();
 
 // ── GRAMMAR BOTTOM SHEET (touch) ──

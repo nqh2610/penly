@@ -2161,14 +2161,18 @@ Rules:
 
   const r = await callAI(prompt, null, true);
   if(seq !== acSeq) return;
-  if(r && r.length < 200 && !r.includes('```') && !r.includes('\n\n')){
-    const clean = r.trim()
-      .replace(/^["']|["']$/g,'')
-      .replace(/\s*—\s*/g, ', ');
-    pendingAC = clean;
-    acText.textContent = clean;
-    acChip.classList.add('show');
-    syncACBar();
+  if(r){
+    // take only the first line in case AI returns multiple lines
+    const firstLine = r.trim().split(/\n/)[0].trim();
+    if(firstLine.length > 0 && firstLine.length < 200 && !firstLine.includes('```')){
+      const clean = firstLine
+        .replace(/^["']|["']$/g,'')
+        .replace(/\s*—\s*/g, ', ');
+      pendingAC = clean;
+      acText.textContent = clean;
+      acChip.classList.add('show');
+      syncACBar();
+    }
   }
 }
 

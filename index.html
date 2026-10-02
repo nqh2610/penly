@@ -322,6 +322,37 @@ body{
 .doc-title-input:hover{background:var(--bg)}
 .doc-title-input:focus{background:var(--bg)}
 .doc-title-input::placeholder{color:var(--muted2);font-weight:400}
+.doc-title-display{
+  flex:1;min-width:0;
+  font-size:.92rem;font-weight:600;color:var(--text);
+  padding:4px 6px;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+.topbar-title-menu-btn{
+  flex-shrink:0;width:1.8rem;height:1.8rem;border-radius:6px;
+  border:none;background:transparent;cursor:pointer;
+  color:var(--muted);display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;transition:.15s;
+}
+.topbar-title-menu-btn:hover{background:var(--bg);color:var(--text)}
+.title-dropdown{
+  display:none;position:absolute;top:calc(100% + 4px);left:0;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);
+  min-width:160px;z-index:100;padding:4px;
+}
+.title-dropdown.open{display:block}
+.title-dd-item{
+  display:flex;align-items:center;gap:8px;width:100%;
+  padding:7px 10px;border:none;background:transparent;
+  font-size:.85rem;color:var(--text);border-radius:7px;
+  cursor:pointer;text-align:left;transition:.12s;
+}
+.title-dd-item:hover{background:var(--bg)}
+.title-dd-item i{font-size:.9rem;color:var(--muted)}
+.title-dd-danger{color:var(--danger,#dc2626)!important}
+.title-dd-danger i{color:var(--danger,#dc2626)!important}
+.title-dd-danger:hover{background:#fef2f2!important}
 
 .tb-sep{width:1px;height:1.25rem;background:var(--border);flex-shrink:0;margin:0 2px}
 .topbar-brand{display:flex;align-items:center;gap:8px;flex-shrink:0;user-select:none}
@@ -332,12 +363,12 @@ body{
   font-size:.9rem;flex-shrink:0;
   box-shadow:0 1px 4px rgba(79,70,229,.35);
 }
-.topbar-brand-text{display:flex;flex-direction:column;gap:1px;line-height:1}
+.topbar-brand-text{display:flex;flex-direction:column;gap:3px;line-height:1}
 .topbar-brand-name{font-size:.92rem;font-weight:800;color:var(--text);letter-spacing:-.3px;white-space:nowrap}
 .topbar-brand-name em{font-style:normal;font-size:.5rem;font-weight:700;color:#7c3aed;text-transform:uppercase;margin-left:2px;vertical-align:middle;letter-spacing:.04em}
-.topbar-brand-tag{font-size:.62rem;color:var(--muted);font-weight:500;white-space:nowrap}
+.topbar-brand-tag{font-size:.63rem;color:var(--muted);font-weight:500;white-space:nowrap;margin-top:1px}
 .topbar-brand-sep{width:1px;height:1.8rem;background:var(--border);flex-shrink:0;margin:0 6px}
-.topbar-title-wrap{display:flex;align-items:center;gap:5px;flex:1;min-width:0}
+.topbar-title-wrap{display:flex;align-items:center;gap:4px;flex:1;min-width:0;position:relative}
 .topbar-title-icon{font-size:.85rem;color:var(--muted2);flex-shrink:0}
 .sel-label{font-size:.67rem;font-weight:700;color:var(--muted2);white-space:nowrap}
 .csel{
@@ -1080,12 +1111,25 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     </div>
     <div class="topbar-brand-sep"></div>
 
-    <!-- doc title: editable inline -->
+    <!-- doc title: display + actions menu -->
     <div class="topbar-title-wrap">
       <i class="bi bi-file-text topbar-title-icon"></i>
-      <input id="titleInput" class="doc-title-input" spellcheck="false" autocomplete="off"
-      placeholder="(Chưa đặt tên)" oninput="onTitleChange()" title="Tên bài viết">
+      <span id="titleDisplay" class="doc-title-display" title="Tên bài viết"></span>
+      <button class="topbar-title-menu-btn" id="titleMenuBtn" onclick="toggleTitleMenu(event)" title="Tùy chọn bài viết">
+        <i class="bi bi-three-dots"></i>
+      </button>
+      <div class="title-dropdown" id="titleDropdown">
+        <button class="title-dd-item" onclick="startRenameDoc()">
+          <i class="bi bi-pencil"></i> <span id="lbl-dd-rename">Đổi tên</span>
+        </button>
+        <button class="title-dd-item title-dd-danger" onclick="confirmDelete()">
+          <i class="bi bi-trash3"></i> <span id="lbl-dd-delete">Xóa bài</span>
+        </button>
+      </div>
     </div>
+    <!-- hidden input kept for internal logic -->
+    <input id="titleInput" style="display:none" spellcheck="false" autocomplete="off"
+      placeholder="(Chưa đặt tên)" oninput="onTitleChange()">
 
     <div class="tb-sep"></div>
     <span class="sel-label" id="lbl-aud">Độc giả</span>
@@ -1633,6 +1677,8 @@ function onTitleChange(){
   const d = getDoc(currentId); if(!d) return;
   d.titleCustom = titleInput.value.trim() !== topicInput.value.trim();
   d.title = titleInput.value.trim();
+  const display = document.getElementById('titleDisplay');
+  if(display) display.textContent = titleInput.value.trim() || topicInput.value.trim() || '(Chưa đặt tên)';
   _debouncedTitleRender();
 }
 const _debouncedTitleRender = debounce(() => renderDocList(), 300);
@@ -1643,7 +1689,36 @@ function updateTopicLockUI(){ /* no-op */ }
 function updateDocTitleDisplay(){
   const val = titleInput.value.trim() || topicInput.value.trim();
   if(val) titleInput.value = val;
+  const display = document.getElementById('titleDisplay');
+  if(display) display.textContent = titleInput.value.trim() || t('untitled') || '(Chưa đặt tên)';
 }
+
+function toggleTitleMenu(e){
+  e.stopPropagation();
+  const dd = document.getElementById('titleDropdown');
+  dd.classList.toggle('open');
+}
+
+function startRenameDoc(){
+  document.getElementById('titleDropdown').classList.remove('open');
+  const d = getDoc(currentId); if(!d) return;
+  const current = titleInput.value.trim() || topicInput.value.trim() || '';
+  const newName = prompt(uiLang==='en' ? 'Rename document:' : 'Đổi tên bài viết:', current);
+  if(newName === null) return;
+  const trimmed = newName.trim();
+  titleInput.value = trimmed;
+  d.titleCustom = trimmed !== topicInput.value.trim();
+  d.title = trimmed;
+  updateDocTitleDisplay();
+  _debouncedTitleRender();
+}
+
+document.addEventListener('click', e => {
+  const dd = document.getElementById('titleDropdown');
+  if(dd && dd.classList.contains('open') && !dd.closest('.topbar-title-wrap').contains(e.target)){
+    dd.classList.remove('open');
+  }
+});
 
 function focusTopic(){
   topicInput.focus();

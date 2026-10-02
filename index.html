@@ -442,9 +442,10 @@ body{
   padding:2px 7px;border-radius:8px;font-size:.68rem;font-weight:700;
   white-space:nowrap;
 }
-.model-chip.tier-2{background:#fef3c7;color:#92400e} /* amber — cấp 2 */
-.model-chip.tier-3{background:#fee2e2;color:#991b1b} /* đỏ nhạt — cấp 3 */
-.model-chip.tier-4{background:#fecaca;color:#7f1d1d} /* đỏ đậm — cấp 4 */
+.model-chip.tier-1{background:var(--accent-soft);color:var(--accent)}
+.model-chip.tier-2{background:#fef3c7;color:#92400e}
+.model-chip.tier-3{background:#fee2e2;color:#991b1b}
+.model-chip.tier-4{background:#fecaca;color:#7f1d1d}
 .sb-r{margin-left:auto}
 
 /* ═══ RESULT PANEL ═══ */
@@ -1988,17 +1989,16 @@ const MODEL_CHAIN = [
 ];
 // Human-readable tier labels (no technical names)
 const MODEL_LABELS = {
-  'openai/gpt-oss-120b':    null,                            // tier 1 — default, no badge
-  'openai/gpt-oss-20b':     { text: '⚡ Cấp 2',  cls: 'tier-2', title: 'Đang dùng AI cấp 2 do cấp 1 bận' },
-  'llama-3.3-70b-versatile':{ text: '⚡ Cấp 3',  cls: 'tier-3', title: 'Đang dùng AI cấp 3 do cấp trên bận' },
-  'llama-3.1-8b-instant':   { text: '⚡ Cấp 4',  cls: 'tier-4', title: 'Đang dùng AI cấp 4 do cấp trên bận' },
+  'openai/gpt-oss-120b':    { text: '✦ Cấp 1', cls: 'tier-1', title: 'Đang dùng AI cấp cao nhất' },
+  'openai/gpt-oss-20b':     { text: '⚡ Cấp 2', cls: 'tier-2', title: 'Đang dùng AI cấp 2 do cấp 1 bận' },
+  'llama-3.3-70b-versatile':{ text: '⚡ Cấp 3', cls: 'tier-3', title: 'Đang dùng AI cấp 3 do cấp trên bận' },
+  'llama-3.1-8b-instant':   { text: '⚡ Cấp 4', cls: 'tier-4', title: 'Đang dùng AI cấp 4 do cấp trên bận' },
 };
 
 function setModelChip(model){
   const chip = document.getElementById('modelChip');
   if(!chip) return;
-  const info = MODEL_LABELS[model];
-  if(!info){ chip.style.display = 'none'; return; }
+  const info = MODEL_LABELS[model] || { text: '✦ Cấp 1', cls: 'tier-1', title: '' };
   chip.textContent = info.text;
   chip.className = 'model-chip ' + info.cls;
   chip.title = info.title;

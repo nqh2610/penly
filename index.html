@@ -86,7 +86,6 @@ html{
   height:100%;
   height:-webkit-fill-available;
   overflow:hidden;
-  transition:font-size .15s;
 }
 body{
   font-family:system-ui,-apple-system,sans-serif;
@@ -97,7 +96,7 @@ body{
   height:100%;
   height:-webkit-fill-available;
   overflow:hidden;
-  transition:background .2s,color .2s;
+  transition:background .2s;
 }
 
 /* Scrollbars */
@@ -501,11 +500,16 @@ body{
 
 .lbar{
   height:3px;border-radius:2px;margin-bottom:0.875rem;
-  background:linear-gradient(90deg,var(--accent),#a5b4fc,var(--accent));
-  background-size:200%;animation:shimmer 1.1s infinite;
+  background:var(--accent);
+  overflow:hidden;position:relative;
+}
+.lbar::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);
+  animation:shimmer 1.1s infinite;
 }
 .lbar.hidden{display:none}
-@keyframes shimmer{0%{background-position:200%}100%{background-position:-200%}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 
 .sc{
   border:1.5px solid var(--border);border-radius:10px;
@@ -1063,7 +1067,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   <div class="workspace">
 
     <!-- EDITOR PANE -->
-    <div class="editor-pane" id="editorPane">
+    <div class="editor-pane" id="editorPane" style="visibility:hidden">
       <div class="editor-scroll">
         <div class="editor-wrap">
 
@@ -1385,9 +1389,14 @@ const wcEl       = document.getElementById('wc');
 const acChip     = document.getElementById('acChip');
 const acText     = document.getElementById('acText');
 const tooltip    = document.getElementById('ge-tooltip');
+const audSel     = document.getElementById('audSel');
+const toneSel    = document.getElementById('toneSel');
+const lvlSel     = document.getElementById('lvlSel');
+
+function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(()=>fn(...a), ms); }; }
 
 // ── INIT ──
-window.addEventListener('load', () => { loadUI(); loadDocs(); });
+window.addEventListener('load', () => { loadUI(); loadDocs(); document.getElementById('editorPane').style.visibility = ''; });
 
 // ══ DOC MANAGEMENT ══
 function loadDocs(){
@@ -1478,16 +1487,17 @@ function onTopicChange(){
     d.title = d.topic;
   }
   updateDocTitleDisplay();
-  saveDocs();
-  renderDocList();
+  _debouncedTopicSave();
 }
+const _debouncedTopicSave = debounce(() => { saveDocs(); renderDocList(); }, 300);
 
 function onTitleChange(){
   const d = getDoc(currentId); if(!d) return;
   d.titleCustom = titleInput.value.trim() !== topicInput.value.trim();
   d.title = titleInput.value.trim();
-  renderDocList();
+  _debouncedTitleRender();
 }
+const _debouncedTitleRender = debounce(() => renderDocList(), 300);
 
 function toggleTopicLock(){ /* no-op — kept for any stale references */ }
 function updateTopicLockUI(){ /* no-op */ }
@@ -1866,7 +1876,9 @@ function syncACBar(){
 }
 
 // ── CONTEXT ──
-function ctx(){ return `WRITING CONTEXT:\n- Audience: ${document.getElementById('audSel').value}\n- Tone: ${document.getElementById('toneSel').value}\n- Level: ${document.getElementById('lvlSel').value}`; }
+function ctx(){
+  return `WRITING CONTEXT:\n- Audience: ${audSel.value}\n- Tone: ${toneSel.value}\n- Level: ${lvlSel.value}`;
+}
 function topic(){
   return topicInput.value.trim();
 }
@@ -1967,14 +1979,8 @@ function setBusy(id, on, openPanel=true){
 (function(){
   const handle = document.getElementById('rzHandle');
   const panel  = document.getElementById('resultPanel');
-  let drag=false,sx=0,sw=0;
-  handle.addEventListener('mousedown',e=>{
-    drag=true;sx=e.clientX;sw=panel.offsetWidth;
-    handle.classList.add('active');
-    document.body.style.userSelect='none';document.body.style.cursor='col-resize';
-  });
-  document.addEventListener('mousemove',e=>{
-    if(!drag) return;
+  let sx=0,sw=0;
+  function onPanelMove(e){
     const nw = Math.min(Math.max(sw+(sx-e.clientX),260),window.innerWidth*.72);
     panel.style.width = nw+'px';
     document.getElementById('editorPane').style.marginRight = nw+'px';
@@ -1982,10 +1988,19 @@ function setBusy(id, on, openPanel=true){
     document.getElementById('pwRange').value = nw;
     document.getElementById('pwVal').textContent = nw+'px';
     localStorage.setItem('ui_pw',nw);
-  });
-  document.addEventListener('mouseup',()=>{
-    if(!drag) return; drag=false; handle.classList.remove('active');
+  }
+  function onPanelUp(){
+    handle.classList.remove('active');
     document.body.style.userSelect=''; document.body.style.cursor='';
+    document.removeEventListener('mousemove',onPanelMove);
+    document.removeEventListener('mouseup',onPanelUp);
+  }
+  handle.addEventListener('mousedown',e=>{
+    sx=e.clientX; sw=panel.offsetWidth;
+    handle.classList.add('active');
+    document.body.style.userSelect='none'; document.body.style.cursor='col-resize';
+    document.addEventListener('mousemove',onPanelMove);
+    document.addEventListener('mouseup',onPanelUp);
   });
 })();
 
@@ -2217,42 +2232,54 @@ async function callImprove(){
   const text = editor.innerText.trim();
   if(!text) return toast(t('no-text'));
   const r = await callAI(
-`Bạn là biên tập viên tiếng Anh và giáo viên giỏi. Hãy viết lại bài hay hơn cho học sinh.
+`You are an expert English language editor and experienced ESL writing coach. Your task is to IMPROVE the student's writing — not rewrite it, not simplify it, not replace their ideas.
 
-Bài viết gốc:
+Student's original text:
 """
 ${text}
 """
 ${ctx()}
 
-⚠️ Quy tắc bắt buộc — đọc kỹ trước khi viết:
-1. GIỮ NGUYÊN trình độ đã chỉ định — KHÔNG nâng cấp lên cao hơn:
-   - A1/A2: vẫn dùng từ đơn giản, câu ngắn 5–10 từ, chỉ dùng "and/but/so"
-   - B1/B2: câu vừa phải, từ vựng thông dụng, tránh từ quá bác học
-   - C1/C2: được dùng cấu trúc phức tạp, từ vựng phong phú
-2. GIỮ NGUYÊN: ý tưởng, sự kiện, nhân vật, ngôi kể (I/we/he/she), cảm xúc của người viết
-3. CHỈ cải thiện: cách diễn đạt tự nhiên hơn, câu văn mượt hơn, từ dùng đúng chỗ hơn
-4. TUYỆT ĐỐI không dùng dấu — (em dash). Dùng dấu phẩy hoặc "and/but/so" thay thế
-5. Bản viết lại phải có ít nhất 2–3 điểm cải thiện rõ ràng so với bản gốc
+## YOUR TASK: Style Upgrade
+
+You must EDIT the student's text to make it sound more natural and fluent. Follow these strict rules:
+
+**WHAT YOU MUST KEEP (never change these):**
+- Every idea, fact, event, and detail the student wrote — do NOT add new content, do NOT remove content
+- The narrator's voice and perspective (I/we/he/she)
+- The emotional tone the student intended
+- The proficiency level context: ${ctx()}
+
+**WHAT YOU SHOULD IMPROVE (based on level):**
+- A1/A2: Fix unnatural phrasing → more natural simple expressions; add ONE basic connector (e.g. "and", "so", "because") where missing; correct word order issues
+- B1/B2: Replace repetitive/weak words with more precise vocabulary; combine short choppy sentences into smoother ones; add transitional phrases ("In addition", "However", "As a result")
+- C1/C2: Elevate to sophisticated vocabulary; vary sentence structures; add discourse markers; improve cohesion and coherence
+
+**ABSOLUTE RULES:**
+- NEVER invent new content (new people, new events, new emotions not in the original)
+- NEVER use em dash (—). Use comma or "and/but/so" instead
+- NEVER downgrade: if student wrote "I want to tell you about", keep the meaning — don't simplify to "I will talk about"
+- NEVER change the word count by more than 30%
+- Bold (**word**) ONLY the words/phrases you changed from the original
 
 %%IMPROVED_START%%
-(Chỉ viết bản cải thiện ở đây. In đậm **từ hoặc cụm từ** được thay đổi so với bản gốc. Không có tiêu đề, không có markdown ngoài bold.)
+(Write ONLY the improved version here. Bold every changed word/phrase. No headings, no markdown except bold.)
 %%IMPROVED_END%%
 
-## 🔍 So sánh thay đổi
+## 🔍 Phân tích thay đổi
 
-| Bản gốc | Bản cải thiện | Vì sao hay hơn |
+| Bản gốc | Bản cải thiện | Lý do ngôn ngữ học |
 |---|---|---|
-*(3–5 thay đổi quan trọng nhất)*
+*(List 3–5 most important changes. The "Lý do" column must explain the linguistic reason in Vietnamese: e.g. "Từ 'want to tell' diễn đạt ý định rõ hơn 'will talk' vì nó thể hiện mong muốn chia sẻ của người viết")*
 
-## 📖 Từ/cụm từ mới học được
+## 📖 Từ/cụm từ được nâng cấp
 
-| Từ / Cụm từ | Nghĩa tiếng Việt | Dùng trong câu khác |
+| Bản gốc | → Bản cải thiện | Tại sao hay hơn (tiếng Việt) |
 |---|---|---|
-*(3–5 từ được dùng trong bản cải thiện)*
+*(Only list words/phrases that were actually changed — not invented ones)*
 
-## 💡 Mẹo viết rút ra
-*(2–3 mẹo ngắn gọn bằng tiếng Việt — gắn trực tiếp với lỗi trong bài này)*`,
+## 💡 Điểm yếu cần luyện thêm
+*(2–3 mẹo ngắn bằng tiếng Việt, gắn với lỗi cụ thể trong bài này — ví dụ: "Bài hay dùng 'I want to' lặp lại — thử thay bằng 'I hope to / I would like to' cho đa dạng hơn")*`,
     'btn-improve'
   );
   if(!r) return;
@@ -2479,23 +2506,24 @@ function initSidebarResize(){
     sidebar.classList.add('resizing');
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onSbMove);
+    document.addEventListener('mouseup', onSbUp);
   });
 
-  document.addEventListener('mousemove', e => {
-    if(!handle.classList.contains('dragging')) return;
+  function onSbMove(e){
     const w = Math.min(MAX_W, Math.max(MIN_W, startW + e.clientX - startX));
     sidebar.style.width = w + 'px';
-  });
-
-  document.addEventListener('mouseup', () => {
-    if(!handle.classList.contains('dragging')) return;
+  }
+  function onSbUp(){
     handle.classList.remove('dragging');
     sidebar.classList.remove('resizing');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     const w = sidebar.offsetWidth;
     if(w >= MIN_W) localStorage.setItem('ui_sbw', w);
-  });
+    document.removeEventListener('mousemove', onSbMove);
+    document.removeEventListener('mouseup', onSbUp);
+  }
 
   // touch support
   handle.addEventListener('touchstart', e => {

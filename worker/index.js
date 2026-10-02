@@ -13,7 +13,7 @@
  */
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "openai/gpt-oss-20b";
+const GROQ_MODEL = "openai/gpt-oss-120b";
 const ALLOWED_ORIGIN = "*"; // hoặc đổi thành domain của bạn: "https://nqh2610.github.io"
 
 async function sha256(str) {
@@ -79,7 +79,7 @@ export default {
           model: GROQ_MODEL,
           messages: [{ role: "user", content: prompt }],
           temperature: temperature ?? 0.7,
-          max_tokens: max_tokens ?? 2000,
+          max_tokens: max_tokens ?? 3000,
         }),
       });
 

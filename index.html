@@ -195,7 +195,7 @@ body{
   overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
   margin-top:1px;
 }
-.doc-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.doc-actions{display:flex;align-items:center;gap:2px;flex-shrink:0;position:relative}
 .doc-btn{
   width:1.4rem;height:1.4rem;border:none;background:none;cursor:pointer;
   color:var(--muted2);border-radius:4px;font-size:.75rem;
@@ -203,10 +203,15 @@ body{
   opacity:0;transition:.12s;flex-shrink:0;
 }
 .doc-item:hover .doc-btn{opacity:1}
-.doc-btn:hover{background:var(--border2)}
-.doc-btn.doc-save:hover{color:var(--success);background:var(--success-soft)}
-.doc-btn.doc-del:hover{color:var(--danger);background:var(--danger-soft)}
-.doc-btn.doc-save.linked{opacity:1;color:var(--success)}
+.doc-item.active .doc-btn{opacity:1}
+.doc-btn:hover{background:var(--border2);color:var(--text)}
+.doc-dropdown{
+  display:none;position:fixed;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);
+  min-width:160px;z-index:200;padding:4px;
+}
+.doc-dropdown.open{display:block}
 /* always show delete on mobile */
 
 /* ── Doc list toolbar (search + sort) ── */
@@ -925,7 +930,6 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   }
 
   .statusbar{padding:0 0.75rem}
-  .doc-del{opacity:1!important}
   .doc-btn{opacity:1!important}
 
   .toast-wrap{bottom:5rem;right:0.5rem}
@@ -1112,24 +1116,6 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       </div>
     </div>
     <div class="topbar-brand-sep"></div>
-
-    <!-- doc title: display + actions menu -->
-    <div class="topbar-title-wrap">
-      <i class="bi bi-file-text topbar-title-icon"></i>
-      <span id="titleDisplay" class="doc-title-display" title="Tên bài viết"></span>
-      <button class="topbar-title-menu-btn" id="titleMenuBtn" onclick="toggleTitleMenu(event)" title="Tùy chọn bài viết">
-        <i class="bi bi-three-dots"></i>
-      </button>
-      <div class="title-dropdown" id="titleDropdown">
-        <button class="title-dd-item" onclick="startRenameDoc()">
-          <i class="bi bi-pencil"></i> <span id="lbl-dd-rename">Đổi tên</span>
-        </button>
-        <div class="title-dd-divider"></div>
-        <button class="title-dd-item title-dd-danger" onclick="confirmDeleteFromMenu()">
-          <i class="bi bi-trash3"></i> <span id="lbl-dd-delete">Xóa bài</span>
-        </button>
-      </div>
-    </div>
     <div class="tb-flex-gap"></div>
     <!-- hidden input kept for internal logic -->
     <input id="titleInput" style="display:none" spellcheck="false" autocomplete="off"
@@ -1722,11 +1708,8 @@ function confirmDeleteFromMenu(){
   confirmDelete();
 }
 
-document.addEventListener('click', e => {
-  const dd = document.getElementById('titleDropdown');
-  if(dd && dd.classList.contains('open') && !dd.closest('.topbar-title-wrap').contains(e.target)){
-    dd.classList.remove('open');
-  }
+document.addEventListener('click', () => {
+  document.querySelectorAll('.doc-dropdown.open').forEach(dd => dd.classList.remove('open'));
 });
 
 function focusTopic(){
@@ -1810,18 +1793,49 @@ function renderDocList(){
         `</div>` +
       `</div>` +
       `<div class="doc-actions">` +
-        (hasFSA ? `<button class="doc-btn doc-save${isLinked?' linked':''}" title="${isLinked?(uiLang==='en'?'Linked: '+fileHandles[d.id]:'Đã liên kết: '+fileHandles[d.id]):(uiLang==='en'?'Save to file':'Lưu ra file')}"><i class="bi bi-floppy${isLinked?'-fill':''}"></i></button>` : '') +
-        `<button class="doc-btn doc-del" title="${uiLang==='en'?'Delete':'Xóa'}"><i class="bi bi-trash3"></i></button>` +
+        `<button class="doc-btn doc-menu-btn" title="${uiLang==='en'?'Options':'Tùy chọn'}"><i class="bi bi-three-dots"></i></button>` +
+        `<div class="doc-dropdown">` +
+          `<button class="title-dd-item doc-dd-rename"><i class="bi bi-pencil"></i> ${uiLang==='en'?'Rename':'Đổi tên'}</button>` +
+          (hasFSA ? `<button class="title-dd-item doc-dd-save"><i class="bi bi-floppy"></i> ${uiLang==='en'?'Save to file':'Lưu ra file'}</button>` : '') +
+          `<div class="title-dd-divider"></div>` +
+          `<button class="title-dd-item title-dd-danger doc-dd-del"><i class="bi bi-trash3"></i> ${uiLang==='en'?'Delete':'Xóa bài'}</button>` +
+        `</div>` +
       `</div>`;
 
-    if(hasFSA){
-      div.querySelector('.doc-save').addEventListener('click', e => {
+    // menu button
+    div.querySelector('.doc-menu-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      // close all other open dropdowns
+      document.querySelectorAll('.doc-dropdown.open').forEach(dd => dd.classList.remove('open'));
+      const dd = div.querySelector('.doc-dropdown');
+      const rect = e.currentTarget.getBoundingClientRect();
+      dd.style.top = (rect.bottom + 4) + 'px';
+      dd.style.left = Math.min(rect.left, window.innerWidth - 170) + 'px';
+      dd.classList.toggle('open');
+    });
+    div.querySelector('.doc-dd-rename').addEventListener('click', e => {
+      e.stopPropagation();
+      div.querySelector('.doc-dropdown').classList.remove('open');
+      const current = d.title || d.topic || '';
+      const newName = prompt(uiLang==='en' ? 'Rename document:' : 'Đổi tên bài viết:', current);
+      if(newName === null) return;
+      d.title = newName.trim(); d.titleCustom = true;
+      if(d.id === currentId){ titleInput.value = d.title; updateDocTitleDisplay(); }
+      saveDocs(); renderDocList();
+    });
+    if(hasFSA && div.querySelector('.doc-dd-save')){
+      div.querySelector('.doc-dd-save').addEventListener('click', e => {
         e.stopPropagation();
+        div.querySelector('.doc-dropdown').classList.remove('open');
         if(d.id !== currentId) openDoc(d.id);
         saveToFile();
       });
     }
-    div.querySelector('.doc-del').addEventListener('click', e => { e.stopPropagation(); deleteDoc(d.id); });
+    div.querySelector('.doc-dd-del').addEventListener('click', e => {
+      e.stopPropagation();
+      div.querySelector('.doc-dropdown').classList.remove('open');
+      deleteDoc(d.id);
+    });
     div.addEventListener('click', () => openDoc(d.id));
     return div;
   };

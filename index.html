@@ -696,32 +696,35 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 
 /* ═══ TABLET (641–1024px) ═══ */
 @media(min-width:641px) and (max-width:1024px){
-  .sidebar{width:190px}
+  .sidebar{width:200px}
   .sel-label{display:none}
-  .csel{max-width:90px;font-size:.73rem}
-  .topbar{gap:5px;padding:0 10px}
+  .csel{max-width:100px;font-size:.75rem}
+  .topbar{gap:6px;padding:0 12px}
   .tb-sep{margin:0}
 
-  /* panel: slide from right, 55% width — editor still visible */
+  /* panel: full-screen overlay on tablet — editor unobstructed */
   .result-panel.open{
-    position:absolute;width:55%!important;
+    position:fixed;inset:0;width:100%!important;
+    z-index:55;transform:translateX(0);border-left:none;
   }
-  .editor-pane.shifted{margin-right:55%}
+  .result-panel{transform:translateX(100%)}
+  .editor-pane.shifted{margin-right:0!important}
 
-  /* settings drawer: 60% width on tablet */
+  /* settings drawer: 70% width on tablet */
   .settings-drawer.open{
-    position:absolute;width:60%!important;
+    position:absolute;width:70%!important;
   }
 
-  /* toolbar: slightly larger touch targets on tablet */
-  .tb-btn{height:2.4rem;padding:0 0.7rem}
+  /* toolbar: comfortable touch targets on tablet */
+  .tb-btn{height:2.6rem;padding:0 0.8rem;font-size:.85rem}
+  .tb-btn i{font-size:1rem}
 }
 
 /* ═══ MOBILE (≤640px) ═══ */
 @media(max-width:640px){
   .sidebar{
     position:fixed;top:0;bottom:0;left:0;
-    width:82vw!important;max-width:290px;
+    width:82vw!important;max-width:300px;
     z-index:50;
     transform:translateX(-100%);
     transition:transform .25s ease;
@@ -729,39 +732,34 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   }
   .sidebar.mobile-open{transform:translateX(0)!important}
   .sidebar.collapsed{transform:translateX(-100%)}
-  .sb-resize{display:none} /* no resize on mobile */
+  .sb-resize{display:none}
 
   /* hide desktop selects from topbar */
   .tb-sep,.sel-label,.csel{display:none!important}
-  .topbar{padding:0 0.625rem;gap:0.5rem}
+  .topbar{padding:0 0.5rem;gap:0.4rem}
 
-  /* context bar — 3-column 2-row grid: each select gets full column width */
+  /* doc title input: take remaining space, truncate */
+  #titleInput{font-size:.9rem;min-width:0;flex:1}
+
+  /* context bar — 3 columns, label + select stacked */
   .ctx-bar{
     display:grid!important;flex-shrink:0;
     grid-template-columns:1fr 1fr 1fr;
-    align-items:center;
     background:var(--surface);border-bottom:1px solid var(--border);
-    padding:4px 8px 6px;gap:1px 6px;
+    padding:5px 10px 7px;gap:2px 8px;
   }
   .ctx-bar .sel-label{
     display:block!important;
     grid-row:1;
-    font-size:.58rem;font-weight:700;color:var(--muted2);
-    white-space:nowrap;padding:0 2px;
+    font-size:.6rem;font-weight:700;letter-spacing:.03em;
+    color:var(--muted2);white-space:nowrap;padding:0 2px;
   }
   .ctx-bar .csel{
     display:block!important;
     grid-row:2;
     width:100%;max-width:none;min-width:0;
-    font-size:.72rem;padding:4px 18px 4px 6px;
-  }
-  /* last select (Trình độ): open dropdown to the left to avoid right-edge overflow */
-  .ctx-bar .csel:last-child{
-    direction:rtl;
-    unicode-bidi:plaintext;
-  }
-  .ctx-bar .csel:last-child option{
-    direction:ltr;
+    font-size:.78rem;padding:5px 20px 5px 7px;
+    height:2rem;
   }
 
   /* result panel full screen */
@@ -780,61 +778,75 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 
   .rz{display:none}
   .editor-pane.shifted{margin-right:0!important}
-  .editor-scroll{padding:0}
-  .editor-wrap{padding:0.75rem 0.875rem 5rem}
-  .editor-scroll{display:block} /* remove flex centering on mobile — use full width */
+  .editor-scroll{padding:0;display:block}
+  .editor-wrap{padding:0.875rem 1rem 6rem}
 
-  /* compact doc header on mobile */
-  #topicInput{font-size:1.35rem}
+  /* doc header */
+  #topicInput{font-size:1.4rem}
   #topicInput::placeholder{font-size:1.2rem}
-  .topic-divider{margin:0.4rem 0 0.75rem}
+  .topic-divider{margin:0.5rem 0 0.875rem}
 
-  /* toolbar: icon only, 44px touch targets */
-  .tb-btn .tb-label{display:none}
+  /* toolbar: 2 rows × 4 cols grid — all buttons visible, large touch targets */
+  .toolbar{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    padding:6px 8px;gap:5px;
+    overflow-x:visible;
+  }
   .tb-btn{
-    padding:0;
-    width:2.5rem;height:2.75rem; /* 40×44px — enough for touch, fits 7 buttons */
+    padding:0;height:2.75rem;
     border-radius:10px;
     flex-shrink:0;
     justify-content:center;
+    display:flex;align-items:center;gap:5px;
   }
-  .tb-btn i{font-size:.9rem}
+  .tb-btn i{font-size:1rem}
+  /* show short labels on toolbar grid */
+  .tb-btn .tb-label{
+    display:inline!important;
+    font-size:.65rem;font-weight:600;
+    white-space:nowrap;overflow:hidden;
+    max-width:56px;text-overflow:ellipsis;
+  }
   .tb-sep2{display:none}
-  .toolbar{
-    padding:5px 6px;gap:4px;
-    justify-content:space-around;
-    overflow-x:auto;
-  }
+
+  /* primary button spans 2 cols so it stands out */
+  #btn-outline{grid-column:span 2}
 
   .doc-del{opacity:1!important}
   .doc-btn{opacity:1!important}
   .statusbar{padding:0 0.75rem}
 
-  .toast-wrap{bottom:4.5rem;right:0.5rem}
+  .toast-wrap{bottom:5rem;right:0.5rem}
 
-  /* ── keyboard-open state: toolbar sticks above keyboard ── */
+  /* keyboard-open: toolbar sticks above keyboard */
   body.kb-open .statusbar{display:none}
   body.kb-open .toolbar{
     position:fixed;bottom:0;left:0;right:0;
     z-index:45;
     border-top:1px solid var(--border);
     box-shadow:0 -3px 12px rgba(0,0,0,.1);
-    padding:5px 8px;
+    padding:4px 6px;
+    display:flex;flex-wrap:nowrap;
+    gap:4px;
     overflow-x:auto;
-    justify-content:flex-start; /* left-align when scrollable */
     -webkit-overflow-scrolling:touch;
   }
+  body.kb-open .tb-btn{
+    flex-shrink:0;width:auto;padding:0 0.6rem;
+  }
+  body.kb-open .tb-btn .tb-label{display:none!important}
+  body.kb-open #btn-outline{grid-column:unset}
   body.kb-open.has-ac .toolbar{bottom:2.8rem}
   body.kb-open .editor-wrap{padding-bottom:3.5rem}
   body.kb-open.has-ac .editor-wrap{padding-bottom:6rem}
-  /* ac-bar sits directly above toolbar */
   .ac-bar{bottom:0}
   body.kb-open .ac-bar.show{bottom:0;z-index:46}
   body.kb-open.has-ac .ac-bar.show{bottom:2.8rem}
 
-  /* improve confirm bar — full width on mobile */
+  /* improve confirm bar */
   .improve-confirm-btns{flex-direction:column}
-  .improve-yes,.improve-no{padding:0.6rem}
+  .improve-yes,.improve-no{padding:0.7rem}
 }
 
 /* ── LICENSE GATE ── */

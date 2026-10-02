@@ -324,7 +324,7 @@ body{
 .doc-title-input::placeholder{color:var(--muted2);font-weight:400}
 
 .tb-sep{width:1px;height:1.25rem;background:var(--border);flex-shrink:0;margin:0 2px}
-.topbar-brand{display:flex;align-items:center;gap:6px;flex-shrink:0;user-select:none}
+.topbar-brand{display:flex;align-items:center;gap:8px;flex-shrink:0;user-select:none}
 .topbar-brand-icon{
   width:1.75rem;height:1.75rem;border-radius:8px;
   background:linear-gradient(135deg,var(--accent),var(--accent-h));
@@ -332,9 +332,13 @@ body{
   font-size:.9rem;flex-shrink:0;
   box-shadow:0 1px 4px rgba(79,70,229,.35);
 }
+.topbar-brand-text{display:flex;flex-direction:column;gap:1px;line-height:1}
 .topbar-brand-name{font-size:.92rem;font-weight:800;color:var(--text);letter-spacing:-.3px;white-space:nowrap}
 .topbar-brand-name em{font-style:normal;font-size:.5rem;font-weight:700;color:#7c3aed;text-transform:uppercase;margin-left:2px;vertical-align:middle;letter-spacing:.04em}
-.topbar-brand-sep{width:1px;height:1.4rem;background:var(--border);flex-shrink:0;margin:0 4px}
+.topbar-brand-tag{font-size:.62rem;color:var(--muted);font-weight:500;white-space:nowrap}
+.topbar-brand-sep{width:1px;height:1.8rem;background:var(--border);flex-shrink:0;margin:0 6px}
+.topbar-title-wrap{display:flex;align-items:center;gap:5px;flex:1;min-width:0}
+.topbar-title-icon{font-size:.85rem;color:var(--muted2);flex-shrink:0}
 .sel-label{font-size:.67rem;font-weight:700;color:var(--muted2);white-space:nowrap}
 .csel{
   border:1px solid var(--border);border-radius:7px;
@@ -771,10 +775,14 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   /* hide desktop selects from topbar */
   .tb-sep,.sel-label,.csel{display:none!important}
   .topbar{padding:0 0.5rem;gap:0.4rem}
-  /* on mobile: show brand icon + text but smaller, hide sep */
-  .topbar-brand-name{font-size:.78rem}
+  /* mobile brand: smaller, hide tagline */
+  .topbar-brand-name{font-size:.82rem}
   .topbar-brand-icon{width:1.5rem;height:1.5rem;font-size:.78rem}
+  .topbar-brand-tag{display:none}
   .topbar-brand-sep{display:none}
+  /* mobile title: hide file icon */
+  .topbar-title-icon{display:none}
+  .topbar-title-wrap{gap:0}
 
   /* doc title input: take remaining space, truncate */
   #titleInput{font-size:.9rem;min-width:0;flex:1}
@@ -1065,13 +1073,19 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     </button>
     <div class="topbar-brand">
       <div class="topbar-brand-icon"><i class="bi bi-pen"></i></div>
-      <span class="topbar-brand-name">Penly<em>AI</em></span>
+      <div class="topbar-brand-text">
+        <span class="topbar-brand-name">Penly<em>AI</em></span>
+        <span class="topbar-brand-tag" id="lbl-topbar-tag">Luyện viết tiếng Anh</span>
+      </div>
     </div>
     <div class="topbar-brand-sep"></div>
 
-    <!-- doc title: editable inline, defaults to topic -->
-    <input id="titleInput" class="doc-title-input" spellcheck="false" autocomplete="off"
+    <!-- doc title: editable inline -->
+    <div class="topbar-title-wrap">
+      <i class="bi bi-file-text topbar-title-icon"></i>
+      <input id="titleInput" class="doc-title-input" spellcheck="false" autocomplete="off"
       placeholder="(Chưa đặt tên)" oninput="onTitleChange()" title="Tên bài viết">
+    </div>
 
     <div class="tb-sep"></div>
     <span class="sel-label" id="lbl-aud">Độc giả</span>
@@ -1331,7 +1345,7 @@ Gợi ý:
             <i class="bi bi-check-circle-fill"></i> Đã cài đặt dưới dạng ứng dụng
           </div>
           <div id="sdPwaGuide">
-            <p style="font-size:.8rem;color:var(--muted);margin:0.4rem 0 0.6rem">Cài Penly lên màn hình chính để dùng như app — không cần mở trình duyệt.</p>
+            <p style="font-size:.8rem;color:var(--muted);margin:0.4rem 0 0.6rem"></p>
             <button class="chip on" id="sdPwaInstallBtn" style="width:100%;justify-content:center;display:none" onclick="sdTriggerPwaInstall()">
               <i class="bi bi-download"></i> Cài ngay
             </button>

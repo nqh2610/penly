@@ -790,9 +790,10 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   #editor{font-size:16px;line-height:1.75}
   #editor:empty::before{font-size:16px;line-height:1.75}
 
-  /* toolbar: always fixed at bottom, icon only, single row */
+  /* toolbar: sticky at bottom of flex column, never fixed */
   .toolbar{
-    position:fixed;bottom:0;left:0;right:0;
+    position:relative;
+    flex-shrink:0;
     z-index:45;
     display:flex;flex-wrap:nowrap;
     justify-content:space-around;
@@ -2880,31 +2881,46 @@ function loadUI(){
 }
 
 // ── MOBILE KEYBOARD DETECTION ──
-// With interactive-widget=resizes-visual in viewport meta,
-// fixed elements automatically sit above the keyboard — no JS needed.
-// This block only handles ac-bar positioning and kb-open class for padding.
+// Samsung Internet and older browsers don't support interactive-widget.
+// Solution: resize .main to visualViewport.height so toolbar stays in view.
 (function(){
   if(!window.visualViewport) return;
   if(window.innerWidth > 640) return;
 
-  const acBar = document.getElementById('acBar');
+  const main   = document.querySelector('.main');
+  const acBar  = document.getElementById('acBar');
   const toolbar = document.querySelector('.toolbar');
 
   function updateKb(){
-    const kbH = Math.max(0, window.innerHeight - window.visualViewport.height);
+    const vvH   = window.visualViewport.height;
+    const vvTop = window.visualViewport.offsetTop;
+    // resize .main to exactly the visible area
+    main.style.height = vvH + 'px';
+    main.style.position = 'fixed';
+    main.style.top = vvTop + 'px';
+    main.style.left = '0';
+    main.style.right = '0';
+
+    const kbH = Math.max(0, window.innerHeight - vvH - vvTop);
     const kbOpen = kbH > 80;
     document.body.classList.toggle('kb-open', kbOpen);
-    if(kbOpen){
-      const tbH = toolbar ? toolbar.offsetHeight || 48 : 48;
-      if(acBar) acBar.style.setProperty('bottom', (kbH + tbH) + 'px', 'important');
-    } else {
-      if(acBar) acBar.style.removeProperty('bottom');
+
+    const tbH = toolbar ? toolbar.offsetHeight || 48 : 48;
+    if(acBar){
+      if(kbOpen && document.body.classList.contains('has-ac')){
+        acBar.style.setProperty('bottom', tbH + 'px', 'important');
+      } else {
+        acBar.style.removeProperty('bottom');
+      }
     }
     syncACBar();
   }
 
   window.visualViewport.addEventListener('resize', updateKb);
+  window.visualViewport.addEventListener('scroll', updateKb);
   window.addEventListener('orientationchange', () => setTimeout(updateKb, 400));
+  // run once after load
+  window.addEventListener('load', updateKb);
 })();
 
 // ── GRAMMAR BOTTOM SHEET (touch) ──

@@ -2952,16 +2952,33 @@ function loadUI(){
   const editorEl   = document.getElementById('editor');
   const topicEl    = document.getElementById('topicInput');
 
-  // Detect keyboard via visualViewport if supported (Chrome)
   let vvSupported = false;
+
   if(window.visualViewport){
+    const vv = window.visualViewport;
+    // baseH = tallest visualViewport height seen — updated whenever keyboard is closed
     let baseH = 0;
-    window.addEventListener('load', () => { baseH = window.visualViewport.height; });
-    window.visualViewport.addEventListener('resize', () => {
-      const vvH = window.visualViewport.height;
-      if(!baseH || vvH > baseH) { baseH = vvH; return; }
-      const kbH = Math.max(0, baseH - vvH);
-      if(kbH > 100){
+
+    function updateBaseH(){
+      // Use offsetTop + height to get full viewport height regardless of scroll offset
+      const full = vv.offsetTop + vv.height;
+      if(full > baseH) baseH = full;
+    }
+
+    // Initialise after a short delay to let Chrome settle
+    setTimeout(updateBaseH, 500);
+    window.addEventListener('load', () => setTimeout(updateBaseH, 300));
+
+    vv.addEventListener('resize', () => {
+      updateBaseH(); // captures the latest full-screen height when kb is closed
+
+      if(!baseH) return;
+      // kbH = how much the bottom of the page is obscured by the keyboard
+      // offsetTop increases when Chrome scrolls the viewport up; height shrinks
+      const visibleBottom = vv.offsetTop + vv.height;
+      const kbH = Math.max(0, baseH - visibleBottom);
+
+      if(kbH > 80){
         vvSupported = true;
         applyKb(kbH);
       } else {
@@ -2970,16 +2987,16 @@ function loadUI(){
     });
   }
 
-  // Fallback: focus/blur detection for Samsung Internet
+  // Fallback for browsers that don't shrink visualViewport (Samsung Internet, WebView)
   function onFocus(){
     if(vvSupported) return;
-    // estimate keyboard height as ~45% of screen
-    const estimated = Math.round(window.innerHeight * 0.45);
-    setTimeout(() => applyKb(estimated), 300);
+    // Use screen.height as reference — more stable than innerHeight which varies per browser chrome
+    const estimated = Math.round(window.screen.height * 0.38);
+    setTimeout(() => applyKb(estimated), 350);
   }
   function onBlur(){
     if(vvSupported) return;
-    setTimeout(resetKb, 100);
+    setTimeout(resetKb, 150);
   }
 
   function applyKb(kbH){

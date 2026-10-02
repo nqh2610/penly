@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Penly</title>
 
 <!-- PWA -->
@@ -778,8 +778,11 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 
   .rz{display:none}
   .editor-pane.shifted{margin-right:0!important}
-  .editor-scroll{padding:0;display:block}
-  .editor-wrap{padding:0.875rem 1rem 6rem}
+
+  /* Mobile layout: editor-pane is a flex column so toolbar sticks to bottom */
+  .editor-pane{display:flex;flex-direction:column;overflow:hidden}
+  .editor-scroll{flex:1;overflow-y:auto;padding:0}
+  .editor-wrap{padding:0.875rem 1rem 1.5rem}
 
   /* doc header */
   #topicInput{font-size:1.3rem}
@@ -790,9 +793,10 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   #editor{font-size:16px;line-height:1.75}
   #editor:empty::before{font-size:16px;line-height:1.75}
 
-  /* toolbar: always fixed at bottom, icon only, single row */
+  /* toolbar: sticky at bottom of editor-pane, never hidden by keyboard */
   .toolbar{
-    position:fixed;bottom:0;left:0;right:0;
+    position:sticky;bottom:0;
+    flex-shrink:0;
     z-index:45;
     display:flex;flex-wrap:nowrap;
     justify-content:space-around;
@@ -814,8 +818,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   .tb-sep2{display:none}
   #btn-outline{flex:1.5}
 
-  /* editor bottom padding clears toolbar + safe area */
-  .editor-wrap{padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px))!important}
+
 
   /* PWA install banner */
   .pwa-banner{
@@ -2941,85 +2944,6 @@ function loadUI(){
     document.getElementById('sidebar').style.width = '';
   }
 }
-
-// ── MOBILE KEYBOARD DETECTION ──
-(function(){
-  if(window.innerWidth > 640) return;
-
-  const toolbar    = document.querySelector('.toolbar');
-  const acBar      = document.getElementById('acBar');
-  const editorPane = document.getElementById('editorPane');
-  const editorEl   = document.getElementById('editor');
-  const topicEl    = document.getElementById('topicInput');
-
-  let vvSupported = false;
-
-  if(window.visualViewport){
-    const vv = window.visualViewport;
-    // baseH = tallest visualViewport height seen — updated whenever keyboard is closed
-    let baseH = 0;
-
-    function updateBaseH(){
-      // Use offsetTop + height to get full viewport height regardless of scroll offset
-      const full = vv.offsetTop + vv.height;
-      if(full > baseH) baseH = full;
-    }
-
-    // Initialise after a short delay to let Chrome settle
-    setTimeout(updateBaseH, 500);
-    window.addEventListener('load', () => setTimeout(updateBaseH, 300));
-
-    vv.addEventListener('resize', () => {
-      updateBaseH(); // captures the latest full-screen height when kb is closed
-
-      if(!baseH) return;
-      // kbH = how much the bottom of the page is obscured by the keyboard
-      // offsetTop increases when Chrome scrolls the viewport up; height shrinks
-      const visibleBottom = vv.offsetTop + vv.height;
-      const kbH = Math.max(0, baseH - visibleBottom);
-
-      if(kbH > 80){
-        vvSupported = true;
-        applyKb(kbH);
-      } else {
-        resetKb();
-      }
-    });
-  }
-
-  // Fallback for browsers that don't shrink visualViewport (Samsung Internet, WebView)
-  function onFocus(){
-    if(vvSupported) return;
-    // Use screen.height as reference — more stable than innerHeight which varies per browser chrome
-    const estimated = Math.round(window.screen.height * 0.38);
-    setTimeout(() => applyKb(estimated), 350);
-  }
-  function onBlur(){
-    if(vvSupported) return;
-    setTimeout(resetKb, 150);
-  }
-
-  function applyKb(kbH){
-    document.body.classList.add('kb-open');
-    toolbar.style.setProperty('bottom', kbH + 'px', 'important');
-    editorPane.style.setProperty('padding-bottom', (kbH + 56) + 'px', 'important');
-    const tbH = toolbar.offsetHeight || 48;
-    if(acBar) acBar.style.setProperty('bottom', (kbH + tbH) + 'px', 'important');
-    syncACBar();
-  }
-  function resetKb(){
-    document.body.classList.remove('kb-open');
-    toolbar.style.removeProperty('bottom');
-    editorPane.style.removeProperty('padding-bottom');
-    if(acBar) acBar.style.removeProperty('bottom');
-    syncACBar();
-  }
-
-  if(editorEl)  { editorEl.addEventListener('focus', onFocus);  editorEl.addEventListener('blur', onBlur); }
-  if(topicEl)   { topicEl.addEventListener('focus', onFocus);   topicEl.addEventListener('blur', onBlur); }
-
-  window.addEventListener('orientationchange', () => setTimeout(resetKb, 400));
-})();
 
 // ── PWA INSTALL BANNER ──
 (function(){

@@ -2882,34 +2882,32 @@ function loadUI(){
 // ── MOBILE KEYBOARD DETECTION ──
 (function(){
   if(!window.visualViewport) return;
+  if(window.innerWidth > 640) return; // desktop/tablet: no need
+
   const toolbar = document.querySelector('.toolbar');
   const acBar   = document.getElementById('acBar');
   let baseH = window.visualViewport.height;
 
   function updateKb(){
-    const vvH    = window.visualViewport.height;
-    const vvTop  = window.visualViewport.offsetTop;
+    const vvH = window.visualViewport.height;
     const kbOpen = vvH < baseH * 0.75;
     document.body.classList.toggle('kb-open', kbOpen);
-    if(!kbOpen){
-      baseH = vvH;
-      toolbar.style.bottom = '';
-      toolbar.style.transform = '';
-      if(acBar) { acBar.style.bottom = ''; acBar.style.transform = ''; }
+
+    if(kbOpen){
+      // push toolbar up by exactly how much the keyboard covers
+      const kbH = Math.max(0, baseH - vvH);
+      toolbar.style.setProperty('bottom', kbH + 'px', 'important');
+      const tbH = toolbar.offsetHeight || 48;
+      if(acBar) acBar.style.setProperty('bottom', (kbH + tbH) + 'px', 'important');
     } else {
-      // keyboard height = window height - visualViewport height - offsetTop
-      const kbH = window.innerHeight - vvH - vvTop;
-      toolbar.style.bottom = kbH + 'px';
-      toolbar.style.transform = 'none';
-      const hasAc = document.body.classList.contains('has-ac');
-      const tbH = toolbar.offsetHeight || 44;
-      if(acBar) acBar.style.bottom = (kbH + tbH) + 'px';
+      baseH = vvH;
+      toolbar.style.removeProperty('bottom');
+      if(acBar) acBar.style.removeProperty('bottom');
     }
     syncACBar();
   }
 
   window.visualViewport.addEventListener('resize', updateKb);
-  window.visualViewport.addEventListener('scroll', updateKb);
   window.addEventListener('orientationchange', () => {
     setTimeout(() => { baseH = window.visualViewport.height; updateKb(); }, 400);
   });

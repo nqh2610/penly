@@ -796,7 +796,9 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     z-index:45;
     display:flex;flex-wrap:nowrap;
     justify-content:space-around;
-    padding:6px 4px;gap:3px;
+    padding:6px 4px;
+    padding-bottom:calc(6px + env(safe-area-inset-bottom, 0px));
+    gap:3px;
     background:var(--surface);
     border-top:1px solid var(--border);
     box-shadow:0 -2px 8px rgba(0,0,0,.08);
@@ -812,8 +814,33 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   .tb-sep2{display:none}
   #btn-outline{flex:1.5}
 
-  /* editor needs bottom padding so content clears fixed toolbar */
-  .editor-wrap{padding-bottom:5rem!important}
+  /* editor bottom padding clears toolbar + safe area */
+  .editor-wrap{padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px))!important}
+
+  /* PWA install banner */
+  .pwa-banner{
+    position:fixed;bottom:0;left:0;right:0;
+    z-index:44;
+    background:var(--accent);color:#fff;
+    padding:10px 14px;
+    display:flex;align-items:center;gap:10px;
+    font-size:.82rem;font-weight:500;
+    box-shadow:0 -2px 12px rgba(0,0,0,.15);
+    transform:translateY(100%);
+    transition:transform .3s ease;
+  }
+  .pwa-banner.show{transform:translateY(0)}
+  .pwa-banner-text{flex:1;line-height:1.4}
+  .pwa-banner-install{
+    background:#fff;color:var(--accent);
+    border:none;border-radius:8px;
+    padding:6px 14px;font-size:.8rem;font-weight:700;
+    cursor:pointer;white-space:nowrap;flex-shrink:0;
+  }
+  .pwa-banner-dismiss{
+    background:none;border:none;color:rgba(255,255,255,.8);
+    font-size:1.1rem;cursor:pointer;padding:4px;flex-shrink:0;
+  }
 
   .statusbar{padding:0 0.75rem}
   .doc-del{opacity:1!important}
@@ -1274,6 +1301,13 @@ Gợi ý:
 <div class="sb-backdrop" id="sbBackdrop" onclick="closeSidebarMobile()"></div>
 <div id="ge-tooltip"></div>
 <div class="toast-wrap" id="toastWrap"></div>
+
+<!-- PWA Install Banner -->
+<div class="pwa-banner" id="pwaBanner">
+  <div class="pwa-banner-text">📱 Cài Penly lên màn hình chính để dùng như app thật!</div>
+  <button class="pwa-banner-install" id="pwaBannerInstall">Cài app</button>
+  <button class="pwa-banner-dismiss" id="pwaBannerDismiss"><i class="bi bi-x"></i></button>
+</div>
 
 <!-- Mobile autocomplete bar (shown above keyboard) -->
 <div class="ac-bar" id="acBar">
@@ -2911,6 +2945,55 @@ function loadUI(){
   window.addEventListener('orientationchange', () => {
     setTimeout(() => { baseH = window.visualViewport.height; updateKb(); }, 400);
   });
+})();
+
+// ── PWA INSTALL BANNER ──
+(function(){
+  if(window.innerWidth > 640) return; // mobile only
+  // already installed as PWA
+  if(window.matchMedia('(display-mode: standalone)').matches) return;
+  if(window.navigator.standalone) return; // iOS PWA
+  // user dismissed before
+  if(localStorage.getItem('pwa_dismissed')) return;
+
+  let deferredPrompt = null;
+  const banner  = document.getElementById('pwaBanner');
+  const btnInstall  = document.getElementById('pwaBannerInstall');
+  const btnDismiss  = document.getElementById('pwaBannerDismiss');
+
+  // Chrome/Edge: capture beforeinstallprompt
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    setTimeout(() => banner.classList.add('show'), 2000);
+  });
+
+  btnInstall.addEventListener('click', async () => {
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if(outcome === 'accepted') localStorage.setItem('pwa_dismissed', '1');
+    } else {
+      // Samsung Internet / iOS: no prompt API, show manual instructions
+      toast('Bấm menu trình duyệt → "Thêm vào màn hình chính"', '');
+    }
+    banner.classList.remove('show');
+  });
+
+  btnDismiss.addEventListener('click', () => {
+    banner.classList.remove('show');
+    localStorage.setItem('pwa_dismissed', '1');
+  });
+
+  // Samsung Internet doesn't fire beforeinstallprompt — show banner after delay
+  setTimeout(() => {
+    if(!deferredPrompt && !localStorage.getItem('pwa_dismissed')){
+      if(!window.matchMedia('(display-mode: standalone)').matches){
+        banner.classList.add('show');
+      }
+    }
+  }, 3000);
 })();
 
 // ── GRAMMAR BOTTOM SHEET (touch) ──

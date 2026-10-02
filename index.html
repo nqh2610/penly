@@ -1777,6 +1777,12 @@ editor.addEventListener('input', () => {
   if(txt.length > 3) acTimer = setTimeout(() => doAC(txt), 1000);
 });
 
+editor.addEventListener('paste', e => {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, text);
+});
+
 editor.addEventListener('keydown', e => {
   if(e.key === 'Tab' && pendingAC){
     e.preventDefault();
@@ -2275,20 +2281,13 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
 (Write ONLY the improved version here. Bold every changed word/phrase. No headings, no markdown except bold.)
 %%IMPROVED_END%%
 
-## 🔍 Phân tích thay đổi
+## ✏️ Thay đổi
 
-| Bản gốc | Bản cải thiện | Lý do ngôn ngữ học |
-|---|---|---|
-*(List 3–5 most important changes. The "Lý do" column must explain the linguistic reason in Vietnamese: e.g. "Từ 'want to tell' diễn đạt ý định rõ hơn 'will talk' vì nó thể hiện mong muốn chia sẻ của người viết")*
+*(List only actual changes — skip if nothing changed. Format per line: original → improved — short reason in Vietnamese, 1 sentence)*
 
-## 📖 Từ/cụm từ được nâng cấp
+## 💡 Mẹo luyện tập
 
-| Bản gốc | → Bản cải thiện | Tại sao hay hơn (tiếng Việt) |
-|---|---|---|
-*(Only list words/phrases that were actually changed — not invented ones)*
-
-## 💡 Điểm yếu cần luyện thêm
-*(2–3 mẹo ngắn bằng tiếng Việt, gắn với lỗi cụ thể trong bài này — ví dụ: "Bài hay dùng 'I want to' lặp lại — thử thay bằng 'I hope to / I would like to' cho đa dạng hơn")*`,
+*(1–2 mẹo thực dụng tiếng Việt, gắn với bài này — ví dụ: "Thay vì lặp 'I want to', thử dùng 'I hope to' hoặc 'I would like to'")*`,
     'btn-improve'
   );
   if(!r) return;
@@ -2408,10 +2407,10 @@ async function callVocab(){
 
 ${tp?`Topic: "${tp}"`:''}
 ${text?`Student's text so far:\n"""\n${text.substring(0,400)}\n"""`:''}
-${ctx()}
+Level: ${lvlSel.value}
 
 Rules:
-- ALL examples must match the level exactly and relate to "${tp||'the topic'}"
+- Silently match ALL examples to the level above — never mention the level in the output
 - NO em dash (—). Use comma or and/but/so instead
 - Keep it practical: words the student can use TODAY in their writing
 - Show words IN ACTION, not just definitions

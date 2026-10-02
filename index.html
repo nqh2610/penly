@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual">
 <title>Penly</title>
 
 <!-- PWA -->
@@ -2880,35 +2880,31 @@ function loadUI(){
 }
 
 // ── MOBILE KEYBOARD DETECTION ──
+// With interactive-widget=resizes-visual in viewport meta,
+// fixed elements automatically sit above the keyboard — no JS needed.
+// This block only handles ac-bar positioning and kb-open class for padding.
 (function(){
   if(!window.visualViewport) return;
   if(window.innerWidth > 640) return;
 
+  const acBar = document.getElementById('acBar');
   const toolbar = document.querySelector('.toolbar');
-  const acBar   = document.getElementById('acBar');
 
   function updateKb(){
-    // innerHeight stays fixed; visualViewport.height shrinks when keyboard opens
-    const kbH = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
-    const kbOpen = kbH > 80; // >80px means keyboard is actually open
+    const kbH = Math.max(0, window.innerHeight - window.visualViewport.height);
+    const kbOpen = kbH > 80;
     document.body.classList.toggle('kb-open', kbOpen);
-
     if(kbOpen){
-      toolbar.style.setProperty('bottom', kbH + 'px', 'important');
-      const tbH = toolbar.offsetHeight || 48;
+      const tbH = toolbar ? toolbar.offsetHeight || 48 : 48;
       if(acBar) acBar.style.setProperty('bottom', (kbH + tbH) + 'px', 'important');
     } else {
-      toolbar.style.removeProperty('bottom');
       if(acBar) acBar.style.removeProperty('bottom');
     }
     syncACBar();
   }
 
   window.visualViewport.addEventListener('resize', updateKb);
-  window.visualViewport.addEventListener('scroll', updateKb);
-  window.addEventListener('orientationchange', () => {
-    setTimeout(updateKb, 400);
-  });
+  window.addEventListener('orientationchange', () => setTimeout(updateKb, 400));
 })();
 
 // ── GRAMMAR BOTTOM SHEET (touch) ──

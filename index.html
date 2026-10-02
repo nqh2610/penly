@@ -428,10 +428,13 @@ body{
   font-size:.7rem;color:var(--muted);
 }
 .ac-chip{
-  display:inline-flex;align-items:center;gap:4px;
+  display:inline-flex;align-items:center;gap:5px;
   background:var(--accent-soft);color:var(--accent);
-  padding:2px 7px;border-radius:10px;font-size:.68rem;font-weight:700;
+  padding:3px 10px 3px 7px;border-radius:10px;
+  font-size:.82rem;font-weight:500;font-style:italic;
   opacity:0;pointer-events:none;transition:opacity .2s;
+  max-width:60ch;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  flex:1;min-width:0;
 }
 .ac-chip.show{opacity:1;pointer-events:auto}
 .sb-r{margin-left:auto}

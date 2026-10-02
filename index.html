@@ -2920,30 +2920,33 @@ function loadUI(){
 
   const toolbar = document.querySelector('.toolbar');
   const acBar   = document.getElementById('acBar');
-  let baseH = window.visualViewport.height;
+  let baseH = 0;
 
   function updateKb(){
-    const vvH   = window.visualViewport.height;
-    const vvTop = window.visualViewport.offsetTop;
-    const kbOpen = vvH < baseH * 0.75;
+    const vvH = window.visualViewport.height;
+    if(!baseH || vvH > baseH) { baseH = vvH; } // always track max height as base
+    const kbH = Math.max(0, baseH - vvH);
+    const kbOpen = kbH > 100;
     document.body.classList.toggle('kb-open', kbOpen);
-    if(!kbOpen){
-      baseH = vvH;
-      toolbar.style.removeProperty('bottom');
-      if(acBar) acBar.style.removeProperty('bottom');
-    } else {
-      const kbH = window.innerHeight - vvH - vvTop;
+    if(kbOpen){
       toolbar.style.setProperty('bottom', kbH + 'px', 'important');
       const tbH = toolbar.offsetHeight || 48;
       if(acBar) acBar.style.setProperty('bottom', (kbH + tbH) + 'px', 'important');
+    } else {
+      toolbar.style.removeProperty('bottom');
+      if(acBar) acBar.style.removeProperty('bottom');
     }
     syncACBar();
   }
 
-  window.visualViewport.addEventListener('resize', updateKb);
-  window.visualViewport.addEventListener('scroll', updateKb);
+  // set baseH after full load when layout is stable
+  window.addEventListener('load', () => {
+    baseH = window.visualViewport.height;
+    window.visualViewport.addEventListener('resize', updateKb);
+    window.visualViewport.addEventListener('scroll', updateKb);
+  });
   window.addEventListener('orientationchange', () => {
-    setTimeout(() => { baseH = window.visualViewport.height; updateKb(); }, 400);
+    setTimeout(() => { baseH = window.visualViewport.height; }, 400);
   });
 })();
 
@@ -2953,8 +2956,8 @@ function loadUI(){
   // already installed as PWA
   if(window.matchMedia('(display-mode: standalone)').matches) return;
   if(window.navigator.standalone) return; // iOS PWA
-  // user dismissed before
-  if(localStorage.getItem('pwa_dismissed')) return;
+  // user dismissed before — use sessionStorage so it resets each visit for testing
+  if(localStorage.getItem('pwa_dismissed') === 'forever') return;
 
   let deferredPrompt = null;
   const banner  = document.getElementById('pwaBanner');
@@ -2973,7 +2976,7 @@ function loadUI(){
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       deferredPrompt = null;
-      if(outcome === 'accepted') localStorage.setItem('pwa_dismissed', '1');
+      if(outcome === 'accepted') localStorage.setItem('pwa_dismissed', 'forever');
     } else {
       // Samsung Internet / iOS: no prompt API, show manual instructions
       toast('Bấm menu trình duyệt → "Thêm vào màn hình chính"', '');
@@ -2983,15 +2986,14 @@ function loadUI(){
 
   btnDismiss.addEventListener('click', () => {
     banner.classList.remove('show');
-    localStorage.setItem('pwa_dismissed', '1');
+    localStorage.setItem('pwa_dismissed', 'forever');
   });
 
   // Samsung Internet doesn't fire beforeinstallprompt — show banner after delay
   setTimeout(() => {
-    if(!deferredPrompt && !localStorage.getItem('pwa_dismissed')){
-      if(!window.matchMedia('(display-mode: standalone)').matches){
-        banner.classList.add('show');
-      }
+    if(!window.matchMedia('(display-mode: standalone)').matches &&
+       localStorage.getItem('pwa_dismissed') !== 'forever'){
+      banner.classList.add('show');
     }
   }, 3000);
 })();

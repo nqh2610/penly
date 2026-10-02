@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#4f46e5"/>
+  <!-- Book base -->
+  <rect x="96" y="140" width="320" height="240" rx="16" fill="#ffffff" opacity="0.15"/>
+  <!-- Book pages left -->
+  <rect x="110" y="155" width="136" height="210" rx="8" fill="#ffffff" opacity="0.9"/>
+  <!-- Book pages right -->
+  <rect x="266" y="155" width="136" height="210" rx="8" fill="#ffffff" opacity="0.75"/>
+  <!-- Spine -->
+  <rect x="246" y="148" width="20" height="224" rx="4" fill="#4f46e5"/>
+  <!-- Lines on left page -->
+  <rect x="126" y="185" width="104" height="8" rx="4" fill="#4f46e5" opacity="0.5"/>
+  <rect x="126" y="205" width="88" height="8" rx="4" fill="#4f46e5" opacity="0.5"/>
+  <rect x="126" y="225" width="96" height="8" rx="4" fill="#4f46e5" opacity="0.5"/>
+  <rect x="126" y="245" width="80" height="8" rx="4" fill="#4f46e5" opacity="0.5"/>
+  <rect x="126" y="265" width="100" height="8" rx="4" fill="#4f46e5" opacity="0.5"/>
+  <!-- Stars / AI sparkle top right -->
+  <circle cx="370" cy="120" r="18" fill="#a5b4fc"/>
+  <polygon points="370,100 375,114 390,114 378,123 383,137 370,128 357,137 362,123 350,114 365,114" fill="#ffffff"/>
+</svg>

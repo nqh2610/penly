@@ -1,0 +1,10 @@
+# Admin tools — never push to public repo
+keygen.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp

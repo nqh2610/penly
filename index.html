@@ -1971,6 +1971,10 @@ function topic(){
 }
 
 // ── API ──
+const FALLBACK_MODEL = 'llama-3.3-70b-versatile';
+let _usingFallback = false;
+let _fallbackUntil = 0; // timestamp — stay on fallback for 2 minutes after rate limit
+
 async function callAI(prompt, btnId, silent=false, noPanel=false){
   // license gate
   const lk = getLicenseKey();
@@ -1980,15 +1984,38 @@ async function callAI(prompt, btnId, silent=false, noPanel=false){
     return null;
   }
   if(!silent) setBusy(btnId, true, !noPanel);
+
+  // use fallback model if still within cooldown window
+  const now = Date.now();
+  const model = now < _fallbackUntil ? FALLBACK_MODEL : undefined;
+
   try{
     const res = await fetch(WORKER_URL, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000 })
+      body:JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000, ...(model ? {model} : {}) })
     });
     const d = await res.json();
     if(!silent) setBusy(btnId, false, !noPanel);
     if(d.content) return d.content;
+
+    // rate limit detected — switch to fallback and retry once
+    if(d.rate_limited && !model){
+      _fallbackUntil = Date.now() + 2 * 60 * 1000; // fallback for 2 minutes
+      if(!silent) toast(uiLang==='en' ? 'Switching to backup model…' : 'Đang chuyển sang model dự phòng…', '');
+      const res2 = await fetch(WORKER_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000, model: FALLBACK_MODEL })
+      });
+      const d2 = await res2.json();
+      if(!silent) setBusy(btnId, false, !noPanel);
+      if(d2.content) return d2.content;
+      const err2 = d2.error || JSON.stringify(d2);
+      if(!silent) toast((uiLang==='en'?'Error: ':'Lỗi: ') + err2.substring(0,100), 'd');
+      return null;
+    }
+
     const err = d.error || JSON.stringify(d);
     if(!silent) toast((uiLang==='en'?'Error: ':'Lỗi: ') + err.substring(0,100), 'd');
     return null;

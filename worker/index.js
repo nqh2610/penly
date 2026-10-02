@@ -13,8 +13,10 @@
  */
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "openai/gpt-oss-120b";
-const ALLOWED_ORIGIN = "*"; // hoặc đổi thành domain của bạn: "https://nqh2610.github.io"
+const GROQ_MODEL_PRIMARY  = "openai/gpt-oss-120b";
+const GROQ_MODEL_FALLBACK = "llama-3.3-70b-versatile";
+const ALLOWED_MODELS = new Set([GROQ_MODEL_PRIMARY, GROQ_MODEL_FALLBACK, "llama-3.1-8b-instant"]);
+const ALLOWED_ORIGIN = "*";
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
@@ -45,7 +47,7 @@ export default {
       return json({ error: "Invalid JSON" }, 400);
     }
 
-    const { penly_key, prompt, temperature, max_tokens } = body;
+    const { penly_key, prompt, temperature, max_tokens, model } = body;
 
     // validate penly_key format
     if (!penly_key || !/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(penly_key.trim().toUpperCase())) {
@@ -67,6 +69,9 @@ export default {
       return json({ error: "License key not found or inactive" }, 401);
     }
 
+    // use requested model if whitelisted, else primary
+    const chosenModel = (model && ALLOWED_MODELS.has(model)) ? model : GROQ_MODEL_PRIMARY;
+
     // forward to Groq
     try {
       const groqRes = await fetch(GROQ_URL, {
@@ -76,7 +81,7 @@ export default {
           "Authorization": `Bearer ${groqKey}`,
         },
         body: JSON.stringify({
-          model: GROQ_MODEL,
+          model: chosenModel,
           messages: [{ role: "user", content: prompt }],
           temperature: temperature ?? 0.7,
           max_tokens: max_tokens ?? 3000,
@@ -85,13 +90,13 @@ export default {
 
       const data = await groqRes.json();
 
-      // only forward the content, not the full Groq response (hides model details)
       if (data.choices?.[0]?.message?.content) {
         return json({ content: data.choices[0].message.content });
       }
 
       const errMsg = data.error?.message || "Unknown error from AI";
-      return json({ error: errMsg }, 502);
+      const isRateLimit = groqRes.status === 429 || errMsg.toLowerCase().includes("rate limit");
+      return json({ error: errMsg, rate_limited: isRateLimit }, 502);
 
     } catch (e) {
       return json({ error: "Failed to reach AI service" }, 502);

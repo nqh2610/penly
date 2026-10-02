@@ -891,6 +891,21 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .lk-buy a{color:var(--accent);text-decoration:none;font-weight:600}
 .lk-buy a:hover{text-decoration:underline}
 </style>
+<script>
+// Apply saved UI settings before first render to avoid flash
+(function(){
+  const r = document.documentElement;
+  const ls = localStorage;
+  const uifs = ls.getItem('ui_uifs'); if(uifs) r.style.setProperty('--ui-fs', uifs+'px');
+  const edfs = ls.getItem('ui_edfs'); if(edfs) r.style.setProperty('--ed-fs', edfs+'px');
+  const lh   = ls.getItem('ui_lh');   if(lh)   r.style.setProperty('--ed-lh', lh);
+  const font = ls.getItem('ui_font'); if(font) r.style.setProperty('--ed-font', font);
+  const theme = ls.getItem('ui_theme');
+  if(theme === 'dark') r.setAttribute('data-theme','dark');
+  const acc = ls.getItem('ui_accent');
+  if(acc){ r.style.setProperty('--accent', acc); const h=ls.getItem('ui_accenth'); if(h) r.style.setProperty('--accent-h',h); }
+})();
+</script>
 </head>
 <body>
 

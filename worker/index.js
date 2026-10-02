@@ -14,8 +14,12 @@
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL_PRIMARY  = "openai/gpt-oss-120b";
-const GROQ_MODEL_FALLBACK = "llama-3.3-70b-versatile";
-const ALLOWED_MODELS = new Set([GROQ_MODEL_PRIMARY, GROQ_MODEL_FALLBACK, "llama-3.1-8b-instant"]);
+const ALLOWED_MODELS = new Set([
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
+]);
 const ALLOWED_ORIGIN = "*";
 
 async function sha256(str) {

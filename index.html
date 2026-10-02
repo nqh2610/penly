@@ -1271,6 +1271,35 @@ Gợi ý:
           </div>
         </div>
 
+        <!-- PWA INSTALL -->
+        <div class="sd-row" id="sdPwaRow" style="border-top:1px solid var(--border);padding-top:1.25rem;margin-top:0.25rem">
+          <div class="sd-label"><i class="bi bi-phone" style="color:var(--accent)"></i> Cài ứng dụng</div>
+          <div id="sdPwaInstalled" style="display:none;font-size:.82rem;color:var(--accent);margin-top:0.4rem">
+            <i class="bi bi-check-circle-fill"></i> Đã cài đặt dưới dạng ứng dụng
+          </div>
+          <div id="sdPwaGuide">
+            <p style="font-size:.8rem;color:var(--muted);margin:0.4rem 0 0.6rem">Cài Penly lên màn hình chính để dùng như app — không cần mở trình duyệt.</p>
+            <button class="chip on" id="sdPwaInstallBtn" style="width:100%;justify-content:center;display:none" onclick="sdTriggerPwaInstall()">
+              <i class="bi bi-download"></i> Cài ngay
+            </button>
+            <div id="sdPwaManual" style="display:none;font-size:.78rem;color:var(--text);line-height:1.6;background:var(--surface-alt,var(--surface));border-radius:8px;padding:0.6rem 0.8rem;margin-top:0.4rem">
+              <div style="font-weight:600;margin-bottom:0.3rem;color:var(--accent)">Cách cài thủ công:</div>
+              <div id="sdPwaManualChrome" style="display:none">
+                Chrome: nhấn <strong>⋮</strong> (góc phải trên) → <strong>Thêm vào màn hình chính</strong>
+              </div>
+              <div id="sdPwaManualSamsung" style="display:none">
+                Samsung Internet: nhấn <strong>☰</strong> → <strong>Thêm trang vào</strong> → <strong>Màn hình chính</strong>
+              </div>
+              <div id="sdPwaManualSafari" style="display:none">
+                Safari (iOS): nhấn <strong>□↑</strong> (chia sẻ) → <strong>Thêm vào màn hình chính</strong>
+              </div>
+              <div id="sdPwaManualGeneric">
+                Mở menu trình duyệt → <strong>Thêm vào màn hình chính</strong> hoặc <strong>Cài ứng dụng</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- LICENSE KEY -->
         <div class="sd-row" style="border-top:1px solid var(--border);padding-top:1.25rem;margin-top:0.25rem">
           <div class="sd-label">License Key</div>
@@ -3027,6 +3056,56 @@ function loadUI(){
       banner.classList.add('show');
     }
   }, 3000);
+})();
+
+// ── PWA SETTINGS SECTION ──
+(function(){
+  const isPwa = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const installed = document.getElementById('sdPwaInstalled');
+  const guide     = document.getElementById('sdPwaGuide');
+  const installBtn= document.getElementById('sdPwaInstallBtn');
+  const manualDiv = document.getElementById('sdPwaManual');
+  const manualChrome  = document.getElementById('sdPwaManualChrome');
+  const manualSamsung = document.getElementById('sdPwaManualSamsung');
+  const manualSafari  = document.getElementById('sdPwaManualSafari');
+  const manualGeneric = document.getElementById('sdPwaManualGeneric');
+
+  if(isPwa){
+    if(installed) installed.style.display = 'block';
+    if(guide)     guide.style.display = 'none';
+    return;
+  }
+
+  // detect browser for manual instructions
+  const ua = navigator.userAgent;
+  const isSamsung = /SamsungBrowser/i.test(ua);
+  const isSafari  = /Safari/i.test(ua) && !/Chrome/i.test(ua);
+
+  if(manualDiv){
+    manualDiv.style.display = 'block';
+    if(isSamsung && manualSamsung){ manualSamsung.style.display='block'; if(manualGeneric) manualGeneric.style.display='none'; }
+    else if(isSafari && manualSafari){ manualSafari.style.display='block'; if(manualGeneric) manualGeneric.style.display='none'; }
+    else if(manualChrome){ manualChrome.style.display='block'; if(manualGeneric) manualGeneric.style.display='none'; }
+  }
+
+  // Chrome/Edge: show install button when beforeinstallprompt fires
+  let _prompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _prompt = e;
+    if(installBtn) installBtn.style.display = 'flex';
+  });
+
+  window.sdTriggerPwaInstall = async function(){
+    if(!_prompt) return;
+    _prompt.prompt();
+    const { outcome } = await _prompt.userChoice;
+    _prompt = null;
+    if(outcome === 'accepted'){
+      if(installed) installed.style.display = 'block';
+      if(guide)     guide.style.display = 'none';
+    }
+  };
 })();
 
 // ── GRAMMAR BOTTOM SHEET (touch) ──

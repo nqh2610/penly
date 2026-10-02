@@ -2404,43 +2404,45 @@ async function callVocab(){
   const tp = topic(); const text = editor.innerText.trim();
   if(!tp && !text) return toast(t('no-text-vocab'));
   const r = await callAI(
-`Bạn là giáo viên từ vựng tiếng Anh giỏi, biết chọn từ thực dụng và phù hợp với người học.
+`You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for this student.
 
-${tp?`Chủ đề: "${tp}"`:''}
-${text?`Bài viết của học sinh:\n"""\n${text.substring(0,400)}\n"""`:''}
+${tp?`Topic: "${tp}"`:''}
+${text?`Student's text so far:\n"""\n${text.substring(0,400)}\n"""`:''}
 ${ctx()}
 
-⚠️ Tất cả từ vựng và ví dụ câu PHẢI phù hợp đúng trình độ đã chỉ định. Ưu tiên từ thực dụng, hay dùng trong cuộc sống thực, gắn với chủ đề "${tp||'bài viết'}".
+Rules:
+- ALL examples must match the level exactly and relate to "${tp||'the topic'}"
+- NO em dash (—). Use comma or and/but/so instead
+- Keep it practical: words the student can use TODAY in their writing
+- Show words IN ACTION, not just definitions
 
-## 🔑 Từ vựng chủ chốt (10–12 từ)
+---
 
-| Từ / Cụm từ | Loại từ | Nghĩa tiếng Việt | Ví dụ câu gắn với chủ đề |
-|---|---|---|---|
-*(Chọn từ thực dụng, không chọn từ quá khó hoặc hiếm dùng)*
+## 🔑 Từ vựng cần biết
 
-## 🗣️ Cụm từ hay dùng (5–6 cụm)
+*(10–12 từ/cụm từ — thực dụng, phù hợp trình độ, gắn chủ đề)*
 
-| Cụm từ | Nghĩa tiếng Việt | Ví dụ câu tự nhiên |
-|---|---|---|
-*(Cụm từ thường gặp trong văn nói lẫn văn viết)*
+**word / phrase** *(loại từ)* — nghĩa tiếng Việt
+> *Example sentence using this word, related to "${tp||'the topic'}".*
 
-## 💬 Cách diễn đạt ấn tượng (3–4 cái)
-*(Thành ngữ hoặc cách nói hay — phù hợp trình độ, kèm nghĩa và ví dụ ngắn)*
+*(repeat for each word)*
 
-## 🔗 Từ nối phù hợp trình độ này
-*(Chỉ liệt kê từ nối phù hợp với trình độ đã chỉ định — A1/A2 chỉ cần and/but/so/because; B1/B2 thêm however/although/therefore; C1/C2 thêm các từ nối học thuật)*
+---
 
-| Chức năng | Từ nối gợi ý |
-|---|---|
-| Thêm ý | … |
-| Tương phản | … |
-| Nguyên nhân | … |
-| Kết quả | … |
-| Ví dụ | … |
-| Kết luận | … |
+## 🔗 Từ nối hay dùng
 
-## ✍️ Câu mẫu theo văn phong "${tp||'chủ đề'}"
-*(3–4 câu mẫu hoàn chỉnh — đúng trình độ, đúng văn phong, có thể dùng ngay trong bài)*`,
+*(Chỉ liệt kê 4–6 từ nối phù hợp trình độ, kèm ví dụ ngắn)*
+
+- **and** — thêm ý: *My dad is tall and strong.*
+- *(tiếp tục với các từ nối phù hợp trình độ)*
+
+---
+
+## ✍️ 3 câu mẫu có thể dùng ngay
+
+> *Sentence 1 — đúng trình độ, đúng chủ đề*
+> *Sentence 2 — đúng trình độ, đúng chủ đề*
+> *Sentence 3 — đúng trình độ, đúng chủ đề*`,
     'btn-vocab'
   );
   if(r) openPanel(t('panel-vocab'), r, null);

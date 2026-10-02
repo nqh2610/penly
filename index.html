@@ -308,18 +308,17 @@ body{
 .btn-ico:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .btn-ico.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-.doc-title-display{
-  flex:1;min-width:0;cursor:pointer;
-  display:flex;align-items:center;
-  padding:4px 8px;border-radius:7px;
-  transition:.15s;overflow:hidden;
-}
-.doc-title-display:hover{background:var(--bg)}
-.doc-title-display span{
+.doc-title-input{
+  flex:1;min-width:0;
+  border:none;outline:none;background:transparent;
   font-size:.92rem;font-weight:600;color:var(--text);
+  padding:4px 8px;border-radius:7px;
   overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  transition:.15s;
 }
-.doc-title-display.untitled span{color:var(--muted2);font-weight:400}
+.doc-title-input:hover{background:var(--bg)}
+.doc-title-input:focus{background:var(--bg)}
+.doc-title-input::placeholder{color:var(--muted2);font-weight:400}
 
 .tb-sep{width:1px;height:1.25rem;background:var(--border);flex-shrink:0;margin:0 2px}
 .sel-label{font-size:.67rem;font-weight:700;color:var(--muted2);white-space:nowrap}
@@ -977,11 +976,9 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <i class="bi bi-layout-sidebar"></i>
     </button>
 
-    <!-- doc name: read-only display, click to focus topic field in editor -->
-    <div class="doc-title-display" id="docTitleDisplay" onclick="focusTopic()" title="Click để đổi tên">
-      <span id="docTitleText">(Chưa đặt tên)</span>
-      <i class="bi bi-pencil-fill" style="font-size:.65rem;opacity:.45;margin-left:4px"></i>
-    </div>
+    <!-- doc title: editable inline, defaults to topic -->
+    <input id="titleInput" class="doc-title-input" spellcheck="false" autocomplete="off"
+      placeholder="(Chưa đặt tên)" oninput="onTitleChange()" title="Tên bài viết">
 
     <div class="tb-sep"></div>
     <span class="sel-label" id="lbl-aud">Độc giả</span>
@@ -1337,6 +1334,7 @@ let savedRange = null;
 // ── ELEMENTS ──
 const editor     = document.getElementById('editor');
 const topicInput = document.getElementById('topicInput');
+const titleInput = document.getElementById('titleInput');
 const saveStatus = document.getElementById('saveStatus');
 const saveIcon   = document.getElementById('saveIcon');
 const wcEl       = document.getElementById('wc');
@@ -1372,7 +1370,7 @@ function getDoc(id){ return docs.find(d => d.id === id); }
 
 function createDoc(render=true){
   const d = {
-    id: Date.now(), title:'', topic:'', html:'',
+    id: Date.now(), title:'', topic:'', titleCustom:false, html:'',
     aud:  document.getElementById('audSel').value,
     tone: document.getElementById('toneSel').value,
     lvl:  document.getElementById('lvlSel').value,
@@ -1389,7 +1387,8 @@ function openDoc(id, render=true){
   }
   currentId = id;
   const d = getDoc(id); if(!d) return;
-  topicInput.value = d.topic || d.title || '';
+  topicInput.value = d.topic || '';
+  titleInput.value = d.titleCustom ? (d.title || '') : (d.topic || '');
   document.getElementById('audSel').value  = d.aud  || document.getElementById('audSel').options[1].value;
   document.getElementById('toneSel').value = d.tone || document.getElementById('toneSel').options[1].value;
   document.getElementById('lvlSel').value  = d.lvl  || document.getElementById('lvlSel').options[1].value;
@@ -1405,8 +1404,8 @@ function openDoc(id, render=true){
 function saveDoc(){
   const d = getDoc(currentId); if(!d) return;
   d.html  = editor.innerHTML;
-  d.title = topicInput.value.trim();
-  d.topic = d.title;
+  d.topic = topicInput.value.trim();
+  d.title = d.titleCustom ? titleInput.value.trim() : d.topic;
   d.date  = new Date().toLocaleDateString('vi-VN');
   saveDocs(); renderDocList();
   // localStorage save always succeeds — show success immediately
@@ -1422,34 +1421,35 @@ function saveDocMeta(){
   d.aud   = document.getElementById('audSel').value;
   d.tone  = document.getElementById('toneSel').value;
   d.lvl   = document.getElementById('lvlSel').value;
-  d.title = topicInput.value.trim();
-  d.topic = d.title;
+  d.topic = topicInput.value.trim();
+  d.title = d.titleCustom ? titleInput.value.trim() : d.topic;
   saveDocs(); renderDocList();
 }
 
 function onTopicChange(){
   const d = getDoc(currentId); if(!d) return;
   d.topic = topicInput.value.trim();
-  d.title = d.topic;
+  if(!d.titleCustom){
+    titleInput.value = d.topic;
+    d.title = d.topic;
+  }
   updateDocTitleDisplay();
   saveDocs();
+}
+
+function onTitleChange(){
+  const d = getDoc(currentId); if(!d) return;
+  d.titleCustom = titleInput.value.trim() !== topicInput.value.trim();
+  d.title = titleInput.value.trim();
+  renderDocList();
 }
 
 function toggleTopicLock(){ /* no-op — kept for any stale references */ }
 function updateTopicLockUI(){ /* no-op */ }
 
 function updateDocTitleDisplay(){
-  const val = topicInput.value.trim();
-  const el  = document.getElementById('docTitleDisplay');
-  const txt = document.getElementById('docTitleText');
-  if(!el || !txt) return;
-  if(val){
-    txt.textContent = val;
-    el.classList.remove('untitled');
-  } else {
-    txt.textContent = t('untitled');
-    el.classList.add('untitled');
-  }
+  const val = titleInput.value.trim() || topicInput.value.trim();
+  if(val) titleInput.value = val;
 }
 
 function focusTopic(){
@@ -1457,7 +1457,6 @@ function focusTopic(){
   topicInput.select();
   document.querySelector('.editor-scroll').scrollTo({top:0, behavior:'smooth'});
 }
-
 function mirrorSel(masterId, mirrorEl){
   document.getElementById(masterId).value = mirrorEl.value;
   saveDocMeta();
@@ -2474,7 +2473,7 @@ function updateFileChip(){
 
 function getFileName(){
   const d = getDoc(currentId);
-  const base = topicInput.value.trim() || 'English_Writing';
+  const base = titleInput.value.trim() || topicInput.value.trim() || 'English_Writing';
   return base.replace(/[\\/:*?"<>|]/g,'_').trim() + '.txt';
 }
 

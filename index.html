@@ -1883,8 +1883,11 @@ function openPanel(title, md, cards){
   document.getElementById('editorPane').classList.add('shifted');
 }
 function closePanel(){
-  document.getElementById('resultPanel').classList.remove('open');
-  document.getElementById('editorPane').classList.remove('shifted');
+  const panel = document.getElementById('resultPanel');
+  const pane  = document.getElementById('editorPane');
+  panel.classList.remove('open');
+  pane.classList.remove('shifted');
+  pane.style.marginRight = '';
 }
 function copyPanel(){
   const txt = document.getElementById('pContent').innerText;

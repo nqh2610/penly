@@ -324,10 +324,17 @@ body{
 .doc-title-input::placeholder{color:var(--muted2);font-weight:400}
 
 .tb-sep{width:1px;height:1.25rem;background:var(--border);flex-shrink:0;margin:0 2px}
-.topbar-brand{display:flex;align-items:center;gap:5px;flex-shrink:0;text-decoration:none;user-select:none}
-.topbar-brand-icon{width:1.6rem;height:1.6rem;border-radius:7px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
-.topbar-brand-name{font-size:.9rem;font-weight:800;color:var(--text);letter-spacing:-.3px;white-space:nowrap}
-.topbar-brand-name em{font-style:normal;font-size:.52rem;font-weight:600;color:#7c3aed;text-transform:uppercase;margin-left:2px;vertical-align:middle}
+.topbar-brand{display:flex;align-items:center;gap:6px;flex-shrink:0;user-select:none}
+.topbar-brand-icon{
+  width:1.75rem;height:1.75rem;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-h));
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;flex-shrink:0;
+  box-shadow:0 1px 4px rgba(79,70,229,.35);
+}
+.topbar-brand-name{font-size:.92rem;font-weight:800;color:var(--text);letter-spacing:-.3px;white-space:nowrap}
+.topbar-brand-name em{font-style:normal;font-size:.5rem;font-weight:700;color:#7c3aed;text-transform:uppercase;margin-left:2px;vertical-align:middle;letter-spacing:.04em}
+.topbar-brand-sep{width:1px;height:1.4rem;background:var(--border);flex-shrink:0;margin:0 4px}
 .sel-label{font-size:.67rem;font-weight:700;color:var(--muted2);white-space:nowrap}
 .csel{
   border:1px solid var(--border);border-radius:7px;
@@ -764,8 +771,10 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   /* hide desktop selects from topbar */
   .tb-sep,.sel-label,.csel{display:none!important}
   .topbar{padding:0 0.5rem;gap:0.4rem}
-  /* on mobile: keep brand icon, hide text to save space */
-  .topbar-brand-name{display:none}
+  /* on mobile: show brand icon + text but smaller, hide sep */
+  .topbar-brand-name{font-size:.78rem}
+  .topbar-brand-icon{width:1.5rem;height:1.5rem;font-size:.78rem}
+  .topbar-brand-sep{display:none}
 
   /* doc title input: take remaining space, truncate */
   #titleInput{font-size:.9rem;min-width:0;flex:1}
@@ -1013,13 +1022,6 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 <div class="sidebar" id="sidebar">
   <div class="sb-resize" id="sbResize"></div>
   <div class="sb-top">
-    <div class="sb-brand">
-      <div class="sb-brand-icon"><i class="bi bi-pen"></i></div>
-      <div>
-        <div class="sb-brand-name">Penly<em>AI</em></div>
-        <div class="sb-brand-sub" id="lbl-brand-sub">Luyện viết tiếng Anh cùng AI</div>
-      </div>
-    </div>
     <button class="btn-new" onclick="newDoc()">
       <i class="bi bi-plus-lg"></i> <span id="lbl-new-doc">Bài viết mới</span>
     </button>
@@ -1065,6 +1067,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <div class="topbar-brand-icon"><i class="bi bi-pen"></i></div>
       <span class="topbar-brand-name">Penly<em>AI</em></span>
     </div>
+    <div class="topbar-brand-sep"></div>
 
     <!-- doc title: editable inline, defaults to topic -->
     <input id="titleInput" class="doc-title-input" spellcheck="false" autocomplete="off"
@@ -1318,7 +1321,7 @@ Gợi ý:
             <button class="chip on" id="acOn"  onclick="setACEnabled(true)"><i class="bi bi-lightning-charge-fill"></i> <span id="lbl-ac-on">Bật</span></button>
             <button class="chip"    id="acOff" onclick="setACEnabled(false)"><i class="bi bi-slash-circle"></i> <span id="lbl-ac-off">Tắt</span></button>
           </div>
-          <p style="font-size:.75rem;color:var(--muted);margin-top:0.4rem;line-height:1.5" id="lbl-ac-desc">Tắt nếu muốn tiết kiệm quota AI.</p>
+          <p style="font-size:.75rem;color:var(--muted);margin-top:0.4rem;line-height:1.5" id="lbl-ac-desc"></p>
         </div>
 
         <!-- PWA INSTALL -->

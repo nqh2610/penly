@@ -2370,7 +2370,7 @@ async function callReview(){
   if(!text) return toast(t('no-text-review'));
   const tp = topic();
   const r = await callAI(
-`Bạn là giáo viên tiếng Anh tận tâm, giỏi động viên học sinh. Hãy nhận xét bài viết một cách chân thực và hữu ích.
+`Bạn là chuyên gia nhận xét văn bản tiếng Anh. Hãy nhận xét bài viết một cách chân thực và hữu ích.
 
 Chủ đề: "${tp||'chưa đặt tên'}"
 Bài viết:
@@ -2379,22 +2379,19 @@ ${text}
 """
 ${ctx()}
 
-Viết toàn bộ nhận xét bằng tiếng Việt, giọng ân cần và khuyến khích như thầy/cô nói chuyện với học sinh:
+Viết toàn bộ nhận xét bằng tiếng Việt. Điều chỉnh giọng điệu và cách xưng hô phù hợp với đối tượng độc giả (Audience) ở trên — ví dụ: thân thiện với bạn bè, chuyên nghiệp với đồng nghiệp, nhẹ nhàng với trẻ em.
 
-## ✅ Điểm em làm tốt
+## ✅ Điểm làm tốt
 *(2–3 điểm — trích dẫn câu hoặc từ cụ thể trong bài → giải thích tại sao tốt, không khen chung chung)*
 
 ## ⚠️ Điểm cần cải thiện
-*(2–3 điểm quan trọng nhất — trích dẫn câu gốc → viết lại câu đúng hơn → giải thích ngắn gọn tại sao)*
+*(2–3 điểm quan trọng nhất — trích dẫn câu gốc → viết lại câu hay hơn → giải thích ngắn gọn tại sao)*
 
 ## 🎯 Nội dung và mạch văn
 *(Bài có đủ ý không? Các câu có liên kết tự nhiên không? Có phù hợp với chủ đề và độc giả không? — 2–3 câu nhận xét thẳng thắn)*
 
-## 💡 Hai việc cụ thể em nên làm ngay
-*(Mỗi việc 1 câu rõ ràng — ví dụ: "Thêm 1 câu mô tả cảm xúc của em khi..." hoặc "Thay từ X bằng từ Y vì...")*
-
-## 🚀 Thử thách tiếp theo
-*(1 ý tưởng sáng tạo để em phát triển bài hoặc viết bài tiếp theo hay hơn)*`,
+## 💡 Hai việc cụ thể nên làm ngay
+*(Mỗi việc 1 câu rõ ràng — ví dụ: "Thêm 1 câu mô tả cảm xúc khi..." hoặc "Thay từ X bằng từ Y vì...")*`,
     'btn-review'
   );
   if(r) openPanel(t('panel-review'), r, null);

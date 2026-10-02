@@ -1725,7 +1725,19 @@ function toggleSidebar(){
     const open = sb.classList.toggle('mobile-open');
     document.getElementById('sbBackdrop').classList.toggle('show', open);
   } else {
-    sb.classList.toggle('collapsed');
+    const collapsing = !sb.classList.contains('collapsed');
+    if(collapsing){
+      // save current width before collapsing, then clear inline so CSS width:0 works
+      const w = sb.offsetWidth;
+      if(w > 0) sb.dataset.savedW = w;
+      sb.style.width = '';
+      sb.classList.add('collapsed');
+    } else {
+      sb.classList.remove('collapsed');
+      // restore saved width if any
+      const saved = sb.dataset.savedW || localStorage.getItem('ui_sbw');
+      if(saved) sb.style.width = saved + 'px';
+    }
   }
 }
 function closeSidebarMobile(){

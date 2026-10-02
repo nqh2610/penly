@@ -900,6 +900,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   const edfs = ls.getItem('ui_edfs'); if(edfs) r.style.setProperty('--ed-fs', edfs+'px');
   const lh   = ls.getItem('ui_lh');   if(lh)   r.style.setProperty('--ed-lh', lh);
   const font = ls.getItem('ui_font'); if(font) r.style.setProperty('--ed-font', font);
+  const pw   = ls.getItem('ui_pw');   if(pw)   r.style.setProperty('--panel-w', pw+'px');
   const theme = ls.getItem('ui_theme');
   if(theme === 'dark') r.setAttribute('data-theme','dark');
   const acc = ls.getItem('ui_accent');

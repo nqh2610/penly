@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Penly</title>
 
 <!-- PWA -->
@@ -87,7 +87,7 @@
 html{
   font-size:var(--ui-fs);
   height:100%;
-  height:100dvh;
+  height:-webkit-fill-available;
   overflow:hidden;
 }
 body{
@@ -97,7 +97,7 @@ body{
   color:var(--text);
   line-height:1.5;
   height:100%;
-  height:100dvh;
+  height:-webkit-fill-available;
   overflow:hidden;
   transition:background .2s;
 }
@@ -790,10 +790,9 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   #editor{font-size:16px;line-height:1.75}
   #editor:empty::before{font-size:16px;line-height:1.75}
 
-  /* toolbar: sticky at bottom, always visible above keyboard */
+  /* toolbar: always fixed at bottom, icon only, single row */
   .toolbar{
-    position:sticky;bottom:0;
-    flex-shrink:0;
+    position:fixed;bottom:0;left:0;right:0;
     z-index:45;
     display:flex;flex-wrap:nowrap;
     justify-content:space-around;
@@ -2881,32 +2880,37 @@ function loadUI(){
 }
 
 // ── MOBILE KEYBOARD DETECTION ──
-// html/body use 100dvh which shrinks when keyboard opens on modern browsers.
-// This block only handles ac-bar positioning and kb-open class.
 (function(){
   if(!window.visualViewport) return;
   if(window.innerWidth > 640) return;
 
-  const acBar  = document.getElementById('acBar');
   const toolbar = document.querySelector('.toolbar');
+  const acBar   = document.getElementById('acBar');
+  let baseH = window.visualViewport.height;
 
   function updateKb(){
-    const kbH = Math.max(0, window.innerHeight - window.visualViewport.height);
-    const kbOpen = kbH > 80;
+    const vvH   = window.visualViewport.height;
+    const vvTop = window.visualViewport.offsetTop;
+    const kbOpen = vvH < baseH * 0.75;
     document.body.classList.toggle('kb-open', kbOpen);
-    const tbH = toolbar ? toolbar.offsetHeight || 48 : 48;
-    if(acBar){
-      if(document.body.classList.contains('has-ac')){
-        acBar.style.setProperty('bottom', tbH + 'px', 'important');
-      } else {
-        acBar.style.removeProperty('bottom');
-      }
+    if(!kbOpen){
+      baseH = vvH;
+      toolbar.style.removeProperty('bottom');
+      if(acBar) acBar.style.removeProperty('bottom');
+    } else {
+      const kbH = window.innerHeight - vvH - vvTop;
+      toolbar.style.setProperty('bottom', kbH + 'px', 'important');
+      const tbH = toolbar.offsetHeight || 48;
+      if(acBar) acBar.style.setProperty('bottom', (kbH + tbH) + 'px', 'important');
     }
     syncACBar();
   }
 
   window.visualViewport.addEventListener('resize', updateKb);
-  window.addEventListener('orientationchange', () => setTimeout(updateKb, 400));
+  window.visualViewport.addEventListener('scroll', updateKb);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => { baseH = window.visualViewport.height; updateKb(); }, 400);
+  });
 })();
 
 // ── GRAMMAR BOTTOM SHEET (touch) ──

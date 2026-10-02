@@ -2097,55 +2097,80 @@ function setBusy(id, on, openPanel=true){
 // ── AUTOCOMPLETE ──
 async function doAC(txt){
   const seq = acSeq; // snapshot — discard result if user types more before API returns
-  const lines = txt.split(/\n+/);
-  const lastPara = lines.slice(-3).join(' ').trim();
+  const lines = txt.split(/\n+/).filter(Boolean);
+  const totalParas = lines.length;
   const wordCount = txt.trim().split(/\s+/).filter(Boolean).length;
   const endsWithPunct = /[.!?]$/.test(txt.trim());
   const tp = topic();
 
+  // Count sentences in current paragraph to know if we should wrap up or keep developing
+  const currentPara = lines[lines.length - 1] || '';
+  const sentencesInPara = (currentPara.match(/[.!?]+/g) || []).length;
+
+  // Full essay context (cap at 600 words to stay within token budget)
+  const words = txt.trim().split(/\s+/);
+  const fullContext = words.length <= 600 ? txt.trim() : '...' + words.slice(-600).join(' ');
+
+  // Determine position hint
+  const positionHint = totalParas <= 1
+    ? 'This is the opening paragraph — help establish the topic.'
+    : totalParas <= 2
+    ? 'This is early in the essay — help develop main ideas.'
+    : sentencesInPara >= 3
+    ? 'The current paragraph already has several sentences — consider suggesting a concluding sentence for this paragraph or a transition to a new idea.'
+    : 'This is a middle paragraph — suggest a sentence that adds a new supporting detail, example, or feeling.';
+
   const prompt = wordCount < 5
-    ? `You are an English writing assistant helping a student continue their writing.
+    ? `You are an English writing assistant.
 Topic: "${tp||'general'}"
 ${ctx()}
-What they wrote so far: "${txt.trim()}"
-Task: Suggest ONE natural continuation that fits EXACTLY the audience, tone, and level above.
+What they wrote: "${txt.trim()}"
+Task: Suggest ONE natural continuation that fits the audience, tone, and level.
 Rules:
-- Write vocabulary and sentence structure appropriate to the Level specified
-- For children/A1-A2: use short simple sentences, common everyday words only
-- For higher levels: more varied structure is fine
-- NO em dash (—), NO semicolons unless the level calls for it
+- Match the Level exactly in vocabulary and sentence length
+- NO em dash (—), NO semicolons unless level is C1/C2
 - NO quotes, NO explanation — output the suggestion text only`
+
     : endsWithPunct
-    ? `You are an English writing assistant helping a student continue their writing.
+    ? `You are an English writing assistant helping develop ideas logically.
 Topic: "${tp||'general'}"
 ${ctx()}
-Text so far: "${lastPara}"
-Task: Write ONE next sentence that continues naturally from the text above.
+
+Full essay so far:
+"""
+${fullContext}
+"""
+
+Position: ${positionHint}
+
+Task: Write ONE next sentence that develops the essay logically.
 Rules:
-- Match EXACTLY the vocabulary level and sentence complexity of the existing text
-- For children/A1-A2: short simple sentence, common words, no fancy punctuation
-- For higher levels: varied structure, conjunctions, relative clauses are fine
-- NO em dash (—) unless it already appears in the text
-- NO quotes, NO explanation — output the sentence only`
-    : `You are an English writing assistant helping a student complete their sentence.
+- Read the FULL essay above — do NOT repeat any idea already written
+- Suggest a sentence that adds new information: a reason, example, detail, feeling, or transition
+- Match EXACTLY the vocabulary level and sentence length of the existing text
+- For A1/A2: short simple sentence (max 10 words), basic words only
+- For B1/B2: 12–18 words, connectors like because/when/although are fine
+- For C1/C2: complex structures welcome
+- NO em dash (—), NO quotes, NO explanation — output the sentence only`
+
+    : `You are an English writing assistant.
 Topic: "${tp||'general'}"
 ${ctx()}
 Text ending with: "...${txt.trim().split(/\s+/).slice(-12).join(' ')}"
 Task: Complete this unfinished sentence naturally.
 Rules:
-- Add only the missing words to complete the current sentence
-- Match the vocabulary and complexity of the text — do NOT upgrade the level
-- For children/A1-A2: keep it simple, use "and", "but", "so" for connectors
+- Add only the missing words to finish the current sentence
+- Match the vocabulary and complexity of the existing text exactly
+- For A1/A2: keep it simple, use "and / but / so"
 - NO em dash (—), no complex punctuation unless already in the text
 - NO quotes, NO explanation — output the completion words only`;
 
   const r = await callAI(prompt, null, true);
-  if(seq !== acSeq) return; // user typed more — discard stale result
+  if(seq !== acSeq) return;
   if(r && r.length < 200 && !r.includes('```') && !r.includes('\n\n')){
-    // strip em dash — replace with comma or nothing depending on context
     const clean = r.trim()
       .replace(/^["']|["']$/g,'')
-      .replace(/\s*—\s*/g, ', '); // em dash → comma (more natural for most levels)
+      .replace(/\s*—\s*/g, ', ');
     pendingAC = clean;
     acText.textContent = clean;
     acChip.classList.add('show');
@@ -2281,41 +2306,57 @@ async function callSuggest(){
   const text = editor.innerText.trim();
   if(!text) return toast(t('no-text-short'));
 
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-  const lastTwo = sentences.slice(-2).join(' ').trim();
+  const lines = text.split(/\n+/).filter(Boolean);
+  const totalParas = lines.length;
+  const currentPara = lines[lines.length - 1] || '';
+  const sentencesInPara = (currentPara.match(/[.!?]+/g) || []).length;
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+
+  // Full essay for context, capped at 600 words
+  const words = text.split(/\s+/);
+  const fullContext = words.length <= 600 ? text : '...' + words.slice(-600).join(' ');
+
+  // Position-aware instruction
+  const positionHint = totalParas <= 1
+    ? 'The writer is in the opening paragraph. Suggest sentences that introduce or expand the main idea.'
+    : sentencesInPara >= 3
+    ? 'The current paragraph is nearly complete. One direction should wrap up this paragraph; one should transition to a new supporting idea.'
+    : wordCount > 120
+    ? 'The writer is developing the body. Suggest sentences that add depth: a reason, a contrast, or a specific example.'
+    : 'The writer is building their essay. Help them develop ideas with more detail or a new angle.';
 
   const r = await callAI(
-`You are an encouraging English writing coach helping a student continue their writing naturally.
+`You are an English writing coach helping develop ideas logically.
 
 Topic: "${topic()||'not specified'}"
 ${ctx()}
 
-What the student has written so far:
+Full essay so far:
 """
-${text}
-"""
-
-The last sentence(s) to continue from:
-"""
-${lastTwo}
+${fullContext}
 """
 
-Generate exactly 3 different continuation sentences. Each must:
-1. Flow DIRECTLY and naturally from the last sentence — read the whole text first to understand the story and avoid repeating ideas already written
-2. STRICTLY match the student's current level:
-   - A1/A2: maximum 8–10 words, only basic vocabulary (happy, big, good, like, play, eat), only "and / but / so" connectors, present simple tense preferred
-   - B1/B2: 12–18 words, varied vocabulary, can use "because / when / after / although", past or present tense
-   - C1/C2: 15–25 words, rich vocabulary, complex structures allowed
-3. Offer 3 different directions: one adds a specific detail, one adds a feeling or reaction, one moves the story forward
-4. Sound like a real person wrote it — warm, natural, NOT textbook-formal
-5. Use natural punctuation (comma, period, question mark) — NO em dash (—) at all
-6. Vietnamese translation must use natural spoken Vietnamese, appropriate pronouns for the context (bố/mẹ/anh/chị/em/tôi/mình...)
+${positionHint}
+
+Generate exactly 3 different next sentences. Each must:
+1. Read the FULL essay above — do NOT repeat or restate any idea already written
+2. Offer a genuinely different direction:
+   - Sentence 1: add a specific detail, fact, or example that supports the current idea
+   - Sentence 2: add a personal feeling, reaction, or opinion related to the topic
+   - Sentence 3: introduce a NEW related idea or make a transition to develop the essay further
+3. STRICTLY match the student's level:
+   - A1/A2: max 8–10 words, only basic vocabulary, only "and / but / so" connectors
+   - B1/B2: 12–18 words, varied vocab, "because / when / after / although" are fine
+   - C1/C2: 15–25 words, rich vocabulary, complex structures welcome
+4. Sound natural and personal — NOT textbook-formal
+5. NO em dash (—) at all. Use comma or "and/but" instead.
+6. Vietnamese translation must be natural spoken Vietnamese with appropriate pronouns
 
 Return ONLY a valid JSON array, no other text:
 [
-  {"en": "First continuation sentence.", "vi": "Bản dịch tiếng Việt tự nhiên."},
-  {"en": "Second continuation sentence.", "vi": "Bản dịch tiếng Việt tự nhiên."},
-  {"en": "Third continuation sentence.", "vi": "Bản dịch tiếng Việt tự nhiên."}
+  {"en": "Specific detail or example sentence.", "vi": "Bản dịch tự nhiên."},
+  {"en": "Feeling or reaction sentence.", "vi": "Bản dịch tự nhiên."},
+  {"en": "New idea or transition sentence.", "vi": "Bản dịch tự nhiên."}
 ]`,
     'btn-suggest'
   );

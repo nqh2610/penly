@@ -869,6 +869,9 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   .ac-bar{bottom:calc(2.75rem + 20px + env(safe-area-inset-bottom,0px))}
   body.has-ac .ac-bar.show{bottom:calc(2.75rem + 20px + env(safe-area-inset-bottom,0px));z-index:46}
 
+  /* push editor scroll area up when ac-bar is showing so content isn't hidden behind it */
+  body.has-ac .editor-scroll{padding-bottom:7rem}
+
   /* improve confirm bar */
   .improve-confirm-btns{flex-direction:column}
   .improve-yes,.improve-no{padding:0.7rem}

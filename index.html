@@ -1605,7 +1605,8 @@ function renderDocList(){
     el.appendChild(body);
   };
 
-  if(useGroups){
+  // always render as flat list
+  if(false){
     // group by topic (normalize: trim + lowercase as key, display original)
     const groupMap = new Map(); // normalizedTopic -> {label, items[]}
     list.forEach(d => {

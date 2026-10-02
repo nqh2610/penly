@@ -368,7 +368,9 @@ body{
 .topbar-brand-name em{font-style:normal;font-size:.5rem;font-weight:700;color:#7c3aed;text-transform:uppercase;margin-left:2px;vertical-align:middle;letter-spacing:.04em}
 .topbar-brand-tag{font-size:.63rem;color:var(--muted);font-weight:500;white-space:nowrap;margin-top:1px}
 .topbar-brand-sep{width:1px;height:1.8rem;background:var(--border);flex-shrink:0;margin:0 6px}
-.topbar-title-wrap{display:flex;align-items:center;gap:4px;flex:1;min-width:0;position:relative}
+.topbar-title-wrap{display:flex;align-items:center;gap:2px;flex-shrink:0;position:relative;max-width:280px}
+.tb-flex-gap{flex:1;min-width:0}
+.title-dd-divider{height:1px;background:var(--border);margin:3px 6px}
 .topbar-title-icon{font-size:.85rem;color:var(--muted2);flex-shrink:0}
 .sel-label{font-size:.67rem;font-weight:700;color:var(--muted2);white-space:nowrap}
 .csel{
@@ -1122,11 +1124,13 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
         <button class="title-dd-item" onclick="startRenameDoc()">
           <i class="bi bi-pencil"></i> <span id="lbl-dd-rename">Đổi tên</span>
         </button>
-        <button class="title-dd-item title-dd-danger" onclick="confirmDelete()">
+        <div class="title-dd-divider"></div>
+        <button class="title-dd-item title-dd-danger" onclick="confirmDeleteFromMenu()">
           <i class="bi bi-trash3"></i> <span id="lbl-dd-delete">Xóa bài</span>
         </button>
       </div>
     </div>
+    <div class="tb-flex-gap"></div>
     <!-- hidden input kept for internal logic -->
     <input id="titleInput" style="display:none" spellcheck="false" autocomplete="off"
       placeholder="(Chưa đặt tên)" oninput="onTitleChange()">
@@ -1711,6 +1715,11 @@ function startRenameDoc(){
   d.title = trimmed;
   updateDocTitleDisplay();
   _debouncedTitleRender();
+}
+
+function confirmDeleteFromMenu(){
+  document.getElementById('titleDropdown').classList.remove('open');
+  confirmDelete();
 }
 
 document.addEventListener('click', e => {

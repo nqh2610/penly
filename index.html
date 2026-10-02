@@ -782,70 +782,48 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   .editor-wrap{padding:0.875rem 1rem 6rem}
 
   /* doc header */
-  #topicInput{font-size:1.4rem}
-  #topicInput::placeholder{font-size:1.2rem}
+  #topicInput{font-size:1.3rem}
+  #topicInput::placeholder{font-size:1.1rem}
   .topic-divider{margin:0.5rem 0 0.875rem}
 
-  /* toolbar: 2 rows × 4 cols grid — all buttons visible, large touch targets */
+  /* editor font matches UI better on mobile */
+  #editor{font-size:16px;line-height:1.75}
+  #editor:empty::before{font-size:16px;line-height:1.75}
+
+  /* toolbar: always fixed at bottom, icon only, single row */
   .toolbar{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    padding:6px 8px;gap:5px;
-    overflow-x:visible;
+    position:fixed;bottom:0;left:0;right:0;
+    z-index:45;
+    display:flex;flex-wrap:nowrap;
+    justify-content:space-around;
+    padding:6px 4px;gap:3px;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    box-shadow:0 -2px 8px rgba(0,0,0,.08);
   }
   .tb-btn{
+    flex:1;min-width:0;
     padding:0;height:2.75rem;
     border-radius:10px;
-    flex-shrink:0;
-    justify-content:center;
-    display:flex;align-items:center;gap:5px;
+    display:flex;align-items:center;justify-content:center;
   }
-  .tb-btn i{font-size:1rem}
-  /* show short labels on toolbar grid */
-  .tb-btn .tb-label{
-    display:inline!important;
-    font-size:.65rem;font-weight:600;
-    white-space:nowrap;overflow:hidden;
-    max-width:56px;text-overflow:ellipsis;
-  }
-  .tb-btn .tb-label[data-mobile]::before{content:attr(data-mobile)}
-  .tb-btn .tb-label[data-mobile]{font-size:0;max-width:none}
-  .tb-btn .tb-label[data-mobile]::before{font-size:.65rem;font-weight:600}
+  .tb-btn i{font-size:1.1rem}
+  .tb-btn .tb-label{display:none!important}
   .tb-sep2{display:none}
+  #btn-outline{flex:1.5}
 
-  /* primary button spans 2 cols so it stands out */
-  #btn-outline{grid-column:span 2}
+  /* editor needs bottom padding so content clears fixed toolbar */
+  .editor-wrap{padding-bottom:5rem!important}
 
+  .statusbar{padding:0 0.75rem}
   .doc-del{opacity:1!important}
   .doc-btn{opacity:1!important}
-  .statusbar{padding:0 0.75rem}
 
   .toast-wrap{bottom:5rem;right:0.5rem}
 
-  /* keyboard-open: toolbar sticks above keyboard */
-  body.kb-open .statusbar{display:none}
-  body.kb-open .toolbar{
-    position:fixed;bottom:0;left:0;right:0;
-    z-index:45;
-    border-top:1px solid var(--border);
-    box-shadow:0 -3px 12px rgba(0,0,0,.1);
-    padding:4px 6px;
-    display:flex;flex-wrap:nowrap;
-    gap:4px;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-  }
-  body.kb-open .tb-btn{
-    flex-shrink:0;width:auto;padding:0 0.6rem;
-  }
-  body.kb-open .tb-btn .tb-label{display:none!important}
-  body.kb-open #btn-outline{grid-column:unset}
-  body.kb-open.has-ac .toolbar{bottom:2.8rem}
-  body.kb-open .editor-wrap{padding-bottom:3.5rem}
-  body.kb-open.has-ac .editor-wrap{padding-bottom:6rem}
-  .ac-bar{bottom:0}
-  body.kb-open .ac-bar.show{bottom:0;z-index:46}
-  body.kb-open.has-ac .ac-bar.show{bottom:2.8rem}
+  /* ac-bar sits above fixed toolbar */
+  .ac-bar{bottom:3.2rem}
+  body.has-ac .ac-bar.show{bottom:3.2rem;z-index:46}
 
   /* improve confirm bar */
   .improve-confirm-btns{flex-direction:column}

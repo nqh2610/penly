@@ -2882,25 +2882,22 @@ function loadUI(){
 // ── MOBILE KEYBOARD DETECTION ──
 (function(){
   if(!window.visualViewport) return;
-  if(window.innerWidth > 640) return; // desktop/tablet: no need
+  if(window.innerWidth > 640) return;
 
   const toolbar = document.querySelector('.toolbar');
   const acBar   = document.getElementById('acBar');
-  let baseH = window.visualViewport.height;
 
   function updateKb(){
-    const vvH = window.visualViewport.height;
-    const kbOpen = vvH < baseH * 0.75;
+    // innerHeight stays fixed; visualViewport.height shrinks when keyboard opens
+    const kbH = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
+    const kbOpen = kbH > 80; // >80px means keyboard is actually open
     document.body.classList.toggle('kb-open', kbOpen);
 
     if(kbOpen){
-      // push toolbar up by exactly how much the keyboard covers
-      const kbH = Math.max(0, baseH - vvH);
       toolbar.style.setProperty('bottom', kbH + 'px', 'important');
       const tbH = toolbar.offsetHeight || 48;
       if(acBar) acBar.style.setProperty('bottom', (kbH + tbH) + 'px', 'important');
     } else {
-      baseH = vvH;
       toolbar.style.removeProperty('bottom');
       if(acBar) acBar.style.removeProperty('bottom');
     }
@@ -2908,8 +2905,9 @@ function loadUI(){
   }
 
   window.visualViewport.addEventListener('resize', updateKb);
+  window.visualViewport.addEventListener('scroll', updateKb);
   window.addEventListener('orientationchange', () => {
-    setTimeout(() => { baseH = window.visualViewport.height; updateKb(); }, 400);
+    setTimeout(updateKb, 400);
   });
 })();
 

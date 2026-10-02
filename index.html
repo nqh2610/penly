@@ -1219,6 +1219,26 @@ Gợi ý:
           </div>
         </div>
 
+        <!-- LICENSE KEY -->
+        <div class="sd-row" style="border-top:1px solid var(--border);padding-top:1.25rem;margin-top:0.25rem">
+          <div class="sd-label">License Key</div>
+          <div id="sdKeyDisplay" style="font-size:.78rem;color:var(--muted);margin-bottom:0.5rem;word-break:break-all"></div>
+          <button class="chip" style="width:100%;justify-content:center" onclick="sdShowKeyInput()">
+            <i class="bi bi-key"></i> <span id="lbl-change-key">Đổi key</span>
+          </button>
+          <div id="sdKeyInputRow" style="display:none;margin-top:0.5rem;display:none">
+            <input id="sdKeyInput" type="text" spellcheck="false" autocomplete="off"
+              placeholder="PENLY-XXXX-XXXX-XXXX"
+              style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;
+                     font-size:.82rem;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box">
+            <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+              <button class="chip on" style="flex:1;justify-content:center" onclick="sdSubmitKey()">Xác nhận</button>
+              <button class="chip"    style="flex:1;justify-content:center" onclick="sdCancelKey()">Huỷ</button>
+            </div>
+            <div id="sdKeyErr" style="display:none;font-size:.73rem;color:var(--danger);margin-top:4px">Key không hợp lệ</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -2696,6 +2716,48 @@ function toggleSettings(){
   const d = document.getElementById('settingsDrawer');
   const open = d.classList.toggle('open');
   document.getElementById('btnSettings').classList.toggle('active', open);
+  if(open) sdRefreshKey();
+}
+
+function sdRefreshKey(){
+  const k = getLicenseKey();
+  const el = document.getElementById('sdKeyDisplay');
+  if(el) el.textContent = k ? k : '(Chưa có key)';
+}
+
+function sdShowKeyInput(){
+  const row = document.getElementById('sdKeyInputRow');
+  row.style.display = 'block';
+  const inp = document.getElementById('sdKeyInput');
+  inp.value = '';
+  document.getElementById('sdKeyErr').style.display = 'none';
+  inp.focus();
+  // format input same as license gate
+  inp.oninput = () => {
+    const raw = inp.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,17);
+    let out = raw.slice(0,5);
+    if(raw.length > 5)  out += '-' + raw.slice(5,9);
+    if(raw.length > 9)  out += '-' + raw.slice(9,13);
+    if(raw.length > 13) out += '-' + raw.slice(13,17);
+    inp.value = out;
+  };
+}
+
+async function sdSubmitKey(){
+  const inp = document.getElementById('sdKeyInput');
+  const raw = inp.value.trim().toUpperCase();
+  const err = document.getElementById('sdKeyErr');
+  if(!(await isValidKey(raw))){
+    err.style.display = 'block'; return;
+  }
+  setLicenseKey(raw);
+  sdCancelKey();
+  sdRefreshKey();
+  toast(uiLang==='en'?'Key updated':'Đã cập nhật key', 's');
+}
+
+function sdCancelKey(){
+  document.getElementById('sdKeyInputRow').style.display = 'none';
 }
 document.addEventListener('click', e => {
   const d = document.getElementById('settingsDrawer');

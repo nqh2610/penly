@@ -358,38 +358,13 @@ body{
 /* ── DOCUMENT HEADER ── */
 .doc-header{margin-bottom:0}
 
-/* H1 title — the single source of truth for doc name */
-#titleInput{
+#topicInput{
   width:100%;border:none;outline:none;background:transparent;
   font-size:1.75rem;font-weight:700;color:var(--text);line-height:1.25;padding:0;
   min-width:0;
 }
-#titleInput::placeholder{color:var(--muted2);font-weight:400;font-size:1.5rem}
-
-/* AI topic row — smaller, below title */
-.topic-row{
-  display:flex;align-items:center;gap:0.5rem;
-  margin-top:0.5rem;
-}
-.topic-label{
-  font-size:.65rem;font-weight:700;color:var(--muted2);
-  text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;flex-shrink:0;
-}
-#topicInput{
-  flex:1;border:none;outline:none;background:transparent;
-  font-size:.95rem;font-weight:500;color:var(--muted);line-height:1.4;padding:0;
-  min-width:0;
-}
-#topicInput::placeholder{color:var(--muted2);font-weight:400;font-size:.9rem}
+#topicInput::placeholder{color:var(--muted2);font-weight:400;font-size:1.5rem}
 #topicInput:focus{color:var(--text)}
-
-/* lock icon — shows when topic has been manually separated from title */
-.topic-lock{
-  font-size:.65rem;color:var(--muted2);cursor:pointer;flex-shrink:0;
-  padding:2px 4px;border-radius:4px;transition:.12s;
-}
-.topic-lock:hover{color:var(--accent);background:var(--accent-soft)}
-.topic-lock.locked{color:var(--accent)}
 
 .topic-divider{height:1px;background:var(--border);margin:0.75rem 0 1.1rem}
 
@@ -803,10 +778,8 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   .editor-scroll{display:block} /* remove flex centering on mobile — use full width */
 
   /* compact doc header on mobile */
-  #titleInput{font-size:1.35rem}
-  #titleInput::placeholder{font-size:1.2rem}
-  .topic-row{display:none} /* hidden by default — shown via JS when topicLocked */
-  .topic-row.mobile-visible{display:flex}
+  #topicInput{font-size:1.35rem}
+  #topicInput::placeholder{font-size:1.2rem}
   .topic-divider{margin:0.4rem 0 0.75rem}
 
   /* toolbar: icon only, 44px touch targets */
@@ -1074,21 +1047,10 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
         <div class="editor-wrap">
 
           <div class="doc-header">
-            <!-- H1: tên bài — nguồn sự thật, sync lên topbar + sidebar -->
-            <input id="titleInput" type="text" spellcheck="false" autocomplete="off"
-              placeholder="Tên bài viết…"
-              oninput="onTitleChange()">
-
-            <!-- AI topic: mặc định = tên bài, user có thể tách riêng -->
-            <div class="topic-row">
-              <span class="topic-label" id="lbl-topic">Chủ đề AI</span>
-              <input id="topicInput" type="text" spellcheck="false" autocomplete="off"
-                placeholder="Chủ đề cho AI (mặc định = tên bài)…"
-                oninput="onTopicChange()">
-              <i class="bi bi-link-45deg topic-lock" id="topicLockIcon"
-                onclick="toggleTopicLock()"
-                title="Liên kết với tên bài"></i>
-            </div>
+            <!-- Tên bài / Chủ đề AI — một ô duy nhất -->
+            <input id="topicInput" type="text" spellcheck="false" autocomplete="off"
+              placeholder="Nhập chủ đề bài viết…"
+              oninput="onTopicChange()">
           </div>
           <div class="topic-divider"></div>
 
@@ -1374,7 +1336,6 @@ let savedRange = null;
 
 // ── ELEMENTS ──
 const editor     = document.getElementById('editor');
-const titleInput = document.getElementById('titleInput');
 const topicInput = document.getElementById('topicInput');
 const saveStatus = document.getElementById('saveStatus');
 const saveIcon   = document.getElementById('saveIcon');
@@ -1411,7 +1372,7 @@ function getDoc(id){ return docs.find(d => d.id === id); }
 
 function createDoc(render=true){
   const d = {
-    id: Date.now(), title:'', topic:'', topicLocked: false, html:'',
+    id: Date.now(), title:'', topic:'', html:'',
     aud:  document.getElementById('audSel').value,
     tone: document.getElementById('toneSel').value,
     lvl:  document.getElementById('lvlSel').value,
@@ -1428,13 +1389,11 @@ function openDoc(id, render=true){
   }
   currentId = id;
   const d = getDoc(id); if(!d) return;
-  titleInput.value = d.title || '';
-  topicInput.value = d.topicLocked ? (d.topic || '') : (d.title || '');
+  topicInput.value = d.topic || d.title || '';
   document.getElementById('audSel').value  = d.aud  || document.getElementById('audSel').options[1].value;
   document.getElementById('toneSel').value = d.tone || document.getElementById('toneSel').options[1].value;
   document.getElementById('lvlSel').value  = d.lvl  || document.getElementById('lvlSel').options[1].value;
   editor.innerHTML = d.html || '';
-  updateTopicLockUI(d.topicLocked);
   updateDocTitleDisplay();
   updateWC(); hideAC(); closePanel();
   syncCtxBar();
@@ -1446,8 +1405,8 @@ function openDoc(id, render=true){
 function saveDoc(){
   const d = getDoc(currentId); if(!d) return;
   d.html  = editor.innerHTML;
-  d.title = titleInput.value.trim();
-  if(!d.topicLocked) d.topic = d.title;
+  d.title = topicInput.value.trim();
+  d.topic = d.title;
   d.date  = new Date().toLocaleDateString('vi-VN');
   saveDocs(); renderDocList();
   // localStorage save always succeeds — show success immediately
@@ -1463,65 +1422,24 @@ function saveDocMeta(){
   d.aud   = document.getElementById('audSel').value;
   d.tone  = document.getElementById('toneSel').value;
   d.lvl   = document.getElementById('lvlSel').value;
-  d.title = titleInput.value.trim();
-  if(!d.topicLocked) d.topic = d.title;
+  d.title = topicInput.value.trim();
+  d.topic = d.title;
   saveDocs(); renderDocList();
-}
-
-function onTitleChange(){
-  const d = getDoc(currentId); if(!d) return;
-  // sync topic with title unless user has locked topic separately
-  if(!d.topicLocked) topicInput.value = titleInput.value;
-  saveDocMeta();
-  updateDocTitleDisplay();
 }
 
 function onTopicChange(){
   const d = getDoc(currentId); if(!d) return;
   d.topic = topicInput.value.trim();
-  // if user typed a topic different from title → auto-lock
-  if(topicInput.value.trim() !== titleInput.value.trim()){
-    d.topicLocked = true;
-    updateTopicLockUI(true);
-  }
+  d.title = d.topic;
+  updateDocTitleDisplay();
   saveDocs();
 }
 
-function toggleTopicLock(){
-  const d = getDoc(currentId); if(!d) return;
-  if(d.topicLocked){
-    // unlock: reset topic back to title
-    d.topicLocked = false;
-    d.topic = d.title;
-    topicInput.value = d.title;
-    updateTopicLockUI(false);
-    toast(t('toast-topic-unlinked'));
-  } else {
-    d.topicLocked = true;
-    updateTopicLockUI(true);
-    toast(t('toast-topic-linked'));
-    topicInput.focus();
-  }
-  saveDocs();
-}
-
-function updateTopicLockUI(locked){
-  const icon = document.getElementById('topicLockIcon');
-  if(!icon) return;
-  if(locked){
-    icon.className = 'bi bi-scissors topic-lock locked';
-    icon.title = t('topic-unlock-hint');
-  } else {
-    icon.className = 'bi bi-link-45deg topic-lock';
-    icon.title = t('topic-lock-hint');
-  }
-  // on mobile: show topic-row only when topic is locked (differs from title)
-  const row = document.querySelector('.topic-row');
-  if(row) row.classList.toggle('mobile-visible', !!locked);
-}
+function toggleTopicLock(){ /* no-op — kept for any stale references */ }
+function updateTopicLockUI(){ /* no-op */ }
 
 function updateDocTitleDisplay(){
-  const val = titleInput.value.trim();
+  const val = topicInput.value.trim();
   const el  = document.getElementById('docTitleDisplay');
   const txt = document.getElementById('docTitleText');
   if(!el || !txt) return;
@@ -1535,8 +1453,8 @@ function updateDocTitleDisplay(){
 }
 
 function focusTopic(){
-  titleInput.focus();
-  titleInput.select();
+  topicInput.focus();
+  topicInput.select();
   document.querySelector('.editor-scroll').scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -1893,9 +1811,7 @@ function syncACBar(){
 // ── CONTEXT ──
 function ctx(){ return `WRITING CONTEXT:\n- Audience: ${document.getElementById('audSel').value}\n- Tone: ${document.getElementById('toneSel').value}\n- Level: ${document.getElementById('lvlSel').value}`; }
 function topic(){
-  const d = getDoc(currentId);
-  // use locked topic if set, otherwise fall back to title
-  return (d && d.topicLocked && d.topic) ? d.topic : titleInput.value.trim();
+  return topicInput.value.trim();
 }
 
 // ── API ──
@@ -2558,7 +2474,7 @@ function updateFileChip(){
 
 function getFileName(){
   const d = getDoc(currentId);
-  const base = (d && d.title) ? d.title : (titleInput.value.trim() || 'English_Writing');
+  const base = topicInput.value.trim() || 'English_Writing';
   return base.replace(/[\\/:*?"<>|]/g,'_').trim() + '.txt';
 }
 
@@ -2907,14 +2823,8 @@ const LANG = {
     'tone-story':'Kể chuyện','tone-casual':'Tự nhiên','tone-humor':'Hài hước',
     'tone-pro':'Chuyên nghiệp','tone-persuade':'Thuyết phục','tone-emo':'Cảm xúc',
     'font-georgia':'Georgia — dễ đọc','font-system':'System Sans — hiện đại','font-courier':'Courier — đánh máy',
-    'topicInput-ph':'Chủ đề cho AI (mặc định = tên bài)…',
+    'topicInput-ph':'Nhập chủ đề bài viết…',
     'untitled':'(Chưa đặt tên)',
-    'topic-lock-hint':'Tách chủ đề AI riêng khỏi tên bài',
-    'topic-unlock-hint':'Đang tách riêng — nhấn để liên kết lại với tên bài',
-    'toast-topic-linked':'Đã tách chủ đề AI riêng',
-    'toast-topic-unlinked':'Chủ đề AI đã liên kết lại với tên bài',
-    'lbl-topic':'Chủ đề AI',
-    'titleInput-ph':'Tên bài viết…',
     'editor-ph':'Bắt đầu viết tiếng Anh tại đây…\n\nGợi ý:\n  • Nhập chủ đề ở trên → nhấn [Lập dàn ý]\n  • Viết từng đoạn theo dàn ý\n  • Nhấn [Kiểm tra lỗi] sau mỗi đoạn\n  • Nhấn Tab để chấp nhận gợi ý tự động',
     'saveStatus-init':'Sẵn sàng',
     'wc-unit':'từ',
@@ -2995,14 +2905,8 @@ const LANG = {
     'tone-story':'Storytelling','tone-casual':'Casual','tone-humor':'Humorous',
     'tone-pro':'Professional','tone-persuade':'Persuasive','tone-emo':'Emotional',
     'font-georgia':'Georgia — readable','font-system':'System Sans — modern','font-courier':'Courier — typewriter',
-    'topicInput-ph':'AI topic (defaults to document title)…',
+    'topicInput-ph':'Enter writing topic…',
     'untitled':'(Untitled)',
-    'topic-lock-hint':'Separate AI topic from document title',
-    'topic-unlock-hint':'Topic is separate — click to re-link with title',
-    'toast-topic-linked':'AI topic separated',
-    'toast-topic-unlinked':'AI topic re-linked to title',
-    'lbl-topic':'AI Topic',
-    'titleInput-ph':'Document title…',
     'editor-ph':'Start writing English here…\n\nTips:\n  • Enter a topic above → click [Outline]\n  • Write each paragraph following the outline\n  • Click [Check errors] after each paragraph\n  • Press Tab to accept autocomplete suggestions',
     'saveStatus-init':'Ready',
     'wc-unit':'words',
@@ -3087,7 +2991,6 @@ function setLang(lang){
   if(sdTitle) sdTitle.textContent = t('lbl-sd-title');
 
   // placeholders
-  document.getElementById('titleInput').placeholder = t('titleInput-ph');
   document.getElementById('topicInput').placeholder = t('topicInput-ph');
   document.getElementById('editor').setAttribute('data-placeholder', t('editor-ph'));
   const dsi = document.getElementById('docSearchInput');

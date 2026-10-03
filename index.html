@@ -452,8 +452,38 @@ body{
 .tb-btn.c-improve:hover{background:var(--success-soft);color:var(--success);border-color:var(--success)}
 .tb-btn.c-review:hover{background:#faf5ff;color:var(--purple);border-color:var(--purple)}
 .tb-btn.c-translate:hover{background:#ecfeff;color:var(--teal);border-color:var(--teal)}
+.tb-btn.c-express:hover{background:#fffbeb;color:#b45309;border-color:#d97706}
 .tb-btn.loading{opacity:.4;pointer-events:none}
 .tb-sep2{width:1px;height:1.4rem;background:var(--border);align-self:center;flex-shrink:0}
+
+/* ── Express modal ── */
+.express-modal{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;padding:1rem;
+}
+.express-modal.open{display:flex}
+.express-box{
+  background:var(--surface);border-radius:16px;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+  width:100%;max-width:460px;padding:1.5rem;
+  display:flex;flex-direction:column;gap:1rem;
+}
+.express-box h3{font-size:1rem;font-weight:700;color:var(--text);margin:0;display:flex;align-items:center;gap:8px}
+.express-box h3 i{color:#d97706}
+.express-desc{font-size:.82rem;color:var(--muted);line-height:1.5;margin:0}
+.express-input{
+  width:100%;border:1.5px solid var(--border);border-radius:10px;
+  padding:10px 12px;font-size:.92rem;color:var(--text);
+  background:var(--bg);resize:vertical;min-height:80px;
+  font-family:inherit;outline:none;transition:.15s;
+}
+.express-input:focus{border-color:var(--accent);background:var(--surface)}
+.express-actions{display:flex;gap:8px;justify-content:flex-end}
+.express-cancel{padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:.85rem}
+.express-submit{padding:7px 18px;border-radius:8px;border:none;background:#d97706;color:#fff;cursor:pointer;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:6px}
+.express-submit:hover{background:#b45309}
+.express-submit:disabled{opacity:.5;pointer-events:none}
 
 /* ── EDITOR ── */
 #editor{
@@ -1245,6 +1275,9 @@ Gợi ý:
         </button>
         <button class="tb-btn c-review" id="btn-review" onclick="callReview()">
           <i class="bi bi-award"></i><span class="tb-label" id="lbl-btn-review" data-mobile="Nhận xét"> Nhận xét</span>
+        </button>
+        <button class="tb-btn c-express" id="btn-express" onclick="openExpressModal()">
+          <i class="bi bi-lightbulb"></i><span class="tb-label" id="lbl-btn-express" data-mobile="Diễn đạt"> Diễn đạt</span>
         </button>
         <button class="tb-btn c-translate" id="btn-translate" onclick="callTranslate()">
           <i class="bi bi-translate"></i><span class="tb-label" id="lbl-btn-translate" data-mobile="Dịch"> Dịch Việt</span>
@@ -3609,6 +3642,90 @@ if('serviceWorker' in navigator){
       .catch(e => console.log('SW error:', e));
   });
 }
+
+// ── DIỄN ĐẠT (Express in English) ──
+function openExpressModal(){
+  document.getElementById('expressModal').classList.add('open');
+  setTimeout(() => document.getElementById('expressInput').focus(), 100);
+}
+function closeExpressModal(){
+  document.getElementById('expressModal').classList.remove('open');
+  document.getElementById('expressInput').value = '';
+}
+async function submitExpress(){
+  const input = document.getElementById('expressInput');
+  const vi = input.value.trim();
+  if(!vi) return;
+  const btn = document.getElementById('expressSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang tra...';
+  closeExpressModal();
+
+  const tone  = document.getElementById('toneSel').value;
+  const level = document.getElementById('lvlSel').value;
+  const tp    = topic();
+
+  const prompt =
+`You are an expert English expression coach for Vietnamese learners.
+The student wants to express this idea in English:
+"${vi}"
+${tp ? `\nContext/topic: "${tp}"` : ''}
+Level: ${level}
+Writing tone: ${tone}
+
+Give a practical, ready-to-use reference. Follow this EXACT format:
+
+## 💬 Cách dịch tự nhiên
+*(2–3 natural English translations, from simple to more expressive)*
+1. ...
+2. ...
+3. ...
+
+## 🔑 Từ vựng & cụm từ chính
+*(6–8 key words/phrases the student needs — include collocations and phrasal verbs)*
+**word/phrase** — nghĩa tiếng Việt | *example sentence*
+
+## 🗣️ Idiom & Slang phù hợp
+*(2–3 idioms or natural expressions matching the tone — skip if none fit)*
+**expression** — nghĩa | *example*
+
+## ✍️ Mẫu câu có thể dùng ngay
+*(3 ready-to-use sentences at the student's level, directly related to their idea)*
+> Sentence 1
+> Sentence 2
+> Sentence 3
+
+Rules:
+- Match ALL examples to the level: ${level}
+- Match tone: ${tone}
+- NO em dash (—) in examples. Use comma or conjunction instead
+- Keep Vietnamese explanations brief
+- Make every example directly usable in their writing`;
+
+  const r = await callAI(prompt, 'btn-express');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-search"></i> Tra cứu';
+  if(r) openPanel('💡 Diễn đạt tiếng Anh', r, null);
+}
+
+document.getElementById('expressInput')?.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitExpress();
+});
 </script>
-</body>
+<!-- ── EXPRESS MODAL ── -->
+<div class="express-modal" id="expressModal" onclick="if(event.target===this)closeExpressModal()">
+  <div class="express-box">
+    <h3><i class="bi bi-lightbulb-fill"></i> Diễn đạt tiếng Anh</h3>
+    <p class="express-desc">Nhập ý muốn viết bằng tiếng Việt — AI sẽ gợi ý từ vựng, idiom, collocations và mẫu câu phù hợp.</p>
+    <textarea class="express-input" id="expressInput"
+      placeholder="Ví dụ: bố tôi rất chăm chỉ, anh ấy làm việc từ sáng đến tối..."></textarea>
+    <p style="font-size:.72rem;color:var(--muted);margin:0">Ctrl+Enter để tra nhanh</p>
+    <div class="express-actions">
+      <button class="express-cancel" onclick="closeExpressModal()">Hủy</button>
+      <button class="express-submit" id="expressSubmitBtn" onclick="submitExpress()">
+        <i class="bi bi-search"></i> Tra cứu
+      </button>
+    </div>
+  </div>
+</div>
 </html>

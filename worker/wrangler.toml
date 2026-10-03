@@ -8,6 +8,9 @@ compatibility_date = "2024-01-01"
 binding = "PENLY_KEYS"
 id = "eb156e17c3f34677a55efbf3efddb980"
 
+[ai]
+binding = "AI"
+
 [vars]
-# ADMIN_PASSWORD và GROQ_KEY được set qua Cloudflare dashboard > Workers > Settings > Variables
+# ADMIN_PASSWORD được set qua Cloudflare dashboard > Workers > Settings > Variables
 # KHÔNG đặt secret ở đây vì file này sẽ lên GitHub

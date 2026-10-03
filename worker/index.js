@@ -108,7 +108,7 @@ async function handleAdmin(request, env, url) {
     return json({ ok: true });
   }
 
-  // PATCH /admin/keys/{hash} — toggle active
+  // PATCH /admin/keys/{hash} — update active, name, groqKey
   const patchMatch = path.match(/^\/admin\/keys\/([a-f0-9]{64})$/);
   if (request.method === "PATCH" && patchMatch) {
     const hash = patchMatch[1];
@@ -116,7 +116,9 @@ async function handleAdmin(request, env, url) {
     if (!val) return json({ error: "Key not found" }, 404);
     let body;
     try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-    val.active = body.active ?? !val.active;
+    if (body.active !== undefined) val.active = body.active;
+    if (body.name) val.name = body.name;
+    if (body.groqKey) val.groqKey = body.groqKey;
     await env.PENLY_KEYS.put(hash, JSON.stringify(val));
     return json({ ok: true, active: val.active });
   }

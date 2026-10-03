@@ -452,7 +452,7 @@ body{
 .tb-btn.c-improve:hover{background:var(--success-soft);color:var(--success);border-color:var(--success)}
 .tb-btn.c-review:hover{background:#faf5ff;color:var(--purple);border-color:var(--purple)}
 .tb-btn.c-translate:hover{background:#ecfeff;color:var(--teal);border-color:var(--teal)}
-.tb-btn.c-express:hover{background:#fffbeb;color:#b45309;border-color:#d97706}
+.tb-btn.c-express:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .tb-btn.loading{opacity:.4;pointer-events:none}
 .tb-sep2{width:1px;height:1.4rem;background:var(--border);align-self:center;flex-shrink:0}
 
@@ -470,7 +470,7 @@ body{
   display:flex;flex-direction:column;gap:1rem;
 }
 .express-box h3{font-size:1rem;font-weight:700;color:var(--text);margin:0;display:flex;align-items:center;gap:8px}
-.express-box h3 i{color:#d97706}
+.express-box h3 i{color:var(--accent)}
 .express-desc{font-size:.82rem;color:var(--muted);line-height:1.5;margin:0}
 .express-input{
   width:100%;border:1.5px solid var(--border);border-radius:10px;
@@ -481,8 +481,8 @@ body{
 .express-input:focus{border-color:var(--accent);background:var(--surface)}
 .express-actions{display:flex;gap:8px;justify-content:flex-end}
 .express-cancel{padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:.85rem}
-.express-submit{padding:7px 18px;border-radius:8px;border:none;background:#d97706;color:#fff;cursor:pointer;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:6px}
-.express-submit:hover{background:#b45309}
+.express-submit{padding:7px 18px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:6px}
+.express-submit:hover{background:var(--accent-h)}
 .express-submit:disabled{opacity:.5;pointer-events:none}
 
 /* ── EDITOR ── */
@@ -1268,7 +1268,7 @@ Gợi ý:
           <i class="bi bi-spellcheck"></i><span class="tb-label" id="lbl-btn-grammar" data-mobile="Lỗi"> Kiểm tra lỗi</span>
         </button>
         <button class="tb-btn" id="btn-suggest" onclick="callSuggest()">
-          <i class="bi bi-chat-dots"></i><span class="tb-label" id="lbl-btn-suggest" data-mobile="Gợi ý"> Gợi ý câu</span>
+          <i class="bi bi-lightbulb"></i><span class="tb-label" id="lbl-btn-suggest" data-mobile="Gợi ý"> Gợi ý câu</span>
         </button>
         <button class="tb-btn c-improve" id="btn-improve" onclick="callImprove()">
           <i class="bi bi-magic"></i><span class="tb-label" id="lbl-btn-improve" data-mobile="Nâng cấp"> Nâng cấp</span>
@@ -1277,7 +1277,7 @@ Gợi ý:
           <i class="bi bi-award"></i><span class="tb-label" id="lbl-btn-review" data-mobile="Nhận xét"> Nhận xét</span>
         </button>
         <button class="tb-btn c-express" id="btn-express" onclick="openExpressModal()">
-          <i class="bi bi-chat-quote"></i><span class="tb-label" id="lbl-btn-express" data-mobile="Diễn đạt"> Diễn đạt</span>
+          <i class="bi bi-book-half"></i><span class="tb-label" id="lbl-btn-express" data-mobile="Diễn đạt"> Diễn đạt</span>
         </button>
         <button class="tb-btn c-translate" id="btn-translate" onclick="callTranslate()">
           <i class="bi bi-translate"></i><span class="tb-label" id="lbl-btn-translate" data-mobile="Dịch"> Dịch Việt</span>
@@ -3705,7 +3705,7 @@ document.getElementById('expressInput')?.addEventListener('keydown', e => {
 <!-- ── EXPRESS MODAL ── -->
 <div class="express-modal" id="expressModal" onclick="if(event.target===this)closeExpressModal()">
   <div class="express-box">
-    <h3><i class="bi bi-chat-quote-fill"></i> Diễn đạt tiếng Anh</h3>
+    <h3><i class="bi bi-book-half"></i> Diễn đạt tiếng Anh</h3>
     <textarea class="express-input" id="expressInput"
       placeholder="Nhập ý muốn viết bằng tiếng Việt..."></textarea>
     <div class="express-actions">

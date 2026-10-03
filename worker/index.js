@@ -3,14 +3,17 @@
  * Deploy lên Cloudflare Workers
  *
  * Bindings cần setup trong Cloudflare dashboard:
- *   PENLY_KEYS  — KV namespace (lưu Penly key hash → { name, groqKey, active, created })
- *   AI          — Workers AI binding (fallback khi Groq hết quota)
+ *   PENLY_KEYS     — KV namespace (lưu Penly key hash → { name, groqKey, active, created })
+ *   AI             — Workers AI binding (fallback khi Groq hết quota)
  *
- * Environment variables:
+ * Secrets (wrangler secret put):
  *   ADMIN_PASSWORD  — mật khẩu bảo vệ trang admin
+ *   OPENROUTER_KEY  — OpenRouter API key (fallback khi Groq hết quota)
  */
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
 const ALLOWED_MODELS = new Set([
   "openai/gpt-oss-120b",
   "openai/gpt-oss-20b",
@@ -19,6 +22,14 @@ const ALLOWED_MODELS = new Set([
   "llama-3.1-8b-instant",
 ]);
 const GROQ_MODEL_PRIMARY = "openai/gpt-oss-120b";
+
+// OpenRouter free models — tried in order when Groq is exhausted
+const OR_MODELS = [
+  "qwen/qwen3-8b:free",
+  "google/gemma-4-31b-it:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+];
+
 const CF_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const ALLOWED_ORIGIN = "*";
 
@@ -47,7 +58,6 @@ function cors() {
   });
 }
 
-// generate a random Penly key: PENLY-XXXX-XXXX-XXXX
 function genPenlyKey() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const seg = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
@@ -67,9 +77,8 @@ async function handleAdmin(request, env, url) {
     return json({ error: "Unauthorized" }, 401);
   }
 
-  const path = url.pathname; // /admin/keys, /admin/keys/{hash}
+  const path = url.pathname;
 
-  // GET /admin/keys — list all keys
   if (request.method === "GET" && path === "/admin/keys") {
     const list = await env.PENLY_KEYS.list();
     const keys = await Promise.all(
@@ -81,7 +90,6 @@ async function handleAdmin(request, env, url) {
     return json({ keys });
   }
 
-  // POST /admin/keys — create new key
   if (request.method === "POST" && path === "/admin/keys") {
     let body;
     try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
@@ -93,24 +101,20 @@ async function handleAdmin(request, env, url) {
     const hash = await sha256(penlyKey.trim().toUpperCase());
 
     await env.PENLY_KEYS.put(hash, JSON.stringify({
-      name,
-      groqKey,
-      active: true,
+      name, groqKey, active: true,
       created: new Date().toISOString(),
-      penlyKey, // lưu để admin có thể xem lại
+      penlyKey,
     }));
 
     return json({ penlyKey, hash, name });
   }
 
-  // DELETE /admin/keys/{hash} — delete key
   const delMatch = path.match(/^\/admin\/keys\/([a-f0-9]{64})$/);
   if (request.method === "DELETE" && delMatch) {
     await env.PENLY_KEYS.delete(delMatch[1]);
     return json({ ok: true });
   }
 
-  // PATCH /admin/keys/{hash} — update active, name, groqKey
   const patchMatch = path.match(/^\/admin\/keys\/([a-f0-9]{64})$/);
   if (request.method === "PATCH" && patchMatch) {
     const hash = patchMatch[1];
@@ -128,6 +132,35 @@ async function handleAdmin(request, env, url) {
   return json({ error: "Not found" }, 404);
 }
 
+// ── OpenRouter fallback ──────────────────────────────────────────────────────
+async function callOpenRouter(env, prompt, temperature, max_tokens) {
+  if (!env.OPENROUTER_KEY) return null;
+
+  for (const model of OR_MODELS) {
+    try {
+      const res = await fetch(OPENROUTER_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${env.OPENROUTER_KEY}`,
+          "HTTP-Referer": "https://nqh2610.github.io/penly",
+          "X-Title": "Penly",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          temperature: temperature ?? 0.7,
+          max_tokens: max_tokens ?? 2000,
+        }),
+      });
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content) return { content, or_model: model };
+    } catch (_) {}
+  }
+  return null;
+}
+
 // ── Main handler ─────────────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
@@ -135,7 +168,6 @@ export default {
 
     const url = new URL(request.url);
 
-    // admin routes
     if (url.pathname.startsWith("/admin/")) {
       return handleAdmin(request, env, url);
     }
@@ -155,6 +187,10 @@ export default {
       const entry = await env.PENLY_KEYS.get(hash, "json");
       if (!entry) return json({ error: "License key not found or inactive" }, 401);
       if (!entry.active) return json({ error: "License key is disabled" }, 401);
+
+      // Try OpenRouter first, then Cloudflare AI
+      const orResult = await callOpenRouter(env, prompt, temperature, max_tokens);
+      if (orResult) return json({ ...orResult, cf_fallback: true });
 
       try {
         const result = await env.AI.run(CF_AI_MODEL, {
@@ -179,7 +215,6 @@ export default {
 
     const { penly_key, prompt, temperature, max_tokens, model } = body;
 
-    // validate key format
     if (!penly_key || !/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(penly_key.trim().toUpperCase())) {
       return json({ error: "Invalid license key format" }, 401);
     }

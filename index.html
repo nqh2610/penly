@@ -5301,7 +5301,7 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
     }
 
     document.getElementById('expressInput')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitExpress();
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitExpress(); }
     });
   </script>
   <!-- ── EXPRESS MODAL ── -->

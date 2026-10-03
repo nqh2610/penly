@@ -6,7 +6,7 @@ compatibility_date = "2024-01-01"
 # id lấy từ Cloudflare dashboard > Workers & Pages > KV > PENLY_KEYS > View details
 [[kv_namespaces]]
 binding = "PENLY_KEYS"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+id = "eb156e17c3f34677a55efbf3efddb980"
 
 [vars]
 # ADMIN_PASSWORD và GROQ_KEY được set qua Cloudflare dashboard > Workers > Settings > Variables

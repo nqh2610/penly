@@ -2,18 +2,14 @@
  * Penly AI Proxy Worker
  * Deploy lên Cloudflare Workers
  *
- * Environment variables cần set trong Cloudflare dashboard:
- *   KEY_MAP  — JSON string: { "PENLY_KEY_HASH": "gsk_groq_key_here", ... }
+ * Bindings cần setup trong Cloudflare dashboard:
+ *   PENLY_KEYS  — KV namespace (lưu Penly key hash → { name, groqKey, active, created })
  *
- * Ví dụ KEY_MAP:
- *   {
- *     "03d42c4928fe18f219e078fa312722770814d911c27227a7aa9013f680b8c152": "gsk_abc123...",
- *     "e56616fdd4acdfe4b3b68fa6dc00b4b80f22ba88b2c250294e8b6f931ebd306f": "gsk_def456..."
- *   }
+ * Environment variables:
+ *   ADMIN_PASSWORD  — mật khẩu bảo vệ trang admin
  */
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL_PRIMARY  = "openai/gpt-oss-120b";
 const ALLOWED_MODELS = new Set([
   "openai/gpt-oss-120b",
   "openai/gpt-oss-20b",
@@ -21,6 +17,7 @@ const ALLOWED_MODELS = new Set([
   "qwen/qwen3-8b",
   "llama-3.1-8b-instant",
 ]);
+const GROQ_MODEL_PRIMARY = "openai/gpt-oss-120b";
 const ALLOWED_ORIGIN = "*";
 
 async function sha256(str) {
@@ -28,17 +25,115 @@ async function sha256(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+function json(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    },
+  });
+}
+
+function cors() {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, X-Admin-Password",
+    },
+  });
+}
+
+// generate a random Penly key: PENLY-XXXX-XXXX-XXXX
+function genPenlyKey() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const seg = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `PENLY-${seg()}-${seg()}-${seg()}`;
+}
+
+// ── Admin auth ──────────────────────────────────────────────────────────────
+async function checkAdmin(request, env) {
+  const pw = request.headers.get("X-Admin-Password");
+  if (!pw || pw !== env.ADMIN_PASSWORD) return false;
+  return true;
+}
+
+// ── Admin handlers ──────────────────────────────────────────────────────────
+async function handleAdmin(request, env, url) {
+  if (!(await checkAdmin(request, env))) {
+    return json({ error: "Unauthorized" }, 401);
+  }
+
+  const path = url.pathname; // /admin/keys, /admin/keys/{hash}
+
+  // GET /admin/keys — list all keys
+  if (request.method === "GET" && path === "/admin/keys") {
+    const list = await env.PENLY_KEYS.list();
+    const keys = await Promise.all(
+      list.keys.map(async (k) => {
+        const val = await env.PENLY_KEYS.get(k.name, "json");
+        return { hash: k.name, ...val };
+      })
+    );
+    return json({ keys });
+  }
+
+  // POST /admin/keys — create new key
+  if (request.method === "POST" && path === "/admin/keys") {
+    let body;
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+
+    const { name, groqKey } = body;
+    if (!name || !groqKey) return json({ error: "name and groqKey required" }, 400);
+
+    const penlyKey = genPenlyKey();
+    const hash = await sha256(penlyKey.trim().toUpperCase());
+
+    await env.PENLY_KEYS.put(hash, JSON.stringify({
+      name,
+      groqKey,
+      active: true,
+      created: new Date().toISOString(),
+      penlyKey, // lưu để admin có thể xem lại
+    }));
+
+    return json({ penlyKey, hash, name });
+  }
+
+  // DELETE /admin/keys/{hash} — delete key
+  const delMatch = path.match(/^\/admin\/keys\/([a-f0-9]{64})$/);
+  if (request.method === "DELETE" && delMatch) {
+    await env.PENLY_KEYS.delete(delMatch[1]);
+    return json({ ok: true });
+  }
+
+  // PATCH /admin/keys/{hash} — toggle active
+  const patchMatch = path.match(/^\/admin\/keys\/([a-f0-9]{64})$/);
+  if (request.method === "PATCH" && patchMatch) {
+    const hash = patchMatch[1];
+    const val = await env.PENLY_KEYS.get(hash, "json");
+    if (!val) return json({ error: "Key not found" }, 404);
+    let body;
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    val.active = body.active ?? !val.active;
+    await env.PENLY_KEYS.put(hash, JSON.stringify(val));
+    return json({ ok: true, active: val.active });
+  }
+
+  return json({ error: "Not found" }, 404);
+}
+
+// ── Main handler ─────────────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
-    // CORS preflight
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
-      });
+    if (request.method === "OPTIONS") return cors();
+
+    const url = new URL(request.url);
+
+    // admin routes
+    if (url.pathname.startsWith("/admin/")) {
+      return handleAdmin(request, env, url);
     }
 
     if (request.method !== "POST") {
@@ -46,44 +141,30 @@ export default {
     }
 
     let body;
-    try {
-      body = await request.json();
-    } catch {
-      return json({ error: "Invalid JSON" }, 400);
-    }
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
     const { penly_key, prompt, temperature, max_tokens, model } = body;
 
-    // validate penly_key format
+    // validate key format
     if (!penly_key || !/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(penly_key.trim().toUpperCase())) {
       return json({ error: "Invalid license key format" }, 401);
     }
 
-    // hash the key and look up Groq key
     const hash = await sha256(penly_key.trim().toUpperCase());
+    const entry = await env.PENLY_KEYS.get(hash, "json");
 
-    let keyMap;
-    try {
-      keyMap = JSON.parse(env.KEY_MAP || "{}");
-    } catch {
-      return json({ error: "Server misconfigured" }, 500);
-    }
+    if (!entry) return json({ error: "License key not found or inactive" }, 401);
+    if (!entry.active) return json({ error: "License key is disabled" }, 401);
+    if (!entry.groqKey) return json({ error: "Server misconfigured" }, 500);
 
-    const groqKey = keyMap[hash];
-    if (!groqKey) {
-      return json({ error: "License key not found or inactive" }, 401);
-    }
-
-    // use requested model if whitelisted, else primary
     const chosenModel = (model && ALLOWED_MODELS.has(model)) ? model : GROQ_MODEL_PRIMARY;
 
-    // forward to Groq
     try {
       const groqRes = await fetch(GROQ_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${groqKey}`,
+          "Authorization": `Bearer ${entry.groqKey}`,
         },
         body: JSON.stringify({
           model: chosenModel,
@@ -100,14 +181,14 @@ export default {
       }
 
       const errMsg = data.error?.message || "Unknown error from AI";
-      const isRateLimit = groqRes.status === 429 || errMsg.toLowerCase().includes("rate limit");
-      // also fallback on model not found / access errors
-      const shouldFallback = isRateLimit
+      const shouldFallback = groqRes.status === 429
         || groqRes.status === 404
+        || errMsg.toLowerCase().includes("rate limit")
         || errMsg.toLowerCase().includes("does not exist")
         || errMsg.toLowerCase().includes("not found")
         || errMsg.toLowerCase().includes("do not have access")
         || errMsg.toLowerCase().includes("model_not_found");
+
       return json({ error: errMsg, rate_limited: shouldFallback }, 502);
 
     } catch (e) {
@@ -115,13 +196,3 @@ export default {
     }
   },
 };
-
-function json(obj, status = 200) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-    },
-  });
-}

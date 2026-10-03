@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Penly Admin — Quản lý Key</title>
+<style>
+  :root {
+    --accent: #4f46e5; --accent-h: #4338ca; --accent-soft: #eef2ff;
+    --danger: #dc2626; --danger-soft: #fef2f2;
+    --success: #16a34a; --success-soft: #f0fdf4;
+    --bg: #f8fafc; --surface: #fff; --border: #e2e8f0; --border2: #cbd5e1;
+    --text: #1e293b; --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0 }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh }
+
+  /* login */
+  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem }
+  .login-box { background: var(--surface); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.1); padding: 2rem; width: 100%; max-width: 360px }
+  .login-box h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: .25rem }
+  .login-box p { font-size: .85rem; color: var(--muted); margin-bottom: 1.5rem }
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1rem }
+  .field label { font-size: .8rem; font-weight: 600; color: var(--muted) }
+  .field input { border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: .92rem; outline: none; transition: .15s }
+  .field input:focus { border-color: var(--accent) }
+  .btn { padding: 9px 18px; border-radius: 8px; border: none; font-size: .88rem; font-weight: 600; cursor: pointer; transition: .15s; display: inline-flex; align-items: center; gap: 6px }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; justify-content: center }
+  .btn-primary:hover { background: var(--accent-h) }
+  .btn-danger { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger) }
+  .btn-danger:hover { background: var(--danger); color: #fff }
+  .btn-sm { padding: 5px 12px; font-size: .78rem }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border) }
+  .btn-ghost:hover { border-color: var(--border2); color: var(--text) }
+  .err { color: var(--danger); font-size: .82rem; margin-top: .5rem; display: none }
+
+  /* main layout */
+  .app { display: none; min-height: 100vh }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: .75rem 1.5rem; display: flex; align-items: center; gap: 12px }
+  .topbar-brand { font-size: 1rem; font-weight: 800; color: var(--text) }
+  .topbar-brand em { color: var(--accent); font-style: normal }
+  .topbar-sub { font-size: .8rem; color: var(--muted); flex: 1 }
+  .main { max-width: 900px; margin: 0 auto; padding: 1.5rem }
+
+  /* stats */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem }
+  .stat { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 1rem 1.25rem }
+  .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--accent) }
+  .stat-label { font-size: .78rem; color: var(--muted); margin-top: 2px }
+
+  /* add key form */
+  .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1.5rem }
+  .card-title { font-size: .92rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px }
+  .form-row { display: flex; gap: .75rem; flex-wrap: wrap }
+  .form-row .field { flex: 1; min-width: 160px; margin: 0 }
+  .form-row .field input { width: 100% }
+
+  /* key table */
+  .table-wrap { overflow-x: auto }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem }
+  th { text-align: left; padding: 8px 12px; font-size: .75rem; font-weight: 600; color: var(--muted); border-bottom: 2px solid var(--border); white-space: nowrap }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle }
+  tr:last-child td { border: none }
+  tr:hover td { background: var(--bg) }
+  .badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 99px; font-size: .72rem; font-weight: 600 }
+  .badge-on { background: var(--success-soft); color: var(--success) }
+  .badge-off { background: var(--danger-soft); color: var(--danger) }
+  .key-mono { font-family: monospace; font-size: .82rem; background: var(--bg); padding: 3px 7px; border-radius: 5px; border: 1px solid var(--border); cursor: pointer; user-select: all }
+  .key-mono:hover { border-color: var(--accent); color: var(--accent) }
+  .actions { display: flex; gap: 6px; align-items: center }
+  .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: .88rem }
+
+  /* new key result */
+  .new-key-box { display: none; background: var(--success-soft); border: 1.5px solid var(--success); border-radius: 10px; padding: 1rem; margin-top: 1rem }
+  .new-key-box p { font-size: .82rem; color: var(--success); margin-bottom: .5rem; font-weight: 600 }
+  .new-key-val { font-family: monospace; font-size: 1.1rem; font-weight: 700; color: var(--success); letter-spacing: 1px; cursor: pointer; user-select: all }
+  .new-key-val:hover { text-decoration: underline }
+
+  /* toast */
+  .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(10px); background: #1e293b; color: #fff; padding: 9px 18px; border-radius: 8px; font-size: .85rem; opacity: 0; transition: .2s; pointer-events: none; z-index: 999; white-space: nowrap }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) }
+
+  @media(max-width:600px) {
+    .stats { grid-template-columns: 1fr 1fr }
+    .form-row { flex-direction: column }
+    .topbar { padding: .75rem 1rem }
+    .main { padding: 1rem }
+  }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <h1>Penly<em>AI</em> Admin</h1>
+    <p>Đăng nhập để quản lý key học sinh</p>
+    <div class="field">
+      <label>Worker URL</label>
+      <input id="workerUrl" type="url" placeholder="https://fancy-disk-f211.nqh2610.workers.dev" value="https://fancy-disk-f211.nqh2610.workers.dev">
+    </div>
+    <div class="field">
+      <label>Mật khẩu admin</label>
+      <input id="adminPw" type="password" placeholder="Nhập mật khẩu" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="btn btn-primary" onclick="login()">Đăng nhập</button>
+    <div class="err" id="loginErr">Sai mật khẩu hoặc không kết nối được Worker.</div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="topbar-brand">Penly<em>AI</em> Admin</div>
+    <div class="topbar-sub">Quản lý Penly Key</div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Đăng xuất</button>
+  </div>
+  <div class="main">
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Tổng key</div></div>
+      <div class="stat"><div class="stat-num" id="statActive" style="color:var(--success)">—</div><div class="stat-label">Đang hoạt động</div></div>
+      <div class="stat"><div class="stat-num" id="statOff" style="color:var(--danger)">—</div><div class="stat-label">Đã tắt</div></div>
+    </div>
+
+    <!-- Add key -->
+    <div class="card">
+      <div class="card-title">➕ Tạo key mới</div>
+      <div class="form-row">
+        <div class="field">
+          <label>Tên học sinh</label>
+          <input id="newName" type="text" placeholder="Nguyễn Văn A">
+        </div>
+        <div class="field">
+          <label>Groq API Key</label>
+          <input id="newGroqKey" type="text" placeholder="gsk_...">
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-primary" onclick="createKey()" id="btnCreate">Tạo key</button>
+        </div>
+      </div>
+      <div class="new-key-box" id="newKeyBox">
+        <p>✅ Key đã tạo — copy và gửi cho học sinh:</p>
+        <div class="new-key-val" id="newKeyVal" onclick="copyText(this.textContent)"></div>
+        <div style="font-size:.75rem;color:var(--success);margin-top:6px">Click để copy · Key chỉ hiện 1 lần này</div>
+      </div>
+    </div>
+
+    <!-- Key list -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        <span>📋 Danh sách key</span>
+        <button class="btn btn-ghost btn-sm" onclick="loadKeys()">↻ Làm mới</button>
+      </div>
+      <div class="table-wrap">
+        <table id="keyTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tên học sinh</th>
+              <th>Penly Key</th>
+              <th>Ngày tạo</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="keyBody">
+            <tr><td colspan="6" class="empty">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let WORKER = '';
+let PASSWORD = '';
+let keysData = [];
+
+function toast(msg, dur = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => toast('Đã copy!'));
+}
+
+async function login() {
+  const url = document.getElementById('workerUrl').value.trim().replace(/\/$/, '');
+  const pw = document.getElementById('adminPw').value;
+  if (!url || !pw) return;
+
+  try {
+    const res = await fetch(url + '/admin/keys', {
+      headers: { 'X-Admin-Password': pw }
+    });
+    if (!res.ok) throw new Error();
+    WORKER = url;
+    PASSWORD = pw;
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadKeys();
+  } catch {
+    document.getElementById('loginErr').style.display = 'block';
+  }
+}
+
+function logout() {
+  WORKER = ''; PASSWORD = '';
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('adminPw').value = '';
+  document.getElementById('loginErr').style.display = 'none';
+}
+
+async function loadKeys() {
+  const res = await fetch(WORKER + '/admin/keys', { headers: { 'X-Admin-Password': PASSWORD } });
+  const data = await res.json();
+  keysData = data.keys || [];
+  renderKeys();
+}
+
+function renderKeys() {
+  const tbody = document.getElementById('keyBody');
+  const total = keysData.length;
+  const active = keysData.filter(k => k.active).length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statOff').textContent = total - active;
+
+  if (!total) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Chưa có key nào. Tạo key đầu tiên ở trên.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = keysData.map((k, i) => {
+    const date = k.created ? new Date(k.created).toLocaleDateString('vi-VN') : '—';
+    const badge = k.active
+      ? '<span class="badge badge-on">✓ Hoạt động</span>'
+      : '<span class="badge badge-off">✗ Tắt</span>';
+    const penlyKeyDisplay = k.penlyKey || '(ẩn)';
+    return `<tr>
+      <td>${i + 1}</td>
+      <td><strong>${k.name || '—'}</strong></td>
+      <td><span class="key-mono" onclick="copyText('${k.penlyKey || ''}')" title="Click để copy">${penlyKeyDisplay}</span></td>
+      <td>${date}</td>
+      <td>${badge}</td>
+      <td class="actions">
+        <button class="btn btn-ghost btn-sm" onclick="toggleKey('${k.hash}', ${k.active})">${k.active ? 'Tắt' : 'Bật'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteKey('${k.hash}', '${k.name}')">Xóa</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function createKey() {
+  const name = document.getElementById('newName').value.trim();
+  const groqKey = document.getElementById('newGroqKey').value.trim();
+  if (!name || !groqKey) { toast('Vui lòng nhập đủ tên và Groq key'); return; }
+
+  const btn = document.getElementById('btnCreate');
+  btn.disabled = true; btn.textContent = 'Đang tạo...';
+
+  const res = await fetch(WORKER + '/admin/keys', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+    body: JSON.stringify({ name, groqKey }),
+  });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = 'Tạo key';
+
+  if (data.penlyKey) {
+    document.getElementById('newKeyVal').textContent = data.penlyKey;
+    document.getElementById('newKeyBox').style.display = 'block';
+    document.getElementById('newName').value = '';
+    document.getElementById('newGroqKey').value = '';
+    toast('Tạo key thành công!');
+    loadKeys();
+  } else {
+    toast('Lỗi: ' + (data.error || 'Unknown'));
+  }
+}
+
+async function toggleKey(hash, currentActive) {
+  await fetch(WORKER + '/admin/keys/' + hash, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+    body: JSON.stringify({ active: !currentActive }),
+  });
+  toast(currentActive ? 'Đã tắt key' : 'Đã bật key');
+  loadKeys();
+}
+
+async function deleteKey(hash, name) {
+  if (!confirm(`Xóa key của "${name}"?\nHọc sinh sẽ không dùng được Penly nữa.`)) return;
+  await fetch(WORKER + '/admin/keys/' + hash, {
+    method: 'DELETE',
+    headers: { 'X-Admin-Password': PASSWORD },
+  });
+  toast('Đã xóa key');
+  loadKeys();
+}
+</script>
+</body>
+</html>

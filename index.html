@@ -3812,6 +3812,19 @@ Gợi ý:
       return res.json();
     }
 
+    async function _callFallback(lk, prompt) {
+      try {
+        const cfRes = await fetch(WORKER_URL.replace(/\/?$/, '') + '/cf-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000 })
+        });
+        const cfData = await cfRes.json();
+        if (cfData.content) return cfData;
+      } catch (_) {}
+      return null;
+    }
+
     async function callAI(prompt, btnId, silent = false, noPanel = false) {
       const lk = getLicenseKey();
       if (!lk || !(await isValidKey(lk))) {
@@ -3822,6 +3835,21 @@ Gợi ý:
       if (!silent) setBusy(btnId, true, !noPanel);
 
       const now = Date.now();
+
+      // check if all Groq models are on cooldown — skip straight to fallback
+      const allCooled = MODEL_CHAIN.every(m => _modelCooldown[m] && now < _modelCooldown[m]);
+      if (allCooled) {
+        const fb = await _callFallback(lk, prompt);
+        if (fb) {
+          if (!silent) setBusy(btnId, false, !noPanel);
+          setModelChip(fb.or_model ? '__or__' : '__cf__');
+          return fb.content;
+        }
+        if (!silent) setBusy(btnId, false, !noPanel);
+        if (!silent) toast(uiLang === 'en' ? 'All models busy, please try again later.' : 'Tất cả model đang bận, vui lòng thử lại sau.', 'd');
+        return null;
+      }
+
       for (let i = 0; i < MODEL_CHAIN.length; i++) {
         const model = MODEL_CHAIN[i];
         if (_modelCooldown[model] && now < _modelCooldown[model]) continue;
@@ -3836,38 +3864,28 @@ Gợi ý:
           }
 
           if (d.rate_limited) {
-            // permanent-ish cooldown for model-not-found errors, 2min for rate limits
             const isPermError = d.error && (
               d.error.toLowerCase().includes("does not exist") ||
               d.error.toLowerCase().includes("not found") ||
               d.error.toLowerCase().includes("do not have access")
             );
             _modelCooldown[model] = Date.now() + (isPermError ? 24 * 60 * 60 * 1000 : 2 * 60 * 1000);
-            const next = MODEL_CHAIN[i + 1];
-            if (next) {
-              continue; // try next model silently
-            } else {
-              // all Groq exhausted — try Cloudflare AI fallback
-              try {
-                const cfRes = await fetch(WORKER_URL.replace(/\/?$/, '') + '/cf-ai', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000 })
-                });
-                const cfData = await cfRes.json();
-                if (cfData.content) {
-                  if (!silent) setBusy(btnId, false, !noPanel);
-                  setModelChip(cfData.or_model ? '__or__' : '__cf__');
-                  return cfData.content;
-                }
-              } catch (_) {}
+            // check if there's a next non-cooled model
+            const hasNext = MODEL_CHAIN.slice(i + 1).some(m => !_modelCooldown[m] || Date.now() >= _modelCooldown[m]);
+            if (hasNext) continue;
+            // all Groq exhausted — try fallback silently
+            const fb = await _callFallback(lk, prompt);
+            if (fb) {
               if (!silent) setBusy(btnId, false, !noPanel);
-              toast(uiLang === 'en' ? 'All models busy, please wait a moment.' : 'Tất cả model đang bận, vui lòng thử lại sau ít phút.', 'd');
-              return null;
+              setModelChip(fb.or_model ? '__or__' : '__cf__');
+              return fb.content;
             }
+            if (!silent) setBusy(btnId, false, !noPanel);
+            if (!silent) toast(uiLang === 'en' ? 'All models busy, please try again later.' : 'Tất cả model đang bận, vui lòng thử lại sau.', 'd');
+            return null;
           }
 
-          // other error
+          // non-rate-limit error — show it
           if (!silent) setBusy(btnId, false, !noPanel);
           const err = d.error || JSON.stringify(d);
           if (!silent) toast((uiLang === 'en' ? 'Error: ' : 'Lỗi: ') + err.substring(0, 100), 'd');

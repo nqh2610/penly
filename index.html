@@ -2653,6 +2653,11 @@
         <i class="bi bi-info-circle"></i> <strong>Cách bắt đầu:</strong><br>
         Liên hệ giáo viên để nhận <strong>Penly Key</strong>, sau đó nhập vào ô bên dưới.
       </div>
+      <div id="lkInstallRow" style="display:none;gap:.6rem;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.7rem 1rem;font-size:.85rem">
+        <i class="bi bi-download" style="font-size:1.1rem;color:var(--accent)"></i>
+        <div style="flex:1;line-height:1.4"><strong>Cài như ứng dụng</strong><br><span style="color:var(--muted);font-size:.8rem">Dùng offline, mở nhanh từ màn hình chính</span></div>
+        <button id="lkInstallBtn" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.4rem .85rem;font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap">Cài ngay</button>
+      </div>
       <div class="lk-input-wrap">
         <input class="lk-input" id="lkInput" type="text" placeholder="PENLY-XXXX-XXXX-XXXX" autocomplete="off"
           spellcheck="false" autocapitalize="characters" />
@@ -4935,7 +4940,27 @@ ${text}
         e.preventDefault();
         deferredPrompt = e;
         setTimeout(() => banner.classList.add('show'), 2000);
+        // also show install row on license gate
+        const row = document.getElementById('lkInstallRow');
+        if (row) row.style.display = 'flex';
       });
+
+      const lkInstallBtn = document.getElementById('lkInstallBtn');
+      if (lkInstallBtn) {
+        lkInstallBtn.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            if (outcome === 'accepted') {
+              const row = document.getElementById('lkInstallRow');
+              if (row) row.style.display = 'none';
+            }
+          } else {
+            toast('Bấm menu trình duyệt → "Thêm vào màn hình chính"', '');
+          }
+        });
+      }
 
       btnInstall.addEventListener('click', async () => {
         if (deferredPrompt) {

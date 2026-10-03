@@ -5268,11 +5268,13 @@ ${text}
       const level = document.getElementById('lvlSel').value;
       const tp = topic();
 
+      const aud = document.getElementById('audSel').value;
+
       const prompt =
         `You are a vocabulary assistant for a Vietnamese ESL student writing in English.
 The student wants to express this idea but doesn't know the right words:
 "${vi}"
-${tp ? `Writing topic: "${tp}"` : ''}Level: ${level} | Tone: ${tone}
+${tp ? `Writing topic: "${tp}"` : ''}Level: ${level} | Tone: ${tone} | Audience: ${aud}
 
 Give PRACTICAL vocabulary they can use RIGHT NOW in their writing. Output EXACTLY:
 
@@ -5284,13 +5286,13 @@ Give PRACTICAL vocabulary they can use RIGHT NOW in their writing. Output EXACTL
 > Natural English sentence 1
 > Natural English sentence 2
 > Natural English sentence 3
-(3 ready-to-use sentences matching their level and tone)
+(3 ready-to-use sentences matching their level, tone and audience)
 
 ## 🔗 Thêm lựa chọn
 **alternative word/phrase** — *nghĩa* | *ví dụ*
 (2–3 synonyms or related expressions)
 
-Rules: NO long explanations. Every example must be copy-paste ready. Match level (${level}) exactly — simple vocab for A/B levels, richer for C. Tone: ${tone}.`;
+Rules: NO long explanations. Every example must be copy-paste ready. Match level (${level}) exactly — simple vocab for A/B levels, richer for C. Tone: ${tone}. Write for audience: ${aud}.`;
 
       const r = await callAI(prompt, 'btn-express');
       btn.disabled = false;

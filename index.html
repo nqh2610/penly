@@ -4177,6 +4177,41 @@ Rules:
       const isMid = ['B1','B1+'].includes(level);
       const isBasic = ['A1','A2','A2+'].includes(level);
 
+      // Label sets by language
+      const L = uiLang === 'en' ? {
+        intro: 'Introduction', body: 'Body', conclusion: 'Conclusion',
+        para: 'Paragraph', hook: 'Hook', bg: 'Background', thesis: 'Thesis statement',
+        topic: 'Topic sentence', supporting: 'Supporting sentences', evidence: 'Evidence/Example',
+        closing: 'Concluding/Transition', counter: 'Counterargument', refute: 'Refutation',
+        restate: 'Restate thesis', summary: 'Summary', final: 'Final thought',
+        whatToWrite: 'What to write', sentCount: 'Sentence count', sample: 'Sample sentence',
+        vocab: 'Useful words', connectors: 'Connectors', note: 'Note',
+        pickOne: 'choose one', eg: 'example', altApproach: 'alternative approach',
+        sampleLabel: 'Sample sentence', contentHint: 'guiding questions',
+        counterPara: 'Paragraph 4 — Counterargument (if topic suits it)',
+        hookNote: 'provocative question, striking fact, or bold statement',
+        thesisNote: 'state position or purpose clearly — specific, not vague',
+        thesisQ: 'Thesis must answer: "What will this essay prove/discuss/describe?"',
+        noNewIdea: 'Conclusion must NOT add new ideas. Only wrap up and elevate existing ones.',
+        meaning: 'meaning',
+      } : {
+        intro: 'Mở bài', body: 'Thân bài', conclusion: 'Kết bài',
+        para: 'Đoạn', hook: 'Hook', bg: 'Background', thesis: 'Thesis statement',
+        topic: 'Topic sentence', supporting: 'Supporting sentences', evidence: 'Evidence/Example',
+        closing: 'Concluding/Transition', counter: 'Counterargument', refute: 'Refutation',
+        restate: 'Restate thesis', summary: 'Summary', final: 'Final thought',
+        whatToWrite: 'Viết gì', sentCount: 'Số câu', sample: 'Câu mẫu',
+        vocab: 'Từ hay dùng', connectors: 'Từ nối', note: 'Lưu ý',
+        pickOne: 'chọn 1', eg: 'ví dụ',  altApproach: 'cách tiếp cận khác',
+        sampleLabel: 'Câu mẫu supporting', contentHint: '2–3 câu hỏi gợi ý nội dung',
+        counterPara: 'Đoạn 4 — Phản biện (Counterargument) *(nếu phù hợp với chủ đề)*',
+        hookNote: 'câu hỏi gây sốc, sự thật thú vị, hoặc nhận định táo bạo',
+        thesisNote: 'nêu rõ lập trường hoặc mục đích — cụ thể, không mơ hồ',
+        thesisQ: 'Thesis phải trả lời: "Bài viết này sẽ chứng minh/thảo luận/mô tả điều gì?"',
+        noNewIdea: 'Kết bài KHÔNG được thêm ý mới. Chỉ khép lại và nâng tầm ý đã có.',
+        meaning: 'nghĩa',
+      };
+
       const r = await callAI(
         `You are an experienced ESL writing coach creating a detailed outline for a student.
 
@@ -4207,157 +4242,157 @@ FORMATTING RULES:
 - ALL English examples must match the level and tone exactly
 - Examples must be specific to "${tp}"
 - NO em dash (—). Use comma or and/but/so instead
-- "Câu mẫu" MUST use blockquote: > *sentence*
-- Bold vocab words, italic Vietnamese meaning
+- Sample sentences MUST use blockquote: > *sentence*
+- Bold vocab words, italic meaning
 
 ---
 
-## 1️⃣ Mở bài
+## 1️⃣ ${L.intro}
 ${isBasic ? `
-Mở bài gồm 2 câu: **câu giới thiệu** + **câu thesis** ngắn gọn.
-- **Câu giới thiệu:**
-> *(1 câu mở đơn giản về chủ đề, đúng trình độ ${level})*
-- **Câu thesis:**
-> *(1 câu nói bài viết về điều gì)*
+${L.intro} gồm 2 câu: **${uiLang === 'en' ? 'opening sentence' : 'câu giới thiệu'}** + **${uiLang === 'en' ? 'thesis' : 'câu thesis'}** ${uiLang === 'en' ? 'short and clear' : 'ngắn gọn'}.
+- **${uiLang === 'en' ? 'Opening sentence' : 'Câu giới thiệu'}:**
+> *(${uiLang === 'en' ? `1 simple opening sentence about the topic, right for level ${level}` : `1 câu mở đơn giản về chủ đề, đúng trình độ ${level}`})*
+- **${uiLang === 'en' ? 'Thesis' : 'Câu thesis'}:**
+> *(${uiLang === 'en' ? '1 sentence saying what the essay is about' : '1 câu nói bài viết về điều gì'})*
 ` : isMid ? `
-Mở bài gồm: **hook** + **background** + **thesis**.
-- **Hook:** (1 câu dẫn dắt — câu hỏi hoặc nhận xét chung)
-> *1. (hook option 1)*
-> *2. (hook option 2)*
-- **Background:** (1 câu giới thiệu bối cảnh)
-- **Thesis:**
-> *(1 câu nêu rõ nội dung chính)*
+${L.intro} gồm: **${L.hook}** + **${L.bg}** + **${L.thesis}**.
+- **${L.hook}:** (${uiLang === 'en' ? '1 engaging opener — question or general observation' : '1 câu dẫn dắt — câu hỏi hoặc nhận xét chung'})
+> *1. (${L.hook} option 1)*
+> *2. (${L.hook} option 2)*
+- **${L.bg}:** (${uiLang === 'en' ? '1 sentence introducing the context' : '1 câu giới thiệu bối cảnh'})
+- **${L.thesis}:**
+> *(${uiLang === 'en' ? '1 sentence stating the main point clearly' : '1 câu nêu rõ nội dung chính'})*
 ` : `
-Mở bài gồm: **hook** (gây ấn tượng) + **background** (bối cảnh) + **thesis** (lập trường/mục đích).
-- **Hook — chọn 1:**
-> *1. (hook — provocative question, striking fact, or bold statement)*
-> *2. (hook — alternative approach)*
-- **Background:** (1–2 câu cung cấp bối cảnh, paraphrase đề bài bằng từ của mình)
-- **Thesis statement:**
-> *(1 câu nêu rõ lập trường hoặc mục đích — specific, not vague)*
-- **Lưu ý:** Thesis phải trả lời "Bài viết này sẽ chứng minh/thảo luận/mô tả điều gì?"
+${L.intro} gồm: **${L.hook}** + **${L.bg}** + **${L.thesis}**.
+- **${L.hook} — ${L.pickOne}:**
+> *1. (${L.hook} — ${L.hookNote})*
+> *2. (${L.hook} — ${L.altApproach})*
+- **${L.bg}:** (${uiLang === 'en' ? '1–2 sentences providing context, paraphrase the topic in your own words' : '1–2 câu cung cấp bối cảnh, paraphrase đề bài bằng từ của mình'})
+- **${L.thesis}:**
+> *(${L.thesisNote})*
+- **${L.note}:** ${L.thesisQ}
 `}
 
 ---
 
-## 2️⃣ Thân bài
+## 2️⃣ ${L.body}
 
-### 📌 Đoạn 1 — [tên ý chính cụ thể]
+### 📌 ${L.para} 1 — [${uiLang === 'en' ? 'specific main idea' : 'tên ý chính cụ thể'}]
 ${isBasic ? `
-- **Viết gì:** (2–3 câu hỏi tiếng Việt gợi ý nội dung)
-- **Số câu:** 2–3 câu
-- **Câu mẫu:**
+- **${L.whatToWrite}:** (${uiLang === 'en' ? '2–3 guiding questions to inspire content' : '2–3 câu hỏi gợi ý nội dung'})
+- **${L.sentCount}:** 2–3 ${uiLang === 'en' ? 'sentences' : 'câu'}
+- **${L.sample}:**
 > *Simple sentence about "${tp}".*
-- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*
-- **Từ nối:** First, Also, And
+- **${L.vocab}:** **word1** *(${L.meaning})*, **word2** *(${L.meaning})*
+- **${L.connectors}:** First, Also, And
 ` : isMid ? `
-- **Topic sentence:** (câu mở đoạn — nêu ý chính)
-> *(ví dụ topic sentence)*
-- **Gợi ý nội dung:** (2–3 câu hỏi tiếng Việt)
-- **Số câu:** 3–4 câu
-- **Câu mẫu supporting:**
+- **${L.topic}:** (${uiLang === 'en' ? 'opening sentence — state the main idea' : 'câu mở đoạn — nêu ý chính'})
+> *(${uiLang === 'en' ? 'example topic sentence' : 'ví dụ topic sentence'})*
+- **${uiLang === 'en' ? 'Content ideas' : 'Gợi ý nội dung'}:** (${L.contentHint})
+- **${L.sentCount}:** 3–4 ${uiLang === 'en' ? 'sentences' : 'câu'}
+- **${L.sampleLabel}:**
 > *Supporting sentence with reason or example.*
-- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*
-- **Từ nối:** (First / In addition / For example / Therefore)
+- **${L.vocab}:** **word1** *(${L.meaning})*, **word2** *(${L.meaning})*, **word3** *(${L.meaning})*
+- **${L.connectors}:** (First / In addition / For example / Therefore)
 ` : `
-- **Topic sentence:** (câu mở đoạn — luận điểm rõ ràng)
-> *(ví dụ topic sentence)*
-- **Supporting sentences:** (2–3 câu lý do + phân tích)
-- **Evidence/Example:** (dẫn chứng hoặc ví dụ cụ thể)
+- **${L.topic}:** (${uiLang === 'en' ? 'opening sentence — clear argument' : 'câu mở đoạn — luận điểm rõ ràng'})
+> *(${uiLang === 'en' ? 'example topic sentence' : 'ví dụ topic sentence'})*
+- **${L.supporting}:** (${uiLang === 'en' ? '2–3 sentences with reasons and analysis' : '2–3 câu lý do + phân tích'})
+- **${L.evidence}:** (${uiLang === 'en' ? 'specific evidence or example' : 'dẫn chứng hoặc ví dụ cụ thể'})
 > *Example or evidence sentence.*
-- **Concluding/Transition:** (câu kết đoạn hoặc chuyển ý)
-> *(ví dụ câu chuyển ý sang đoạn 2)*
-- **Số câu:** ${isAdvanced ? '5–6' : '4–5'} câu
-- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*, **word4** *(nghĩa)*
-- **Từ nối:** (Furthermore / As a result / This suggests that / Notably)
+- **${L.closing}:** (${uiLang === 'en' ? 'closing sentence or transition' : 'câu kết đoạn hoặc chuyển ý'})
+> *(${uiLang === 'en' ? 'example transition to paragraph 2' : 'ví dụ câu chuyển ý sang đoạn 2'})*
+- **${L.sentCount}:** ${isAdvanced ? '5–6' : '4–5'} ${uiLang === 'en' ? 'sentences' : 'câu'}
+- **${L.vocab}:** **word1** *(${L.meaning})*, **word2** *(${L.meaning})*, **word3** *(${L.meaning})*, **word4** *(${L.meaning})*
+- **${L.connectors}:** (Furthermore / As a result / This suggests that / Notably)
 `}
 
-### 📌 Đoạn 2 — [tên ý chính khác]
+### 📌 ${L.para} 2 — [${uiLang === 'en' ? 'another main idea' : 'tên ý chính khác'}]
 ${isBasic ? `
-- **Viết gì:** (2–3 câu hỏi tiếng Việt)
-- **Số câu:** 2–3 câu
-- **Câu mẫu:**
+- **${L.whatToWrite}:** (${uiLang === 'en' ? '2–3 guiding questions' : '2–3 câu hỏi gợi ý'})
+- **${L.sentCount}:** 2–3 ${uiLang === 'en' ? 'sentences' : 'câu'}
+- **${L.sample}:**
 > *Another simple sentence about "${tp}".*
-- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*
-- **Từ nối:** Next, Then, But
+- **${L.vocab}:** **word1** *(${L.meaning})*, **word2** *(${L.meaning})*
+- **${L.connectors}:** Next, Then, But
 ` : isMid ? `
-- **Topic sentence:**
-> *(ví dụ topic sentence)*
-- **Gợi ý nội dung:** (2–3 câu hỏi tiếng Việt)
-- **Số câu:** 3–4 câu
-- **Câu mẫu supporting:**
+- **${L.topic}:**
+> *(${uiLang === 'en' ? 'example topic sentence' : 'ví dụ topic sentence'})*
+- **${uiLang === 'en' ? 'Content ideas' : 'Gợi ý nội dung'}:** (${L.contentHint})
+- **${L.sentCount}:** 3–4 ${uiLang === 'en' ? 'sentences' : 'câu'}
+- **${L.sampleLabel}:**
 > *Supporting sentence.*
-- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*
-- **Từ nối:** (However / On the other hand / Additionally / As a result)
+- **${L.vocab}:** **word1** *(${L.meaning})*, **word2** *(${L.meaning})*, **word3** *(${L.meaning})*
+- **${L.connectors}:** (However / On the other hand / Additionally / As a result)
 ` : `
-- **Topic sentence:**
-> *(ví dụ topic sentence)*
-- **Supporting sentences + Evidence:**
+- **${L.topic}:**
+> *(${uiLang === 'en' ? 'example topic sentence' : 'ví dụ topic sentence'})*
+- **${L.supporting} + ${L.evidence}:**
 > *Evidence or analysis sentence.*
-- **Concluding/Transition:**
-> *(ví dụ câu chuyển ý sang đoạn 3)*
-- **Số câu:** ${isAdvanced ? '5–6' : '4–5'} câu
-- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*, **word4** *(nghĩa)*
-- **Từ nối:** (In contrast / Moreover / Consequently / It is worth noting that)
+- **${L.closing}:**
+> *(${uiLang === 'en' ? 'example transition to paragraph 3' : 'ví dụ câu chuyển ý sang đoạn 3'})*
+- **${L.sentCount}:** ${isAdvanced ? '5–6' : '4–5'} ${uiLang === 'en' ? 'sentences' : 'câu'}
+- **${L.vocab}:** **word1** *(${L.meaning})*, **word2** *(${L.meaning})*, **word3** *(${L.meaning})*, **word4** *(${L.meaning})*
+- **${L.connectors}:** (In contrast / Moreover / Consequently / It is worth noting that)
 `}
 ${!isBasic ? `
-### 📌 Đoạn 3 — [tên ý chính thứ 3]
+### 📌 ${L.para} 3 — [${uiLang === 'en' ? 'third main idea' : 'tên ý chính thứ 3'}]
 ${isMid ? `
-- **Topic sentence:**
-> *(ví dụ topic sentence)*
-- **Gợi ý nội dung:** (2–3 câu hỏi tiếng Việt)
-- **Số câu:** 3–4 câu
-- **Câu mẫu:**
+- **${L.topic}:**
+> *(${uiLang === 'en' ? 'example topic sentence' : 'ví dụ topic sentence'})*
+- **${uiLang === 'en' ? 'Content ideas' : 'Gợi ý nội dung'}:** (${L.contentHint})
+- **${L.sentCount}:** 3–4 ${uiLang === 'en' ? 'sentences' : 'câu'}
+- **${L.sample}:**
 > *Supporting sentence.*
-- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*
-- **Từ nối:** (Finally / Most importantly / In addition)
+- **${L.vocab}:** **word1** *(${L.meaning})*, **word2** *(${L.meaning})*, **word3** *(${L.meaning})*
+- **${L.connectors}:** (Finally / Most importantly / In addition)
 ` : `
-- **Topic sentence:**
-> *(ví dụ topic sentence)*
-- **Supporting sentences + Evidence:**
+- **${L.topic}:**
+> *(${uiLang === 'en' ? 'example topic sentence' : 'ví dụ topic sentence'})*
+- **${L.supporting} + ${L.evidence}:**
 > *Evidence sentence.*
-- **Concluding/Transition:**
-> *(câu kết đoạn hoặc chuyển sang kết bài)*
-- **Số câu:** ${isAdvanced ? '5–6' : '4–5'} câu
-- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*, **word4** *(nghĩa)*
-- **Từ nối:** (Ultimately / Beyond this / In light of this / This reinforces the idea that)
+- **${L.closing}:**
+> *(${uiLang === 'en' ? 'closing sentence or transition to conclusion' : 'câu kết đoạn hoặc chuyển sang kết bài'})*
+- **${L.sentCount}:** ${isAdvanced ? '5–6' : '4–5'} ${uiLang === 'en' ? 'sentences' : 'câu'}
+- **${L.vocab}:** **word1** *(${L.meaning})*, **word2** *(${L.meaning})*, **word3** *(${L.meaning})*, **word4** *(${L.meaning})*
+- **${L.connectors}:** (Ultimately / Beyond this / In light of this / This reinforces the idea that)
 `}` : ''}
 ${isAdvanced ? `
-### 📌 Đoạn 4 — Phản biện (Counterargument) *(nếu phù hợp với chủ đề)*
-- **Counterargument:** (nêu quan điểm đối lập)
-> *(ví dụ câu counterargument)*
-- **Refutation:** (bác bỏ hoặc giới hạn lập luận đó)
-> *(ví dụ câu refutation)*
-- **Số câu:** 4–5 câu
-- **Từ hay dùng:** **admittedly** *(thừa nhận rằng)*, **nevertheless** *(tuy nhiên)*, **despite this** *(mặc dù vậy)*
+### 📌 ${L.counterPara}
+- **${L.counter}:** (${uiLang === 'en' ? 'state the opposing viewpoint' : 'nêu quan điểm đối lập'})
+> *(${uiLang === 'en' ? 'example counterargument sentence' : 'ví dụ câu counterargument'})*
+- **${L.refute}:** (${uiLang === 'en' ? 'rebut or limit that argument' : 'bác bỏ hoặc giới hạn lập luận đó'})
+> *(${uiLang === 'en' ? 'example refutation sentence' : 'ví dụ câu refutation'})*
+- **${L.sentCount}:** 4–5 ${uiLang === 'en' ? 'sentences' : 'câu'}
+- **${L.vocab}:** **admittedly** *(${uiLang === 'en' ? 'granted that' : 'thừa nhận rằng'})*, **nevertheless** *(${uiLang === 'en' ? 'however' : 'tuy nhiên'})*, **despite this** *(${uiLang === 'en' ? 'even so' : 'mặc dù vậy'})*
 ` : ''}
 
 ---
 
-## 3️⃣ Kết bài
+## 3️⃣ ${L.conclusion}
 ${isBasic ? `
-Kết bài gồm 2 câu: **nhắc lại ý chính** + **câu cảm xúc**.
-- **Câu tóm tắt:**
-> *(1 câu nhắc lại chủ đề theo cách khác)*
-- **Câu kết:**
-> *(1 câu cảm xúc hoặc lời nhắn nhủ đơn giản)*
+${L.conclusion} gồm 2 ${uiLang === 'en' ? 'sentences' : 'câu'}: **${uiLang === 'en' ? 'recap main idea' : 'nhắc lại ý chính'}** + **${uiLang === 'en' ? 'closing feeling' : 'câu cảm xúc'}**.
+- **${uiLang === 'en' ? 'Summary sentence' : 'Câu tóm tắt'}:**
+> *(${uiLang === 'en' ? '1 sentence restating the topic in different words' : '1 câu nhắc lại chủ đề theo cách khác'})*
+- **${uiLang === 'en' ? 'Closing sentence' : 'Câu kết'}:**
+> *(${uiLang === 'en' ? '1 emotional sentence or simple message' : '1 câu cảm xúc hoặc lời nhắn nhủ đơn giản'})*
 ` : isMid ? `
-Kết bài gồm: **restate thesis** + **summary** + **final thought**.
-- **Restate thesis:** (diễn đạt lại thesis bằng từ khác)
-> *(ví dụ)*
-- **Summary:** (1–2 câu tóm tắt ý chính thân bài)
-- **Final thought — chọn 1:**
-> *1. (lời khuyên hoặc câu hỏi mở)*
-> *2. (dự đoán hoặc lời nhắn nhủ)*
+${L.conclusion} gồm: **${L.restate}** + **${L.summary}** + **${L.final}**.
+- **${L.restate}:** (${uiLang === 'en' ? 'rephrase thesis in different words' : 'diễn đạt lại thesis bằng từ khác'})
+> *(${L.eg})*
+- **${L.summary}:** (${uiLang === 'en' ? '1–2 sentences summarising body paragraph ideas' : '1–2 câu tóm tắt ý chính thân bài'})
+- **${L.final} — ${L.pickOne}:**
+> *1. (${uiLang === 'en' ? 'advice or open question' : 'lời khuyên hoặc câu hỏi mở'})*
+> *2. (${uiLang === 'en' ? 'prediction or closing message' : 'dự đoán hoặc lời nhắn nhủ'})*
 ` : `
-Kết bài gồm: **restate thesis** + **summary of main points** + **final thought** (broader implication/call to action).
-- **Restate thesis:** (diễn đạt lại thesis — KHÔNG sao chép nguyên văn)
-> *(ví dụ restate)*
-- **Summary:** (2–3 câu tóm tắt các luận điểm chính, không lặp chi tiết)
-- **Final thought — chọn 1:**
-> *1. (broader implication, prediction, or recommendation)*
-> *2. (call to action or thought-provoking closing)*
-- **Lưu ý:** Kết bài KHÔNG được thêm ý mới. Chỉ khép lại và nâng tầm ý đã có.
+${L.conclusion} gồm: **${L.restate}** + **${L.summary}** + **${L.final}** (${uiLang === 'en' ? 'broader implication or call to action' : 'ý nghĩa rộng hơn hoặc lời kêu gọi hành động'}).
+- **${L.restate}:** (${uiLang === 'en' ? 'rephrase thesis — do NOT copy verbatim' : 'diễn đạt lại thesis — KHÔNG sao chép nguyên văn'})
+> *(${uiLang === 'en' ? 'example restate' : 'ví dụ restate'})*
+- **${L.summary}:** (${uiLang === 'en' ? '2–3 sentences summarising main arguments, no repeated details' : '2–3 câu tóm tắt các luận điểm chính, không lặp chi tiết'})
+- **${L.final} — ${L.pickOne}:**
+> *1. (${uiLang === 'en' ? 'broader implication, prediction, or recommendation' : 'broader implication, prediction, or recommendation'})*
+> *2. (${uiLang === 'en' ? 'call to action or thought-provoking closing' : 'call to action or thought-provoking closing'})*
+- **${L.note}:** ${L.noNewIdea}
 `}`,
         'btn-outline'
       );

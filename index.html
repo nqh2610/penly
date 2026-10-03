@@ -4378,6 +4378,9 @@ Student text:
 ${text}
 """
 ${ctx()}
+Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+
+LANGUAGE RULE: Write ALL explanations, labels, and feedback in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
 
 IMPORTANT — adjust expectations to the student's level:
 - A1/A2: only mark clear errors (wrong verb form, wrong pronoun, obvious misspelling). Do NOT penalize simple sentence structure or basic vocabulary — that is appropriate for their level.
@@ -4442,6 +4445,9 @@ RULES:
 
 Topic: "${topic() || 'not specified'}"
 ${ctx()}
+Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+
+LANGUAGE RULE: Write the Vietnamese translation ("vi" field) in Vietnamese. Write all other labels and instructions in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
 
 Current paragraph (${paraRole}):
 "${currentPara.trim()}"
@@ -4493,6 +4499,9 @@ Student's original text:
 ${text}
 """
 ${ctx()}
+Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+
+LANGUAGE RULE: Write ALL section headings, explanations, tips, and change descriptions in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
 
 ## YOUR TASK: Style Upgrade
 
@@ -4520,13 +4529,13 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
 (Write ONLY the improved version here. Bold every changed word/phrase. No headings, no markdown except bold.)
 %%IMPROVED_END%%
 
-## ✏️ Thay đổi
+## ✏️ ${uiLang === 'en' ? 'Changes made' : 'Thay đổi'}
 
-*(List only actual changes — skip if nothing changed. Format per line: original → improved — short reason in Vietnamese, 1 sentence)*
+*(${uiLang === 'en' ? 'List only actual changes. Format: original → improved — short reason, 1 sentence' : 'Liệt kê thay đổi. Format: gốc → cải thiện — lý do ngắn, 1 câu'})*
 
-## 💡 Mẹo luyện tập
+## 💡 ${uiLang === 'en' ? 'Practice tips' : 'Mẹo luyện tập'}
 
-*(1–2 mẹo thực dụng tiếng Việt, gắn với bài này — ví dụ: "Thay vì lặp 'I want to', thử dùng 'I hope to' hoặc 'I would like to'")*`,
+*(${uiLang === 'en' ? '1–2 practical tips related to this text' : '1–2 mẹo thực dụng, gắn với bài này'})*`,
         'btn-improve'
       );
       if (!r) return;
@@ -4608,28 +4617,29 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
       if (!text) return toast(t('no-text-review'));
       const tp = topic();
       const r = await callAI(
-        `Bạn là chuyên gia nhận xét văn bản tiếng Anh. Hãy nhận xét bài viết một cách chân thực và hữu ích.
+        `You are an expert English writing reviewer. Give honest and helpful feedback on the student's writing.
 
-Chủ đề: "${tp || 'chưa đặt tên'}"
-Bài viết:
+Topic: "${tp || 'not specified'}"
+Text:
 """
 ${text}
 """
 ${ctx()}
+Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 
-Viết toàn bộ nhận xét bằng tiếng Việt. Điều chỉnh giọng điệu và cách xưng hô phù hợp với đối tượng độc giả (Audience) ở trên — ví dụ: thân thiện với bạn bè, chuyên nghiệp với đồng nghiệp, nhẹ nhàng với trẻ em.
+LANGUAGE RULE: Write ALL feedback, section headings, explanations, and suggestions in ${uiLang === 'en' ? 'English' : 'Vietnamese'}. Adjust tone to match the Audience context above.
 
-## ✅ Điểm làm tốt
-*(2–3 điểm — trích dẫn câu hoặc từ cụ thể trong bài → giải thích tại sao tốt, không khen chung chung)*
+## ✅ ${uiLang === 'en' ? 'Strengths' : 'Điểm làm tốt'}
+*(${uiLang === 'en' ? '2–3 points — quote specific sentences or words → explain why they work well' : '2–3 điểm — trích dẫn câu hoặc từ cụ thể → giải thích tại sao tốt, không khen chung chung'})*
 
-## ⚠️ Điểm cần cải thiện
-*(2–3 điểm quan trọng nhất — trích dẫn câu gốc → viết lại câu hay hơn → giải thích ngắn gọn tại sao)*
+## ⚠️ ${uiLang === 'en' ? 'Areas to improve' : 'Điểm cần cải thiện'}
+*(${uiLang === 'en' ? '2–3 key issues — quote original → rewrite better → short explanation' : '2–3 điểm quan trọng nhất — trích dẫn câu gốc → viết lại hay hơn → giải thích ngắn gọn'})*
 
-## 🎯 Nội dung và mạch văn
-*(Bài có đủ ý không? Các câu có liên kết tự nhiên không? Có phù hợp với chủ đề và độc giả không? — 2–3 câu nhận xét thẳng thắn)*
+## 🎯 ${uiLang === 'en' ? 'Content & flow' : 'Nội dung và mạch văn'}
+*(${uiLang === 'en' ? 'Does the essay cover the topic fully? Do sentences connect naturally? Is it appropriate for the audience? — 2–3 sentences' : 'Bài có đủ ý không? Các câu có liên kết tự nhiên không? Có phù hợp với độc giả không? — 2–3 câu nhận xét thẳng thắn'})*
 
-## 💡 Hai việc cụ thể nên làm ngay
-*(Mỗi việc 1 câu rõ ràng — ví dụ: "Thêm 1 câu mô tả cảm xúc khi..." hoặc "Thay từ X bằng từ Y vì...")*`,
+## 💡 ${uiLang === 'en' ? 'Two actions to take now' : 'Hai việc cụ thể nên làm ngay'}
+*(${uiLang === 'en' ? '1 sentence each — specific and actionable' : 'Mỗi việc 1 câu rõ ràng — ví dụ: "Thêm 1 câu mô tả cảm xúc khi..." hoặc "Thay từ X bằng từ Y vì..."'})*`,
         'btn-review'
       );
       if (r) openPanel(t('panel-review'), r, null);
@@ -4645,39 +4655,42 @@ ${tp ? `Topic: "${tp}"` : ''}
 ${text ? `Student's text so far:\n"""\n${text.substring(0, 400)}\n"""` : ''}
 Level: ${lvlSel.value}
 
+Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+
 Rules:
 - Silently match ALL examples to the level above — never mention the level in the output
 - NO em dash (—). Use comma or and/but/so instead
 - Keep it practical: words the student can use TODAY in their writing
 - Show words IN ACTION, not just definitions
+- LANGUAGE RULE: Write ALL section headings, labels, explanations, and translations in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 
 ---
 
-## 🔑 Từ vựng cần biết
+## 🔑 ${uiLang === 'en' ? 'Key vocabulary' : 'Từ vựng cần biết'}
 
-*(10–12 từ/cụm từ — thực dụng, phù hợp trình độ, gắn chủ đề)*
+*(${uiLang === 'en' ? '10–12 words/phrases — practical, level-appropriate, topic-relevant' : '10–12 từ/cụm từ — thực dụng, phù hợp trình độ, gắn chủ đề'})*
 
-**word / phrase** *(loại từ)* — nghĩa tiếng Việt
+**word / phrase** *(part of speech)* — ${uiLang === 'en' ? 'meaning in English' : 'nghĩa tiếng Việt'}
 > *Example sentence using this word, related to "${tp || 'the topic'}".*
 
 *(repeat for each word)*
 
 ---
 
-## 🔗 Từ nối hay dùng
+## 🔗 ${uiLang === 'en' ? 'Useful connectors' : 'Từ nối hay dùng'}
 
-*(Chỉ liệt kê 4–6 từ nối phù hợp trình độ, kèm ví dụ ngắn)*
+*(${uiLang === 'en' ? 'List 4–6 level-appropriate connectors with short examples' : 'Chỉ liệt kê 4–6 từ nối phù hợp trình độ, kèm ví dụ ngắn'})*
 
-- **and** — thêm ý: *My dad is tall and strong.*
-- *(tiếp tục với các từ nối phù hợp trình độ)*
+- **and** — ${uiLang === 'en' ? 'add an idea' : 'thêm ý'}: *My dad is tall and strong.*
+- *(${uiLang === 'en' ? 'continue with level-appropriate connectors' : 'tiếp tục với các từ nối phù hợp trình độ'})*
 
 ---
 
-## ✍️ 3 câu mẫu có thể dùng ngay
+## ✍️ ${uiLang === 'en' ? '3 sample sentences to use now' : '3 câu mẫu có thể dùng ngay'}
 
-> *Sentence 1 — đúng trình độ, đúng chủ đề*
-> *Sentence 2 — đúng trình độ, đúng chủ đề*
-> *Sentence 3 — đúng trình độ, đúng chủ đề*`,
+> *Sentence 1 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*
+> *Sentence 2 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*
+> *Sentence 3 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*`,
         'btn-vocab'
       );
       if (r) openPanel(t('panel-vocab'), r, null);
@@ -4688,7 +4701,29 @@ Rules:
       if (!text) return toast(t('no-text'));
       const tp = topic();
       const r = await callAI(
-        `Bạn là dịch giả tiếng Anh — tiếng Việt chuyên nghiệp, am hiểu văn hóa và cách người Việt thực sự nói chuyện.
+        uiLang === 'en'
+        ? `You are a professional English-Vietnamese translator who understands culture and how Vietnamese people naturally speak.
+
+Translate the following English text into Vietnamese.
+
+Topic: "${tp || 'not specified'}"
+${ctx()}
+
+⚠️ Required rules:
+1. Translate naturally as a Vietnamese person would write — do NOT translate word-for-word
+2. Use correct pronouns based on the relationship in the text:
+   - Writing about parents → use "bố/mẹ" (not "anh ấy/cô ấy")
+   - Writing about friends → use "bạn ấy/cậu ấy/bạn"
+   - First person → use "tôi/mình/em" matching the tone
+3. Preserve the emotion and tone of the original — a cheerful text stays cheerful, a formal text stays formal
+4. Keep proper names and place names unchanged
+5. If the original English has grammar errors, still translate the intended meaning
+6. Return only the complete translation — no explanations, no notes, no headings
+
+"""
+${text}
+"""`
+        : `Bạn là dịch giả tiếng Anh — tiếng Việt chuyên nghiệp, am hiểu văn hóa và cách người Việt thực sự nói chuyện.
 
 Hãy dịch đoạn văn tiếng Anh sau sang tiếng Việt.
 
@@ -5557,26 +5592,30 @@ ${text}
 
       const aud = document.getElementById('audSel').value;
 
+      const isVi = uiLang !== 'en';
       const prompt =
-        `You are a vocabulary assistant for a Vietnamese ESL student writing in English.
+        `You are a vocabulary assistant for an ESL student writing in English.
 The student wants to express this idea but doesn't know the right words:
 "${vi}"
 ${tp ? `Writing topic: "${tp}"` : ''}Level: ${level} | Tone: ${tone} | Audience: ${aud}
+Interface language: ${isVi ? 'Vietnamese' : 'English'}
+
+LANGUAGE RULE: Write ALL labels, headings, meanings, and examples in ${isVi ? 'Vietnamese' : 'English'}.
 
 Give PRACTICAL vocabulary they can use RIGHT NOW in their writing. Output EXACTLY:
 
-## ✏️ Từ / Cụm từ chính
-**word or phrase** — *nghĩa tiếng Việt* | *ví dụ ngắn dùng ngay*
+## ✏️ ${isVi ? 'Từ / Cụm từ chính' : 'Key words / phrases'}
+**word or phrase** — *${isVi ? 'nghĩa tiếng Việt' : 'meaning'}* | *${isVi ? 'ví dụ ngắn dùng ngay' : 'short example'}*
 (4–6 items: single words, collocations, phrasal verbs — most useful first)
 
-## 💡 Cách diễn đạt tự nhiên
+## 💡 ${isVi ? 'Cách diễn đạt tự nhiên' : 'Natural ways to say it'}
 > Natural English sentence 1
 > Natural English sentence 2
 > Natural English sentence 3
 (3 ready-to-use sentences matching their level, tone and audience)
 
-## 🔗 Thêm lựa chọn
-**alternative word/phrase** — *nghĩa* | *ví dụ*
+## 🔗 ${isVi ? 'Thêm lựa chọn' : 'More options'}
+**alternative word/phrase** — *${isVi ? 'nghĩa' : 'meaning'}* | *${isVi ? 'ví dụ' : 'example'}*
 (2–3 synonyms or related expressions)
 
 Rules: NO long explanations. Every example must be copy-paste ready. Match level (${level}) exactly — simple vocab for A/B levels, richer for C. Tone: ${tone}. Write for audience: ${aud}.`;
@@ -5592,7 +5631,7 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
   <div class="express-modal" id="expressModal" onclick="if(event.target===this)closeExpressModal()">
     <div class="express-box">
       <h3><i class="bi bi-book-half"></i> Diễn đạt tiếng Anh</h3>
-      <textarea class="express-input" id="expressInput" placeholder="Nhập ý muốn viết bằng tiếng Việt...&#10;Ví dụ: &quot;cảm thấy hồi hộp&quot;, &quot;mô tả người chăm chỉ&quot;, &quot;nói về việc thức khuya học bài&quot;..."></textarea>
+      <textarea class="express-input" id="expressInput" placeholder="Nhập ý muốn viết bằng tiếng Việt..."></textarea>
       <div class="express-actions">
         <button class="express-cancel" onclick="closeExpressModal()">Hủy</button>
         <button class="express-submit" id="expressSubmitBtn" onclick="submitExpress()">

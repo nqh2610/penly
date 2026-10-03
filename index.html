@@ -3666,41 +3666,31 @@ async function submitExpress(){
   const tp    = topic();
 
   const prompt =
-`You are an expert English expression coach for Vietnamese learners.
-The student wants to express this idea in English:
-"${vi}"
-${tp ? `\nContext/topic: "${tp}"` : ''}
-Level: ${level}
-Writing tone: ${tone}
+`ESL expression coach. Student idea (Vietnamese): "${vi}"
+${tp ? `Topic: "${tp}"` : ''}Level: ${level} | Tone: ${tone}
 
-Give a practical, ready-to-use reference. Follow this EXACT format:
+Output EXACTLY this format, no extra explanation:
 
-## 💬 Cách dịch tự nhiên
-*(2–3 natural English translations, from simple to more expressive)*
+## 💬 Dịch tự nhiên
 1. ...
 2. ...
 3. ...
 
-## 🔑 Từ vựng & cụm từ chính
-*(6–8 key words/phrases the student needs — include collocations and phrasal verbs)*
-**word/phrase** — nghĩa tiếng Việt | *example sentence*
+## 🔑 Từ vựng & cụm từ
+**word/phrase** — *nghĩa* | example sentence
+**word/phrase** — *nghĩa* | example sentence
+(6–8 items, include collocations & phrasal verbs)
 
-## 🗣️ Idiom & Slang phù hợp
-*(2–3 idioms or natural expressions matching the tone — skip if none fit)*
-**expression** — nghĩa | *example*
+## 🗣️ Idiom & Slang
+**expression** — *nghĩa* | example
+(2–3 items matching tone, skip section if none fit)
 
-## ✍️ Mẫu câu có thể dùng ngay
-*(3 ready-to-use sentences at the student's level, directly related to their idea)*
+## ✍️ Mẫu câu
 > Sentence 1
 > Sentence 2
 > Sentence 3
 
-Rules:
-- Match ALL examples to the level: ${level}
-- Match tone: ${tone}
-- NO em dash (—) in examples. Use comma or conjunction instead
-- Keep Vietnamese explanations brief
-- Make every example directly usable in their writing`;
+Rules: match level & tone exactly, NO em dash in sentences, examples must be directly usable`;
 
   const r = await callAI(prompt, 'btn-express');
   btn.disabled = false;

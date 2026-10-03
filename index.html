@@ -1277,7 +1277,7 @@ Gợi ý:
           <i class="bi bi-award"></i><span class="tb-label" id="lbl-btn-review" data-mobile="Nhận xét"> Nhận xét</span>
         </button>
         <button class="tb-btn c-express" id="btn-express" onclick="openExpressModal()">
-          <i class="bi bi-lightbulb"></i><span class="tb-label" id="lbl-btn-express" data-mobile="Diễn đạt"> Diễn đạt</span>
+          <i class="bi bi-chat-quote"></i><span class="tb-label" id="lbl-btn-express" data-mobile="Diễn đạt"> Diễn đạt</span>
         </button>
         <button class="tb-btn c-translate" id="btn-translate" onclick="callTranslate()">
           <i class="bi bi-translate"></i><span class="tb-label" id="lbl-btn-translate" data-mobile="Dịch"> Dịch Việt</span>
@@ -3705,11 +3705,9 @@ document.getElementById('expressInput')?.addEventListener('keydown', e => {
 <!-- ── EXPRESS MODAL ── -->
 <div class="express-modal" id="expressModal" onclick="if(event.target===this)closeExpressModal()">
   <div class="express-box">
-    <h3><i class="bi bi-lightbulb-fill"></i> Diễn đạt tiếng Anh</h3>
-    <p class="express-desc">Nhập ý muốn viết bằng tiếng Việt — AI sẽ gợi ý từ vựng, idiom, collocations và mẫu câu phù hợp.</p>
+    <h3><i class="bi bi-chat-quote-fill"></i> Diễn đạt tiếng Anh</h3>
     <textarea class="express-input" id="expressInput"
-      placeholder="Ví dụ: bố tôi rất chăm chỉ, anh ấy làm việc từ sáng đến tối..."></textarea>
-    <p style="font-size:.72rem;color:var(--muted);margin:0">Ctrl+Enter để tra nhanh</p>
+      placeholder="Nhập ý muốn viết bằng tiếng Việt..."></textarea>
     <div class="express-actions">
       <button class="express-cancel" onclick="closeExpressModal()">Hủy</button>
       <button class="express-submit" id="expressSubmitBtn" onclick="submitExpress()">

@@ -3778,6 +3778,7 @@ Gợi ý:
       'meta-llama/llama-4-scout-17b-16e-instruct': { text: '⚡ Cấp 3', cls: 'tier-3', title: 'Đang dùng AI cấp 3 do cấp trên bận' },
       'qwen/qwen3-8b': { text: '⚡ Cấp 4', cls: 'tier-4', title: 'Đang dùng AI cấp 4 do cấp trên bận' },
       'llama-3.1-8b-instant': { text: '⚡ Cấp 5', cls: 'tier-4', title: 'Đang dùng AI cấp 5 do cấp trên bận' },
+      '__cf__': { text: '☁ Dự phòng', cls: 'tier-4', title: 'Đang dùng AI dự phòng Cloudflare (tất cả model chính bận)' },
     };
 
     function setModelChip(model) {
@@ -3845,7 +3846,20 @@ Gợi ý:
             if (next) {
               continue; // try next model silently
             } else {
-              // all exhausted
+              // all Groq exhausted — try Cloudflare AI fallback
+              try {
+                const cfRes = await fetch(WORKER_URL.replace(/\/?$/, '') + '/cf-ai', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000 })
+                });
+                const cfData = await cfRes.json();
+                if (cfData.content) {
+                  if (!silent) setBusy(btnId, false, !noPanel);
+                  setModelChip('__cf__');
+                  return cfData.content;
+                }
+              } catch (_) {}
               if (!silent) setBusy(btnId, false, !noPanel);
               toast(uiLang === 'en' ? 'All models busy, please wait a moment.' : 'Tất cả model đang bận, vui lòng thử lại sau ít phút.', 'd');
               return null;

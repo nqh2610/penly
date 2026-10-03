@@ -4,6 +4,7 @@
  *
  * Bindings cần setup trong Cloudflare dashboard:
  *   PENLY_KEYS  — KV namespace (lưu Penly key hash → { name, groqKey, active, created })
+ *   AI          — Workers AI binding (fallback khi Groq hết quota)
  *
  * Environment variables:
  *   ADMIN_PASSWORD  — mật khẩu bảo vệ trang admin
@@ -18,6 +19,7 @@ const ALLOWED_MODELS = new Set([
   "llama-3.1-8b-instant",
 ]);
 const GROQ_MODEL_PRIMARY = "openai/gpt-oss-120b";
+const CF_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct";
 const ALLOWED_ORIGIN = "*";
 
 async function sha256(str) {
@@ -136,6 +138,36 @@ export default {
     // admin routes
     if (url.pathname.startsWith("/admin/")) {
       return handleAdmin(request, env, url);
+    }
+
+    // Cloudflare AI fallback endpoint
+    if (url.pathname === "/cf-ai" && request.method === "POST") {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+
+      const { penly_key, prompt, temperature, max_tokens } = body;
+
+      if (!penly_key || !/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(penly_key.trim().toUpperCase())) {
+        return json({ error: "Invalid license key format" }, 401);
+      }
+
+      const hash = await sha256(penly_key.trim().toUpperCase());
+      const entry = await env.PENLY_KEYS.get(hash, "json");
+      if (!entry) return json({ error: "License key not found or inactive" }, 401);
+      if (!entry.active) return json({ error: "License key is disabled" }, 401);
+
+      try {
+        const result = await env.AI.run(CF_AI_MODEL, {
+          messages: [{ role: "user", content: prompt }],
+          temperature: temperature ?? 0.7,
+          max_tokens: max_tokens ?? 3000,
+        });
+        const content = result?.response || result?.choices?.[0]?.message?.content;
+        if (content) return json({ content, cf_fallback: true });
+        return json({ error: "Cloudflare AI returned no content" }, 502);
+      } catch (e) {
+        return json({ error: "Cloudflare AI failed: " + e.message }, 502);
+      }
     }
 
     if (request.method !== "POST") {

@@ -3,193 +3,274 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Penly Admin — Quản lý Key</title>
+<title>Penly Admin</title>
 <style>
-  :root {
-    --accent: #4f46e5; --accent-h: #4338ca; --accent-soft: #eef2ff;
-    --danger: #dc2626; --danger-soft: #fef2f2;
-    --success: #16a34a; --success-soft: #f0fdf4;
-    --bg: #f8fafc; --surface: #fff; --border: #e2e8f0; --border2: #cbd5e1;
-    --text: #1e293b; --muted: #64748b;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0 }
-  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh }
+:root{
+  --accent:#4f46e5;--accent-h:#4338ca;--accent-soft:#eef2ff;
+  --danger:#dc2626;--danger-soft:#fef2f2;
+  --success:#16a34a;--success-soft:#f0fdf4;
+  --warn:#d97706;--warn-soft:#fffbeb;
+  --bg:#f1f5f9;--surface:#fff;--border:#e2e8f0;--border2:#cbd5e1;
+  --text:#1e293b;--muted:#64748b;--muted2:#94a3b8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:.875rem}
 
-  /* login */
-  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem }
-  .login-box { background: var(--surface); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.1); padding: 2rem; width: 100%; max-width: 360px }
-  .login-box h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: .25rem }
-  .login-box p { font-size: .85rem; color: var(--muted); margin-bottom: 1.5rem }
-  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1rem }
-  .field label { font-size: .8rem; font-weight: 600; color: var(--muted) }
-  .field input { border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: .92rem; outline: none; transition: .15s }
-  .field input:focus { border-color: var(--accent) }
-  .btn { padding: 9px 18px; border-radius: 8px; border: none; font-size: .88rem; font-weight: 600; cursor: pointer; transition: .15s; display: inline-flex; align-items: center; gap: 6px }
-  .btn-primary { background: var(--accent); color: #fff; width: 100%; justify-content: center }
-  .btn-primary:hover { background: var(--accent-h) }
-  .btn-danger { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger) }
-  .btn-danger:hover { background: var(--danger); color: #fff }
-  .btn-sm { padding: 5px 12px; font-size: .78rem }
-  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border) }
-  .btn-ghost:hover { border-color: var(--border2); color: var(--text) }
-  .err { color: var(--danger); font-size: .82rem; margin-top: .5rem; display: none }
+/* ── LOGIN ── */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.login-box{background:var(--surface);border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:2rem;width:100%;max-width:340px}
+.login-logo{font-size:1.25rem;font-weight:800;margin-bottom:.25rem}
+.login-logo em{color:var(--accent);font-style:normal}
+.login-sub{font-size:.8rem;color:var(--muted);margin-bottom:1.5rem}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:.875rem}
+.field label{font-size:.75rem;font-weight:600;color:var(--muted)}
+.field input{border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;font-size:.875rem;outline:none;transition:.15s;background:var(--bg)}
+.field input:focus{border-color:var(--accent);background:#fff}
+.btn{padding:8px 16px;border-radius:8px;border:none;font-size:.82rem;font-weight:600;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff;width:100%;justify-content:center}
+.btn-primary:hover{background:var(--accent-h)}
+.btn-sm{padding:4px 10px;font-size:.75rem}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-danger{background:var(--danger-soft);color:var(--danger);border:1px solid transparent}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-warn{background:var(--warn-soft);color:var(--warn);border:1px solid transparent}
+.btn-warn:hover{background:var(--warn);color:#fff}
+.btn-success{background:var(--success-soft);color:var(--success);border:1px solid transparent}
+.btn-success:hover{background:var(--success);color:#fff}
+.err{color:var(--danger);font-size:.78rem;margin-top:.5rem;display:none}
 
-  /* main layout */
-  .app { display: none; min-height: 100vh }
-  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: .75rem 1.5rem; display: flex; align-items: center; gap: 12px }
-  .topbar-brand { font-size: 1rem; font-weight: 800; color: var(--text) }
-  .topbar-brand em { color: var(--accent); font-style: normal }
-  .topbar-sub { font-size: .8rem; color: var(--muted); flex: 1 }
-  .main { max-width: 900px; margin: 0 auto; padding: 1.5rem }
+/* ── APP LAYOUT ── */
+.app{display:none;min-height:100vh;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:.6rem 1.25rem;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.topbar-logo{font-size:.95rem;font-weight:800}
+.topbar-logo em{color:var(--accent);font-style:normal}
+.topbar-sep{width:1px;height:1.2rem;background:var(--border);margin:0 2px}
+.topbar-title{font-size:.78rem;color:var(--muted);font-weight:500}
+.topbar-gap{flex:1}
 
-  /* stats */
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem }
-  .stat { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 1rem 1.25rem }
-  .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--accent) }
-  .stat-label { font-size: .78rem; color: var(--muted); margin-top: 2px }
+/* ── MAIN ── */
+.main{flex:1;padding:1rem 1.25rem;max-width:1100px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:.875rem}
 
-  /* add key form */
-  .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1.5rem }
-  .card-title { font-size: .92rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px }
-  .form-row { display: flex; gap: .75rem; flex-wrap: wrap }
-  .form-row .field { flex: 1; min-width: 160px; margin: 0 }
-  .form-row .field input { width: 100% }
+/* ── STATS ROW ── */
+.stats{display:flex;gap:.75rem}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;flex:1;display:flex;align-items:center;gap:.65rem}
+.stat-icon{width:2rem;height:2rem;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.stat-icon.total{background:var(--accent-soft);color:var(--accent)}
+.stat-icon.on{background:var(--success-soft);color:var(--success)}
+.stat-icon.off{background:var(--danger-soft);color:var(--danger)}
+.stat-body{min-width:0}
+.stat-num{font-size:1.3rem;font-weight:800;line-height:1}
+.stat-label{font-size:.7rem;color:var(--muted);margin-top:2px}
 
-  /* key table */
-  .table-wrap { overflow-x: auto }
-  table { width: 100%; border-collapse: collapse; font-size: .85rem }
-  th { text-align: left; padding: 8px 12px; font-size: .75rem; font-weight: 600; color: var(--muted); border-bottom: 2px solid var(--border); white-space: nowrap }
-  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle }
-  tr:last-child td { border: none }
-  tr:hover td { background: var(--bg) }
-  .badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 99px; font-size: .72rem; font-weight: 600 }
-  .badge-on { background: var(--success-soft); color: var(--success) }
-  .badge-off { background: var(--danger-soft); color: var(--danger) }
-  .key-mono { font-family: monospace; font-size: .82rem; background: var(--bg); padding: 3px 7px; border-radius: 5px; border: 1px solid var(--border); cursor: pointer; user-select: all }
-  .key-mono:hover { border-color: var(--accent); color: var(--accent) }
-  .actions { display: flex; gap: 6px; align-items: center }
-  .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: .88rem }
+/* ── ADD KEY PANEL ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.panel-head{padding:.6rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.panel-title{font-size:.82rem;font-weight:700;display:flex;align-items:center;gap:5px}
+.panel-body{padding:.875rem 1rem}
+.add-row{display:flex;gap:.625rem;align-items:flex-end;flex-wrap:wrap}
+.add-row .field{flex:1;min-width:140px;margin:0}
+.add-row .field input{width:100%}
+.new-key-box{display:none;margin-top:.75rem;background:var(--success-soft);border:1px solid #86efac;border-radius:8px;padding:.65rem .875rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.new-key-box.show{display:flex}
+.new-key-label{font-size:.75rem;color:var(--success);font-weight:600}
+.new-key-val{font-family:monospace;font-size:.95rem;font-weight:700;color:var(--success);cursor:pointer;letter-spacing:.5px}
+.new-key-val:hover{text-decoration:underline}
+.new-key-hint{font-size:.68rem;color:#16a34a99;margin-top:2px}
 
-  /* new key result */
-  .new-key-box { display: none; background: var(--success-soft); border: 1.5px solid var(--success); border-radius: 10px; padding: 1rem; margin-top: 1rem }
-  .new-key-box p { font-size: .82rem; color: var(--success); margin-bottom: .5rem; font-weight: 600 }
-  .new-key-val { font-family: monospace; font-size: 1.1rem; font-weight: 700; color: var(--success); letter-spacing: 1px; cursor: pointer; user-select: all }
-  .new-key-val:hover { text-decoration: underline }
+/* ── TABLE PANEL ── */
+.toolbar-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;gap:5px;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;background:var(--bg);flex:1;min-width:160px;max-width:260px;transition:.15s}
+.search-box:focus-within{border-color:var(--accent);background:#fff}
+.search-box input{border:none;background:transparent;outline:none;font-size:.82rem;width:100%;color:var(--text)}
+.search-box i{color:var(--muted2);font-size:.8rem;flex-shrink:0}
+.filter-tabs{display:flex;gap:3px}
+.ftab{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;font-size:.75rem;font-weight:600;cursor:pointer;color:var(--muted);transition:.12s}
+.ftab:hover{border-color:var(--border2);color:var(--text)}
+.ftab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.toolbar-gap{flex:1}
+.count-label{font-size:.75rem;color:var(--muted);white-space:nowrap}
 
-  /* toast */
-  .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(10px); background: #1e293b; color: #fff; padding: 9px 18px; border-radius: 8px; font-size: .85rem; opacity: 0; transition: .2s; pointer-events: none; z-index: 999; white-space: nowrap }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) }
+/* table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th{text-align:left;padding:7px 10px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--border);white-space:nowrap;background:var(--bg)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border:none}
+tr:hover td{background:#f8fafc}
+.col-num{width:2.5rem;color:var(--muted2);text-align:center}
+.col-name{font-weight:600;min-width:120px}
+.col-key{min-width:180px}
+.col-date{white-space:nowrap;color:var(--muted);min-width:90px}
+.col-status{white-space:nowrap;min-width:100px}
+.col-actions{white-space:nowrap;min-width:110px}
+.key-mono{font-family:monospace;font-size:.78rem;background:var(--bg);padding:2px 7px;border-radius:5px;border:1px solid var(--border);cursor:pointer;user-select:all;display:inline-block}
+.key-mono:hover{border-color:var(--accent);color:var(--accent)}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:600}
+.badge-on{background:var(--success-soft);color:var(--success)}
+.badge-off{background:var(--danger-soft);color:var(--danger)}
+.actions{display:flex;gap:4px}
+.empty-row td{text-align:center;padding:2.5rem;color:var(--muted);font-size:.82rem}
 
-  @media(max-width:600px) {
-    .stats { grid-template-columns: 1fr 1fr }
-    .form-row { flex-direction: column }
-    .topbar { padding: .75rem 1rem }
-    .main { padding: 1rem }
-  }
+/* pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;border-top:1px solid var(--border);gap:.5rem}
+.pag-info{font-size:.75rem;color:var(--muted)}
+.pag-btns{display:flex;gap:3px}
+.pag-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;font-size:.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:.12s}
+.pag-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.pag-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.pag-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* toast */
+.toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%) translateY(8px);background:#1e293b;color:#fff;padding:7px 16px;border-radius:8px;font-size:.82rem;opacity:0;transition:.2s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:600px){
+  .stats{flex-wrap:wrap}
+  .stat{flex:calc(50% - .375rem)}
+  .add-row{flex-direction:column}
+  .add-row .field{min-width:0}
+  .topbar{padding:.6rem .875rem}
+  .main{padding:.75rem .875rem}
+}
 </style>
 </head>
 <body>
 
-<!-- Login -->
+<!-- LOGIN -->
 <div class="login-wrap" id="loginWrap">
   <div class="login-box">
-    <h1>Penly<em>AI</em> Admin</h1>
-    <p>Đăng nhập để quản lý key học sinh</p>
-    <div class="field">
-      <label>Worker URL</label>
-      <input id="workerUrl" type="url" placeholder="https://penly-proxy.nqh2610.workers.dev" value="https://penly-proxy.nqh2610.workers.dev">
+    <div class="login-logo">Penly<em>AI</em> Admin</div>
+    <div class="login-sub">Quản lý key học sinh</div>
+    <div class="field"><label>Worker URL</label>
+      <input id="workerUrl" type="url" value="https://penly-proxy.nqh2610.workers.dev" placeholder="https://...workers.dev">
     </div>
-    <div class="field">
-      <label>Mật khẩu admin</label>
-      <input id="adminPw" type="password" placeholder="Nhập mật khẩu" onkeydown="if(event.key==='Enter')login()">
+    <div class="field"><label>Mật khẩu admin</label>
+      <input id="adminPw" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
     </div>
     <button class="btn btn-primary" onclick="login()">Đăng nhập</button>
     <div class="err" id="loginErr">Sai mật khẩu hoặc không kết nối được Worker.</div>
   </div>
 </div>
 
-<!-- App -->
+<!-- APP -->
 <div class="app" id="app">
   <div class="topbar">
-    <div class="topbar-brand">Penly<em>AI</em> Admin</div>
-    <div class="topbar-sub">Quản lý Penly Key</div>
+    <div class="topbar-logo">Penly<em>AI</em></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-title">Quản lý Key</div>
+    <div class="topbar-gap"></div>
     <button class="btn btn-ghost btn-sm" onclick="logout()">Đăng xuất</button>
   </div>
-  <div class="main">
 
+  <div class="main">
     <!-- Stats -->
     <div class="stats">
-      <div class="stat"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Tổng key</div></div>
-      <div class="stat"><div class="stat-num" id="statActive" style="color:var(--success)">—</div><div class="stat-label">Đang hoạt động</div></div>
-      <div class="stat"><div class="stat-num" id="statOff" style="color:var(--danger)">—</div><div class="stat-label">Đã tắt</div></div>
+      <div class="stat">
+        <div class="stat-icon total">⊞</div>
+        <div class="stat-body"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Tổng key</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-icon on">✓</div>
+        <div class="stat-body"><div class="stat-num" id="statActive" style="color:var(--success)">—</div><div class="stat-label">Hoạt động</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-icon off">✕</div>
+        <div class="stat-body"><div class="stat-num" id="statOff" style="color:var(--danger)">—</div><div class="stat-label">Đã tắt</div></div>
+      </div>
     </div>
 
     <!-- Add key -->
-    <div class="card">
-      <div class="card-title">➕ Tạo key mới</div>
-      <div class="form-row">
-        <div class="field">
-          <label>Tên học sinh</label>
-          <input id="newName" type="text" placeholder="Nguyễn Văn A">
-        </div>
-        <div class="field">
-          <label>Groq API Key</label>
-          <input id="newGroqKey" type="text" placeholder="gsk_...">
-        </div>
-        <div style="display:flex;align-items:flex-end">
-          <button class="btn btn-primary" onclick="createKey()" id="btnCreate">Tạo key</button>
-        </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">+ Tạo key mới</div>
       </div>
-      <div class="new-key-box" id="newKeyBox">
-        <p>✅ Key đã tạo — copy và gửi cho học sinh:</p>
-        <div class="new-key-val" id="newKeyVal" onclick="copyText(this.textContent)"></div>
-        <div style="font-size:.75rem;color:var(--success);margin-top:6px">Click để copy · Key chỉ hiện 1 lần này</div>
+      <div class="panel-body">
+        <div class="add-row">
+          <div class="field"><label>Tên học sinh</label>
+            <input id="newName" type="text" placeholder="Nguyễn Văn A">
+          </div>
+          <div class="field"><label>Groq API Key</label>
+            <input id="newGroqKey" type="text" placeholder="gsk_...">
+          </div>
+          <button class="btn btn-primary" id="btnCreate" onclick="createKey()" style="flex-shrink:0">Tạo key</button>
+        </div>
+        <div class="new-key-box" id="newKeyBox">
+          <div>
+            <div class="new-key-label">Key đã tạo — copy gửi cho học sinh:</div>
+            <div class="new-key-val" id="newKeyVal" onclick="copyText(this.textContent)"></div>
+            <div class="new-key-hint">Click để copy · Chỉ hiện 1 lần</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="copyText(document.getElementById('newKeyVal').textContent)">Copy</button>
+        </div>
       </div>
     </div>
 
     <!-- Key list -->
-    <div class="card">
-      <div class="card-title" style="justify-content:space-between">
-        <span>📋 Danh sách key</span>
-        <button class="btn btn-ghost btn-sm" onclick="loadKeys()">↻ Làm mới</button>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Danh sách key</div>
+        <div class="toolbar-row">
+          <div class="search-box">
+            <span>🔍</span>
+            <input id="searchInput" type="text" placeholder="Tìm tên học sinh..." oninput="onSearch()">
+          </div>
+          <div class="filter-tabs">
+            <button class="ftab active" data-f="all" onclick="setFilter('all')">Tất cả</button>
+            <button class="ftab" data-f="on" onclick="setFilter('on')">Hoạt động</button>
+            <button class="ftab" data-f="off" onclick="setFilter('off')">Đã tắt</button>
+          </div>
+          <div class="toolbar-gap"></div>
+          <span class="count-label" id="countLabel"></span>
+          <button class="btn btn-ghost btn-sm" onclick="loadKeys()">↻</button>
+        </div>
       </div>
       <div class="table-wrap">
-        <table id="keyTable">
+        <table>
           <thead>
             <tr>
-              <th>#</th>
-              <th>Tên học sinh</th>
-              <th>Penly Key</th>
-              <th>Ngày tạo</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
+              <th class="col-num">#</th>
+              <th class="col-name">Tên học sinh</th>
+              <th class="col-key">Penly Key</th>
+              <th class="col-date">Ngày tạo</th>
+              <th class="col-status">Trạng thái</th>
+              <th class="col-actions">Thao tác</th>
             </tr>
           </thead>
           <tbody id="keyBody">
-            <tr><td colspan="6" class="empty">Đang tải...</td></tr>
+            <tr class="empty-row"><td colspan="6">Đang tải...</td></tr>
           </tbody>
         </table>
       </div>
+      <div class="pagination" id="pagination" style="display:none">
+        <div class="pag-info" id="pagInfo"></div>
+        <div class="pag-btns" id="pagBtns"></div>
+      </div>
     </div>
-
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-let WORKER = '';
-let PASSWORD = '';
-let keysData = [];
+let WORKER = '', PASSWORD = '';
+let allKeys = [];
+let filtered = [];
+let currentFilter = 'all';
+let searchQ = '';
+let page = 1;
+const PAGE_SIZE = 15;
 
-function toast(msg, dur = 2200) {
+function toast(msg, dur = 2000) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), dur);
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), dur);
 }
 
 function copyText(text) {
+  if (!text || text === '(ẩn)') return;
   navigator.clipboard.writeText(text).then(() => toast('Đã copy!'));
 }
 
@@ -197,16 +278,13 @@ async function login() {
   const url = document.getElementById('workerUrl').value.trim().replace(/\/$/, '');
   const pw = document.getElementById('adminPw').value;
   if (!url || !pw) return;
-
   try {
-    const res = await fetch(url + '/admin/keys', {
-      headers: { 'X-Admin-Password': pw }
-    });
+    const res = await fetch(url + '/admin/keys', { headers: { 'X-Admin-Password': pw } });
     if (!res.ok) throw new Error();
-    WORKER = url;
-    PASSWORD = pw;
+    WORKER = url; PASSWORD = pw;
     document.getElementById('loginWrap').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    const app = document.getElementById('app');
+    app.style.display = 'flex';
     loadKeys();
   } catch {
     document.getElementById('loginErr').style.display = 'block';
@@ -224,51 +302,106 @@ function logout() {
 async function loadKeys() {
   const res = await fetch(WORKER + '/admin/keys', { headers: { 'X-Admin-Password': PASSWORD } });
   const data = await res.json();
-  keysData = data.keys || [];
-  renderKeys();
+  allKeys = (data.keys || []).sort((a, b) => new Date(b.created) - new Date(a.created));
+  applyFilter();
 }
 
-function renderKeys() {
-  const tbody = document.getElementById('keyBody');
-  const total = keysData.length;
-  const active = keysData.filter(k => k.active).length;
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.ftab').forEach(t => t.classList.toggle('active', t.dataset.f === f));
+  page = 1;
+  applyFilter();
+}
+
+function onSearch() {
+  searchQ = document.getElementById('searchInput').value.toLowerCase();
+  page = 1;
+  applyFilter();
+}
+
+function applyFilter() {
+  filtered = allKeys.filter(k => {
+    const matchFilter = currentFilter === 'all' || (currentFilter === 'on' && k.active) || (currentFilter === 'off' && !k.active);
+    const matchSearch = !searchQ || (k.name || '').toLowerCase().includes(searchQ);
+    return matchFilter && matchSearch;
+  });
+
+  const total = allKeys.length;
+  const active = allKeys.filter(k => k.active).length;
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statActive').textContent = active;
   document.getElementById('statOff').textContent = total - active;
+  document.getElementById('countLabel').textContent = filtered.length + ' kết quả';
 
-  if (!total) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">Chưa có key nào. Tạo key đầu tiên ở trên.</td></tr>';
-    return;
+  renderPage();
+}
+
+function renderPage() {
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (page > totalPages) page = totalPages;
+  const start = (page - 1) * PAGE_SIZE;
+  const slice = filtered.slice(start, start + PAGE_SIZE);
+
+  const tbody = document.getElementById('keyBody');
+  if (!slice.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Không có key nào.</td></tr>';
+  } else {
+    tbody.innerHTML = slice.map((k, i) => {
+      const num = start + i + 1;
+      const date = k.created ? new Date(k.created).toLocaleDateString('vi-VN') : '—';
+      const badge = k.active
+        ? '<span class="badge badge-on">✓ Hoạt động</span>'
+        : '<span class="badge badge-off">✕ Tắt</span>';
+      const pk = k.penlyKey || '(ẩn)';
+      return `<tr>
+        <td class="col-num">${num}</td>
+        <td class="col-name">${k.name || '—'}</td>
+        <td class="col-key"><span class="key-mono" onclick="copyText('${pk}')" title="Click để copy">${pk}</span></td>
+        <td class="col-date">${date}</td>
+        <td class="col-status">${badge}</td>
+        <td class="col-actions"><div class="actions">
+          <button class="btn btn-sm ${k.active ? 'btn-warn' : 'btn-success'}" onclick="toggleKey('${k.hash}',${k.active})">${k.active ? 'Tắt' : 'Bật'}</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteKey('${k.hash}','${k.name}')">Xóa</button>
+        </div></td>
+      </tr>`;
+    }).join('');
   }
 
-  tbody.innerHTML = keysData.map((k, i) => {
-    const date = k.created ? new Date(k.created).toLocaleDateString('vi-VN') : '—';
-    const badge = k.active
-      ? '<span class="badge badge-on">✓ Hoạt động</span>'
-      : '<span class="badge badge-off">✗ Tắt</span>';
-    const penlyKeyDisplay = k.penlyKey || '(ẩn)';
-    return `<tr>
-      <td>${i + 1}</td>
-      <td><strong>${k.name || '—'}</strong></td>
-      <td><span class="key-mono" onclick="copyText('${k.penlyKey || ''}')" title="Click để copy">${penlyKeyDisplay}</span></td>
-      <td>${date}</td>
-      <td>${badge}</td>
-      <td class="actions">
-        <button class="btn btn-ghost btn-sm" onclick="toggleKey('${k.hash}', ${k.active})">${k.active ? 'Tắt' : 'Bật'}</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteKey('${k.hash}', '${k.name}')">Xóa</button>
-      </td>
-    </tr>`;
-  }).join('');
+  // pagination
+  const pag = document.getElementById('pagination');
+  const pagInfo = document.getElementById('pagInfo');
+  const pagBtns = document.getElementById('pagBtns');
+  if (totalPages <= 1) {
+    pag.style.display = 'none';
+  } else {
+    pag.style.display = 'flex';
+    pagInfo.textContent = `Trang ${page}/${totalPages} · ${filtered.length} key`;
+    let btns = `<button class="pag-btn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+    for (let p = 1; p <= totalPages; p++) {
+      if (totalPages <= 7 || p === 1 || p === totalPages || Math.abs(p - page) <= 1) {
+        btns += `<button class="pag-btn ${p===page?'active':''}" onclick="goPage(${p})">${p}</button>`;
+      } else if (Math.abs(p - page) === 2) {
+        btns += `<button class="pag-btn" disabled>…</button>`;
+      }
+    }
+    btns += `<button class="pag-btn" onclick="goPage(${page+1})" ${page===totalPages?'disabled':''}>›</button>`;
+    pagBtns.innerHTML = btns;
+  }
+}
+
+function goPage(p) {
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  if (p < 1 || p > totalPages) return;
+  page = p;
+  renderPage();
 }
 
 async function createKey() {
   const name = document.getElementById('newName').value.trim();
   const groqKey = document.getElementById('newGroqKey').value.trim();
   if (!name || !groqKey) { toast('Vui lòng nhập đủ tên và Groq key'); return; }
-
   const btn = document.getElementById('btnCreate');
   btn.disabled = true; btn.textContent = 'Đang tạo...';
-
   const res = await fetch(WORKER + '/admin/keys', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
@@ -276,10 +409,10 @@ async function createKey() {
   });
   const data = await res.json();
   btn.disabled = false; btn.textContent = 'Tạo key';
-
   if (data.penlyKey) {
+    const box = document.getElementById('newKeyBox');
     document.getElementById('newKeyVal').textContent = data.penlyKey;
-    document.getElementById('newKeyBox').style.display = 'block';
+    box.classList.add('show');
     document.getElementById('newName').value = '';
     document.getElementById('newGroqKey').value = '';
     toast('Tạo key thành công!');
@@ -289,23 +422,23 @@ async function createKey() {
   }
 }
 
-async function toggleKey(hash, currentActive) {
+async function toggleKey(hash, cur) {
   await fetch(WORKER + '/admin/keys/' + hash, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
-    body: JSON.stringify({ active: !currentActive }),
+    body: JSON.stringify({ active: !cur }),
   });
-  toast(currentActive ? 'Đã tắt key' : 'Đã bật key');
+  toast(cur ? 'Đã tắt key' : 'Đã bật key');
   loadKeys();
 }
 
 async function deleteKey(hash, name) {
-  if (!confirm(`Xóa key của "${name}"?\nHọc sinh sẽ không dùng được Penly nữa.`)) return;
+  if (!confirm(`Xóa key của "${name}"?`)) return;
   await fetch(WORKER + '/admin/keys/' + hash, {
     method: 'DELETE',
     headers: { 'X-Admin-Password': PASSWORD },
   });
-  toast('Đã xóa key');
+  toast('Đã xóa');
   loadKeys();
 }
 </script>

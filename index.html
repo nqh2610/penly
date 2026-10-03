@@ -5300,9 +5300,6 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
       if (r) openPanel('💡 Diễn đạt tiếng Anh', r, null);
     }
 
-    document.getElementById('expressInput')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitExpress(); }
-    });
   </script>
   <!-- ── EXPRESS MODAL ── -->
   <div class="express-modal" id="expressModal" onclick="if(event.target===this)closeExpressModal()">

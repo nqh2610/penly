@@ -101,7 +101,14 @@ export default {
 
       const errMsg = data.error?.message || "Unknown error from AI";
       const isRateLimit = groqRes.status === 429 || errMsg.toLowerCase().includes("rate limit");
-      return json({ error: errMsg, rate_limited: isRateLimit }, 502);
+      // also fallback on model not found / access errors
+      const shouldFallback = isRateLimit
+        || groqRes.status === 404
+        || errMsg.toLowerCase().includes("does not exist")
+        || errMsg.toLowerCase().includes("not found")
+        || errMsg.toLowerCase().includes("do not have access")
+        || errMsg.toLowerCase().includes("model_not_found");
+      return json({ error: errMsg, rate_limited: shouldFallback }, 502);
 
     } catch (e) {
       return json({ error: "Failed to reach AI service" }, 502);

@@ -2198,7 +2198,13 @@ async function callAI(prompt, btnId, silent=false, noPanel=false){
       }
 
       if(d.rate_limited){
-        _modelCooldown[model] = Date.now() + 2 * 60 * 1000;
+        // permanent-ish cooldown for model-not-found errors, 2min for rate limits
+        const isPermError = d.error && (
+          d.error.toLowerCase().includes("does not exist") ||
+          d.error.toLowerCase().includes("not found") ||
+          d.error.toLowerCase().includes("do not have access")
+        );
+        _modelCooldown[model] = Date.now() + (isPermError ? 24*60*60*1000 : 2*60*1000);
         const next = MODEL_CHAIN[i + 1];
         if(next){
           continue; // try next model silently

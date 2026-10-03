@@ -4167,72 +4167,194 @@ Rules:
     // ══ AI FEATURES ══
     async function callOutline() {
       const tp = topic(); if (!tp) return toast(t('no-topic'));
+      const level = lvlSel.value;
+      const tone = toneSel.value;
+      const aud = audSel.value;
+
+      // Determine depth by level
+      const isAdvanced = ['B2','C1','C2'].includes(level);
+      const isMid = ['B1','B1+'].includes(level);
+      const isBasic = ['A1','A2','A2+'].includes(level);
+
       const r = await callAI(
-        `You are an experienced ESL teacher creating a writing outline for a student.
+        `You are an experienced ESL writing coach creating a detailed outline for a student.
 
 Topic: "${tp}"
-${ctx()}
+Level: ${level} | Tone: ${tone} | Audience: ${aud}
 
-Rules:
-- ALL English examples must match the level exactly
-- Examples must be specific to "${tp}", not generic
+STRUCTURE RULES by level:
+- A1/A2: Simple 3-part outline. Short sentences. 2 body paragraphs max. 2–3 sentences each. Basic vocabulary only.
+- A2+/B1: Standard 3-part outline. 2–3 body paragraphs. 3–4 sentences each. Common connectors.
+- B1+/B2: Full outline with topic/supporting/concluding sentences per paragraph. 3 body paragraphs. 4–5 sentences. Varied connectors and vocabulary.
+- C1/C2: Academic outline. 3–4 body paragraphs. 5–6 sentences. Include counterargument paragraph if appropriate. Sophisticated vocabulary and transitions.
+
+TONE rules:
+- Formal: academic/professional vocabulary, no contractions, complex sentences
+- Semi-formal: balanced, clear, polite
+- Informal/Casual: natural, friendly, simple expressions, ok to use contractions
+
+AUDIENCE rules:
+- Trẻ em/Học sinh: simple words, relatable examples (school, family, daily life)
+- Bạn bè/Đồng nghiệp: conversational, practical examples
+- Giáo viên/Người lớn: respectful, mature topics
+- Công chúng/Độc giả chung: clear and accessible to all
+
+FORMATTING RULES:
+- ALL English examples must match the level and tone exactly
+- Examples must be specific to "${tp}"
 - NO em dash (—). Use comma or and/but/so instead
-- "Câu mẫu" MUST use blockquote format: > *sentence* — this makes English stand out visually
-- "Từ hay dùng" words must be bold, meanings in italic Vietnamese
+- "Câu mẫu" MUST use blockquote: > *sentence*
+- Bold vocab words, italic Vietnamese meaning
 
 ---
 
 ## 1️⃣ Mở bài
-
-Mở bài gồm 2 phần: **câu hook** (dẫn dắt, gây tò mò) + **câu thesis** (giới thiệu bài viết về gì). KHÔNG kể chi tiết — đó là việc của thân bài.
-
-- **Câu hook — chọn 1:**
-> *1. (câu hook — hỏi, nhận xét chung, hoặc cảm xúc mở đầu, đúng trình độ)*
-> *2. (câu hook — cách khác)*
-- **Câu thesis:** (1 câu giới thiệu bài viết sẽ nói về điều gì — không kể chi tiết)
-> *(ví dụ câu thesis đúng trình độ)*
+${isBasic ? `
+Mở bài gồm 2 câu: **câu giới thiệu** + **câu thesis** ngắn gọn.
+- **Câu giới thiệu:**
+> *(1 câu mở đơn giản về chủ đề, đúng trình độ ${level})*
+- **Câu thesis:**
+> *(1 câu nói bài viết về điều gì)*
+` : isMid ? `
+Mở bài gồm: **hook** + **background** + **thesis**.
+- **Hook:** (1 câu dẫn dắt — câu hỏi hoặc nhận xét chung)
+> *1. (hook option 1)*
+> *2. (hook option 2)*
+- **Background:** (1 câu giới thiệu bối cảnh)
+- **Thesis:**
+> *(1 câu nêu rõ nội dung chính)*
+` : `
+Mở bài gồm: **hook** (gây ấn tượng) + **background** (bối cảnh) + **thesis** (lập trường/mục đích).
+- **Hook — chọn 1:**
+> *1. (hook — provocative question, striking fact, or bold statement)*
+> *2. (hook — alternative approach)*
+- **Background:** (1–2 câu cung cấp bối cảnh, paraphrase đề bài bằng từ của mình)
+- **Thesis statement:**
+> *(1 câu nêu rõ lập trường hoặc mục đích — specific, not vague)*
+- **Lưu ý:** Thesis phải trả lời "Bài viết này sẽ chứng minh/thảo luận/mô tả điều gì?"
+`}
 
 ---
 
 ## 2️⃣ Thân bài
 
 ### 📌 Đoạn 1 — [tên ý chính cụ thể]
-- **Gợi ý nội dung:** (2–3 câu hỏi tiếng Việt giúp học sinh nghĩ ra ý)
-- **Viết:** (số câu, ví dụ: 2–3 câu)
+${isBasic ? `
+- **Viết gì:** (2–3 câu hỏi tiếng Việt gợi ý nội dung)
+- **Số câu:** 2–3 câu
 - **Câu mẫu:**
-> *Sentence in English here.*
+> *Simple sentence about "${tp}".*
+- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*
+- **Từ nối:** First, Also, And
+` : isMid ? `
+- **Topic sentence:** (câu mở đoạn — nêu ý chính)
+> *(ví dụ topic sentence)*
+- **Gợi ý nội dung:** (2–3 câu hỏi tiếng Việt)
+- **Số câu:** 3–4 câu
+- **Câu mẫu supporting:**
+> *Supporting sentence with reason or example.*
 - **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*
-- **Từ nối:** (2–3 từ phù hợp)
+- **Từ nối:** (First / In addition / For example / Therefore)
+` : `
+- **Topic sentence:** (câu mở đoạn — luận điểm rõ ràng)
+> *(ví dụ topic sentence)*
+- **Supporting sentences:** (2–3 câu lý do + phân tích)
+- **Evidence/Example:** (dẫn chứng hoặc ví dụ cụ thể)
+> *Example or evidence sentence.*
+- **Concluding/Transition:** (câu kết đoạn hoặc chuyển ý)
+> *(ví dụ câu chuyển ý sang đoạn 2)*
+- **Số câu:** ${isAdvanced ? '5–6' : '4–5'} câu
+- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*, **word4** *(nghĩa)*
+- **Từ nối:** (Furthermore / As a result / This suggests that / Notably)
+`}
 
 ### 📌 Đoạn 2 — [tên ý chính khác]
-- **Gợi ý nội dung:** (2–3 câu hỏi tiếng Việt)
-- **Viết:** (số câu)
+${isBasic ? `
+- **Viết gì:** (2–3 câu hỏi tiếng Việt)
+- **Số câu:** 2–3 câu
 - **Câu mẫu:**
-> *Sentence in English here.*
-- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*
-- **Từ nối:** (2–3 từ)
-
-### 📌 Đoạn 3 — [tên ý chính]
+> *Another simple sentence about "${tp}".*
+- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*
+- **Từ nối:** Next, Then, But
+` : isMid ? `
+- **Topic sentence:**
+> *(ví dụ topic sentence)*
 - **Gợi ý nội dung:** (2–3 câu hỏi tiếng Việt)
-- **Viết:** (số câu)
-- **Câu mẫu:**
-> *Sentence in English here.*
+- **Số câu:** 3–4 câu
+- **Câu mẫu supporting:**
+> *Supporting sentence.*
 - **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*
-- **Từ nối:** (2–3 từ)
-
-IMPORTANT: Only include Đoạn 3 if the level is B1 or above. For A1/A2, stop at Đoạn 2.
+- **Từ nối:** (However / On the other hand / Additionally / As a result)
+` : `
+- **Topic sentence:**
+> *(ví dụ topic sentence)*
+- **Supporting sentences + Evidence:**
+> *Evidence or analysis sentence.*
+- **Concluding/Transition:**
+> *(ví dụ câu chuyển ý sang đoạn 3)*
+- **Số câu:** ${isAdvanced ? '5–6' : '4–5'} câu
+- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*, **word4** *(nghĩa)*
+- **Từ nối:** (In contrast / Moreover / Consequently / It is worth noting that)
+`}
+${!isBasic ? `
+### 📌 Đoạn 3 — [tên ý chính thứ 3]
+${isMid ? `
+- **Topic sentence:**
+> *(ví dụ topic sentence)*
+- **Gợi ý nội dung:** (2–3 câu hỏi tiếng Việt)
+- **Số câu:** 3–4 câu
+- **Câu mẫu:**
+> *Supporting sentence.*
+- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*
+- **Từ nối:** (Finally / Most importantly / In addition)
+` : `
+- **Topic sentence:**
+> *(ví dụ topic sentence)*
+- **Supporting sentences + Evidence:**
+> *Evidence sentence.*
+- **Concluding/Transition:**
+> *(câu kết đoạn hoặc chuyển sang kết bài)*
+- **Số câu:** ${isAdvanced ? '5–6' : '4–5'} câu
+- **Từ hay dùng:** **word1** *(nghĩa)*, **word2** *(nghĩa)*, **word3** *(nghĩa)*, **word4** *(nghĩa)*
+- **Từ nối:** (Ultimately / Beyond this / In light of this / This reinforces the idea that)
+`}` : ''}
+${isAdvanced ? `
+### 📌 Đoạn 4 — Phản biện (Counterargument) *(nếu phù hợp với chủ đề)*
+- **Counterargument:** (nêu quan điểm đối lập)
+> *(ví dụ câu counterargument)*
+- **Refutation:** (bác bỏ hoặc giới hạn lập luận đó)
+> *(ví dụ câu refutation)*
+- **Số câu:** 4–5 câu
+- **Từ hay dùng:** **admittedly** *(thừa nhận rằng)*, **nevertheless** *(tuy nhiên)*, **despite this** *(mặc dù vậy)*
+` : ''}
 
 ---
 
 ## 3️⃣ Kết bài
-
-Kết bài gồm 2 phần: **tóm tắt ngắn** (nhắc lại ý chính, không lặp nguyên văn) + **câu cảm xúc/ý nghĩa** (điều bài viết muốn để lại). KHÔNG thêm ý mới.
-
-- **Câu tóm tắt:** (1 câu nhắc lại ý chính theo cách khác)
-> *(ví dụ câu tóm tắt đúng trình độ)*
-- **Câu kết — chọn 1:**
-> *1. (câu kết — cảm xúc hoặc ý nghĩa, đúng trình độ)*
-> *2. (câu kết — cách khác)*`,
+${isBasic ? `
+Kết bài gồm 2 câu: **nhắc lại ý chính** + **câu cảm xúc**.
+- **Câu tóm tắt:**
+> *(1 câu nhắc lại chủ đề theo cách khác)*
+- **Câu kết:**
+> *(1 câu cảm xúc hoặc lời nhắn nhủ đơn giản)*
+` : isMid ? `
+Kết bài gồm: **restate thesis** + **summary** + **final thought**.
+- **Restate thesis:** (diễn đạt lại thesis bằng từ khác)
+> *(ví dụ)*
+- **Summary:** (1–2 câu tóm tắt ý chính thân bài)
+- **Final thought — chọn 1:**
+> *1. (lời khuyên hoặc câu hỏi mở)*
+> *2. (dự đoán hoặc lời nhắn nhủ)*
+` : `
+Kết bài gồm: **restate thesis** + **summary of main points** + **final thought** (broader implication/call to action).
+- **Restate thesis:** (diễn đạt lại thesis — KHÔNG sao chép nguyên văn)
+> *(ví dụ restate)*
+- **Summary:** (2–3 câu tóm tắt các luận điểm chính, không lặp chi tiết)
+- **Final thought — chọn 1:**
+> *1. (broader implication, prediction, or recommendation)*
+> *2. (call to action or thought-provoking closing)*
+- **Lưu ý:** Kết bài KHÔNG được thêm ý mới. Chỉ khép lại và nâng tầm ý đã có.
+`}`,
         'btn-outline'
       );
       if (r) {

@@ -5269,31 +5269,28 @@ ${text}
       const tp = topic();
 
       const prompt =
-        `ESL expression coach. Student idea (Vietnamese): "${vi}"
-${tp ? `Topic: "${tp}"` : ''}Level: ${level} | Tone: ${tone}
+        `You are a vocabulary assistant for a Vietnamese ESL student writing in English.
+The student wants to express this idea but doesn't know the right words:
+"${vi}"
+${tp ? `Writing topic: "${tp}"` : ''}Level: ${level} | Tone: ${tone}
 
-Output EXACTLY this format, no extra explanation:
+Give PRACTICAL vocabulary they can use RIGHT NOW in their writing. Output EXACTLY:
 
-## 💬 Dịch tự nhiên
-1. ...
-2. ...
-3. ...
+## ✏️ Từ / Cụm từ chính
+**word or phrase** — *nghĩa tiếng Việt* | *ví dụ ngắn dùng ngay*
+(4–6 items: single words, collocations, phrasal verbs — most useful first)
 
-## 🔑 Từ vựng & cụm từ
-**word/phrase** — *nghĩa* | example sentence
-**word/phrase** — *nghĩa* | example sentence
-(6–8 items, include collocations & phrasal verbs)
+## 💡 Cách diễn đạt tự nhiên
+> Natural English sentence 1
+> Natural English sentence 2
+> Natural English sentence 3
+(3 ready-to-use sentences matching their level and tone)
 
-## 🗣️ Idiom & Slang
-**expression** — *nghĩa* | example
-(2–3 items matching tone, skip section if none fit)
+## 🔗 Thêm lựa chọn
+**alternative word/phrase** — *nghĩa* | *ví dụ*
+(2–3 synonyms or related expressions)
 
-## ✍️ Mẫu câu
-> Sentence 1
-> Sentence 2
-> Sentence 3
-
-Rules: match level & tone exactly, NO em dash in sentences, examples must be directly usable`;
+Rules: NO long explanations. Every example must be copy-paste ready. Match level (${level}) exactly — simple vocab for A/B levels, richer for C. Tone: ${tone}.`;
 
       const r = await callAI(prompt, 'btn-express');
       btn.disabled = false;
@@ -5309,7 +5306,7 @@ Rules: match level & tone exactly, NO em dash in sentences, examples must be dir
   <div class="express-modal" id="expressModal" onclick="if(event.target===this)closeExpressModal()">
     <div class="express-box">
       <h3><i class="bi bi-book-half"></i> Diễn đạt tiếng Anh</h3>
-      <textarea class="express-input" id="expressInput" placeholder="Nhập ý muốn viết bằng tiếng Việt..."></textarea>
+      <textarea class="express-input" id="expressInput" placeholder="Nhập ý muốn viết bằng tiếng Việt...&#10;Ví dụ: &quot;cảm thấy hồi hộp&quot;, &quot;mô tả người chăm chỉ&quot;, &quot;nói về việc thức khuya học bài&quot;..."></textarea>
       <div class="express-actions">
         <button class="express-cancel" onclick="closeExpressModal()">Hủy</button>
         <button class="express-submit" id="expressSubmitBtn" onclick="submitExpress()">

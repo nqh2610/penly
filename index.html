@@ -4170,6 +4170,7 @@ Rules:
       const level = lvlSel.value;
       const tone = toneSel.value;
       const aud = audSel.value;
+      const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
 
       // Determine depth by level
       const isAdvanced = ['B2','C1','C2'].includes(level);
@@ -4181,6 +4182,9 @@ Rules:
 
 Topic: "${tp}"
 Level: ${level} | Tone: ${tone} | Audience: ${aud}
+Interface language: ${lang}
+
+CRITICAL LANGUAGE RULE: Write ALL labels, section titles, explanations, guiding questions, notes, and instructions in ${lang}. Only English example sentences stay in English (in blockquotes).
 
 STRUCTURE RULES by level:
 - A1/A2: Simple 3-part outline. Short sentences. 2 body paragraphs max. 2–3 sentences each. Basic vocabulary only.

@@ -5273,13 +5273,31 @@ ${text}
         'btn-translate'
       );
       if (r) {
-        // Merge single line-breaks into spaces; preserve double line-breaks (paragraph breaks)
-        const merged = r
+        // Count paragraphs in source
+        const srcParas = text.split(/\n{2,}/).filter(p => p.trim());
+        const nParas = srcParas.length;
+
+        // Flatten all lines from AI into sentences
+        const sentences = r
           .replace(/\r\n/g, '\n')
-          .replace(/\n{3,}/g, '\n\n')          // normalize 3+ newlines to double
-          .replace(/([^\n])\n(?!\n)/g, '$1 ')   // single \n → space
-          .trim();
-        openPanel(t('panel-translate'), merged, null);
+          .split('\n')
+          .map(l => l.trim())
+          .filter(Boolean);
+
+        let translated;
+        if (nParas <= 1 || sentences.length <= nParas) {
+          // single paragraph or not enough sentences to split
+          translated = sentences.join(' ');
+        } else {
+          // distribute sentences evenly across paragraphs
+          const perPara = Math.ceil(sentences.length / nParas);
+          const paras = [];
+          for (let i = 0; i < nParas; i++) {
+            paras.push(sentences.slice(i * perPara, (i + 1) * perPara).join(' '));
+          }
+          translated = paras.join('\n\n');
+        }
+        openPanel(t('panel-translate'), translated, null);
       }
     }
 

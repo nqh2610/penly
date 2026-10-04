@@ -980,6 +980,11 @@
       box-shadow: 0 -2px 8px rgba(0, 0, 0, .04);
     }
 
+    /* On desktop tb-row is a transparent passthrough — children flow inline */
+    .tb-row {
+      display: contents;
+    }
+
     .toolbar::-webkit-scrollbar {
       height: 0
     }
@@ -1067,8 +1072,228 @@
       flex-shrink: 0
     }
 
-    /* ── Express modal ── */
-    .express-modal {
+    .tb-sep2 {
+      width: 1px;
+      height: 1.4rem;
+      background: var(--border);
+      align-self: center;
+      flex-shrink: 0
+    }
+
+    /* ── TTS ── */
+    .tts-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .c-tts {
+      color: var(--muted);
+    }
+
+    .c-tts.speaking {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #f59e0b;
+      animation: tts-pulse 1.4s ease-in-out infinite;
+    }
+
+    .c-tts.paused {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #3b82f6;
+    }
+
+    @keyframes tts-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .65; }
+    }
+
+    .tts-menu {
+      display: none;
+      position: fixed;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+      z-index: 9000;
+      min-width: 180px;
+    }
+
+    .tts-menu.open {
+      display: block;
+    }
+
+    .tts-menu button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 0.55rem 0.9rem;
+      border: none;
+      background: none;
+      font-size: .82rem;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      text-align: left;
+      transition: .12s;
+    }
+
+    .tts-menu button:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .tts-menu button i {
+      font-size: .85rem;
+      flex-shrink: 0;
+    }
+
+    .tts-menu-sep {
+      height: 1px;
+      background: var(--border);
+      margin: 2px 0;
+    }
+
+    .tts-highlight {
+      background: #fef08a;
+      border-radius: 2px;
+    }
+
+    /* ── Context Menu ── */
+    .ctx-menu {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      padding: 5px;
+      min-width: 180px;
+      animation: ctx-in .1s ease;
+    }
+
+    @keyframes ctx-in {
+      from { opacity: 0; transform: scale(.95); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .ctx-menu.open { display: block; }
+
+    .ctx-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 0.5rem 0.85rem;
+      border: none;
+      background: none;
+      font-size: .84rem;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      border-radius: 8px;
+      text-align: left;
+      transition: background .1s, color .1s;
+      white-space: nowrap;
+    }
+
+    .ctx-item:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .ctx-item i {
+      font-size: .9rem;
+      flex-shrink: 0;
+      width: 1rem;
+      text-align: center;
+    }
+
+    .ctx-item:disabled {
+      opacity: .35;
+      pointer-events: none;
+    }
+
+    .ctx-sep {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    .ctx-sub { position: relative; }
+    .ctx-sub > .ctx-item::after { content: '›'; margin-left: auto; font-size: 1rem; opacity: .5; }
+    .ctx-submenu {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      padding: 5px;
+      min-width: 180px;
+      animation: ctx-in .1s ease;
+    }
+    .ctx-submenu.open { display: block; }
+
+    /* ── Selection Toolbar (mobile floating) ── */
+    .sel-toolbar {
+      display: none;
+      position: fixed;
+      z-index: 9998;
+      background: #1f2937;
+      border-radius: 10px;
+      padding: 4px 6px;
+      gap: 2px;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,.35);
+      animation: ctx-in .12s ease;
+      /* arrow pointing down */
+    }
+
+    .sel-toolbar::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #1f2937;
+    }
+
+    .sel-toolbar.show { display: flex; }
+
+    .sel-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.4rem;
+      height: 2.4rem;
+      border: none;
+      background: none;
+      color: #f9fafb;
+      border-radius: 7px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background .1s;
+      flex-shrink: 0;
+    }
+
+    .sel-btn:hover, .sel-btn:active {
+      background: rgba(255,255,255,.15);
+    }
+
+    .sel-sep {
+      width: 1px;
+      height: 1.4rem;
+      background: rgba(255,255,255,.2);
+      margin: 0 2px;
+      flex-shrink: 0;
+    }
+
+
       display: none;
       position: fixed;
       inset: 0;
@@ -2388,21 +2613,26 @@
         flex-shrink: 0;
         z-index: 45;
         display: flex;
-        flex-wrap: nowrap;
-        justify-content: space-around;
-        padding: 6px 4px;
-        padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+        flex-direction: column;
         gap: 3px;
+        padding: 5px 4px;
+        padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px));
         background: var(--surface);
         border-top: 1px solid var(--border);
         box-shadow: 0 -2px 8px rgba(0, 0, 0, .08);
+      }
+
+      .tb-row {
+        display: flex;
+        gap: 3px;
+        justify-content: space-around;
       }
 
       .tb-btn {
         flex: 1;
         min-width: 0;
         padding: 0;
-        height: 2.75rem;
+        height: 2.5rem;
         border-radius: 10px;
         display: flex;
         align-items: center;
@@ -2421,9 +2651,23 @@
         display: none
       }
 
-      #btn-outline {
-        flex: 1.5
+      /* Row 2 buttons slightly smaller to save space */
+      .tb-row-2 .tb-btn {
+        height: 2.3rem;
+        border-radius: 8px;
       }
+
+      /* tts-wrap fills like a regular flex child on mobile */
+      .tb-row-2 .tts-wrap {
+        flex: 1;
+        display: flex;
+      }
+      .tb-row-2 .tts-wrap > .tb-btn {
+        flex: 1;
+      }
+
+
+
 
 
 
@@ -2499,19 +2743,19 @@
         right: 0.5rem
       }
 
-      /* ac-bar sits above sticky toolbar */
+      /* ac-bar sits above sticky toolbar (2-row: ~5.3rem) */
       .ac-bar {
-        bottom: calc(2.75rem + 20px + env(safe-area-inset-bottom, 0px))
+        bottom: calc(5.3rem + 12px + env(safe-area-inset-bottom, 0px))
       }
 
       body.has-ac .ac-bar.show {
-        bottom: calc(2.75rem + 20px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(5.3rem + 12px + env(safe-area-inset-bottom, 0px));
         z-index: 46
       }
 
       /* push editor scroll area up when ac-bar is showing so content isn't hidden behind it */
       body.has-ac .editor-scroll {
-        padding-bottom: 7rem
+        padding-bottom: 10rem
       }
 
       /* improve confirm bar */
@@ -3018,38 +3262,50 @@ Gợi ý:
 
           <!-- SINGLE TOOLBAR — replaces both quick-strip and action bar -->
           <div class="toolbar">
-            <button class="tb-btn primary" id="btn-outline" onclick="callOutline()">
-              <i class="bi bi-list-task"></i><span class="tb-label" id="lbl-btn-outline" data-mobile="Dàn ý"> Lập dàn
-                ý</span>
-            </button>
-            <button class="tb-btn" id="btn-vocab" onclick="callVocab()">
-              <i class="bi bi-book"></i><span class="tb-label" id="lbl-btn-vocab" data-mobile="Từ vựng"> Từ vựng</span>
-            </button>
-            <div class="tb-sep2"></div>
-            <button class="tb-btn c-grammar" id="btn-grammar" onclick="callGrammar()">
-              <i class="bi bi-spellcheck"></i><span class="tb-label" id="lbl-btn-grammar" data-mobile="Lỗi"> Kiểm tra
-                lỗi</span>
-            </button>
-            <button class="tb-btn" id="btn-suggest" onclick="callSuggest()">
-              <i class="bi bi-lightbulb"></i><span class="tb-label" id="lbl-btn-suggest" data-mobile="Gợi ý"> Gợi ý
-                câu</span>
-            </button>
-            <button class="tb-btn c-improve" id="btn-improve" onclick="callImprove()">
-              <i class="bi bi-magic"></i><span class="tb-label" id="lbl-btn-improve" data-mobile="Nâng cấp"> Nâng
-                cấp</span>
-            </button>
-            <button class="tb-btn c-review" id="btn-review" onclick="callReview()">
-              <i class="bi bi-award"></i><span class="tb-label" id="lbl-btn-review" data-mobile="Nhận xét"> Nhận
-                xét</span>
-            </button>
-            <button class="tb-btn c-express" id="btn-express" onclick="openExpressModal()">
-              <i class="bi bi-book-half"></i><span class="tb-label" id="lbl-btn-express" data-mobile="Diễn đạt"> Diễn
-                đạt</span>
-            </button>
-            <button class="tb-btn c-translate" id="btn-translate" onclick="callTranslate()">
-              <i class="bi bi-translate"></i><span class="tb-label" id="lbl-btn-translate" data-mobile="Dịch"> Dịch
-                Việt</span>
-            </button>
+            <!-- Row 1: primary actions -->
+            <div class="tb-row tb-row-1">
+              <button class="tb-btn primary" id="btn-outline" onclick="callOutline()">
+                <i class="bi bi-list-task"></i><span class="tb-label" id="lbl-btn-outline"> Lập dàn ý</span>
+              </button>
+              <button class="tb-btn" id="btn-vocab" onclick="callVocab()">
+                <i class="bi bi-book"></i><span class="tb-label" id="lbl-btn-vocab"> Từ vựng</span>
+              </button>
+              <div class="tb-sep2"></div>
+              <button class="tb-btn c-grammar" id="btn-grammar" onclick="callGrammar()">
+                <i class="bi bi-spellcheck"></i><span class="tb-label" id="lbl-btn-grammar"> Kiểm tra lỗi</span>
+              </button>
+              <button class="tb-btn" id="btn-suggest" onclick="callSuggest()">
+                <i class="bi bi-lightbulb"></i><span class="tb-label" id="lbl-btn-suggest"> Gợi ý câu</span>
+              </button>
+              <button class="tb-btn c-improve" id="btn-improve" onclick="callImprove()">
+                <i class="bi bi-magic"></i><span class="tb-label" id="lbl-btn-improve"> Nâng cấp</span>
+              </button>
+              <button class="tb-btn c-review" id="btn-review" onclick="callReview()">
+                <i class="bi bi-award"></i><span class="tb-label" id="lbl-btn-review"> Nhận xét</span>
+              </button>
+            </div>
+            <!-- Row 2: secondary actions -->
+            <div class="tb-row tb-row-2">
+              <button class="tb-btn c-express" id="btn-express" onclick="openExpressModal()">
+                <i class="bi bi-book-half"></i><span class="tb-label" id="lbl-btn-express"> Diễn đạt</span>
+              </button>
+              <button class="tb-btn c-translate" id="btn-translate" onclick="callTranslate()">
+                <i class="bi bi-translate"></i><span class="tb-label" id="lbl-btn-translate"> Dịch Việt</span>
+              </button>
+              <div class="tb-sep2"></div>
+              <!-- TTS dropdown -->
+              <div class="tts-wrap" id="ttsWrap">
+                <button class="tb-btn c-tts" id="btn-tts" onclick="toggleTTSMenu()" title="Đọc văn bản">
+                  <i class="bi bi-volume-up-fill" id="ico-tts-main"></i><span class="tb-label" id="lbl-tts-main"> Đọc</span>
+                </button>
+                <div class="tts-menu" id="ttsMenu">
+                  <button onclick="ttsTogglePara()"><i class="bi bi-text-paragraph" id="ico-tts-para"></i> <span id="lbl-tts-para">Đọc đoạn này</span></button>
+                  <button onclick="ttsToggleAll()"><i class="bi bi-file-text" id="ico-tts-all"></i> <span id="lbl-tts-all">Đọc toàn bài</span></button>
+                  <div class="tts-menu-sep" id="ttsStopSep" style="display:none"></div>
+                  <button id="ttsStopBtn" onclick="ttsStop()" style="display:none"><i class="bi bi-stop-fill"></i> <span>Dừng hẳn</span></button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -3171,6 +3427,20 @@ Gợi ý:
                 <button class="chip" id="pdC" onclick="setPad('compact')"><span id="lbl-pad-c">Hẹp</span></button>
                 <button class="chip on" id="pdN" onclick="setPad('normal')"><span id="lbl-pad-n">Vừa</span></button>
                 <button class="chip" id="pdW" onclick="setPad('wide')"><span id="lbl-pad-w">Rộng</span></button>
+              </div>
+            </div>
+
+            <!-- TTS VOICE -->
+            <div class="sd-row" style="border-top:1px solid var(--border);padding-top:1.25rem;margin-top:0.25rem">
+              <div class="sd-label"><i class="bi bi-volume-up-fill" style="color:var(--accent)"></i> <span id="lbl-sd-tts">Giọng đọc (Text-to-Speech)</span></div>
+              <select class="sd-select" id="ttsVoiceSel" onchange="saveTTSVoice()" style="margin-top:0.5rem">
+                <option value="">-- Chọn giọng đọc --</option>
+              </select>
+              <div class="sd-range-row" style="margin-top:0.6rem">
+                <span style="font-size:.7rem;color:var(--muted)" id="lbl-tts-slow">Chậm</span>
+                <input type="range" id="ttsRateRange" min="0.6" max="1.4" step="0.1" value="0.9" oninput="saveTTSRate(+this.value)">
+                <span style="font-size:.7rem;color:var(--muted)" id="lbl-tts-fast">Nhanh</span>
+                <span class="sd-val" id="ttsRateVal">0.9x</span>
               </div>
             </div>
 
@@ -5414,6 +5684,534 @@ ${text}
       }
     }
 
+    // ── TTS (Text-to-Speech) ──
+    const tts = window.speechSynthesis;
+    let ttsUtterance = null;
+    // 'idle' | 'speaking' | 'paused'
+    let ttsState = 'idle';
+    // 'para' | 'all' | 'from' — which mode is active
+    let ttsMode = null;
+    // text and char offset for resume-from-pause
+    let ttsFullText = '';
+    let ttsResumeChar = 0;
+    // Chrome keepalive interval (fixes ~15s cutoff bug)
+    let ttsKeepAlive = null;
+
+    const TTS_PREFERRED = [
+      'Google US English', 'Google UK English Female', 'Google UK English Male',
+      'Microsoft Zira - Desktop', 'Microsoft David - Desktop', 'Microsoft Mark - Desktop',
+      'Microsoft Zira', 'Microsoft David', 'Microsoft Mark',
+      'Karen', 'Daniel', 'Samantha', 'Alex',
+    ];
+
+    function ttsGetVoices() {
+      return tts.getVoices().filter(v => v.lang.startsWith('en'));
+    }
+
+    function ttsPopulateVoices() {
+      const sel = document.getElementById('ttsVoiceSel');
+      if (!sel) return;
+      const voices = ttsGetVoices();
+      if (!voices.length) return;
+      const saved = localStorage.getItem('tts_voice');
+      sel.innerHTML = '';
+      const sorted = [...voices].sort((a, b) => {
+        const ai = TTS_PREFERRED.indexOf(a.name), bi = TTS_PREFERRED.indexOf(b.name);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1;
+        if (bi !== -1) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      sorted.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.lang})`;
+        if (v.name === saved) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      if (!saved || !sorted.find(v => v.name === saved)) {
+        const best = TTS_PREFERRED.find(n => sorted.find(v => v.name === n));
+        if (best) sel.value = best;
+      }
+    }
+
+    function saveTTSVoice() {
+      localStorage.setItem('tts_voice', document.getElementById('ttsVoiceSel').value);
+    }
+
+    function saveTTSRate(val) {
+      localStorage.setItem('tts_rate', val);
+      document.getElementById('ttsRateVal').textContent = val.toFixed(1) + 'x';
+    }
+
+    function ttsGetVoice() {
+      const name = localStorage.getItem('tts_voice') || document.getElementById('ttsVoiceSel')?.value;
+      const all = tts.getVoices();
+      return all.find(v => v.name === name)
+        || all.find(v => TTS_PREFERRED.includes(v.name))
+        || all.find(v => v.lang.startsWith('en'))
+        || all[0] || null;
+    }
+
+    function ttsGetRate() {
+      return +(localStorage.getItem('tts_rate') || 0.9);
+    }
+
+    function ttsUpdateUI() {
+      const btnMain = document.getElementById('btn-tts');
+      const icoMain = document.getElementById('ico-tts-main');
+      const lblMain = document.getElementById('lbl-tts-main');
+      const icoPara = document.getElementById('ico-tts-para');
+      const icoAll  = document.getElementById('ico-tts-all');
+      const lblPara = document.getElementById('lbl-tts-para');
+      const lblAll  = document.getElementById('lbl-tts-all');
+      const stopBtn = document.getElementById('ttsStopBtn');
+      const stopSep = document.getElementById('ttsStopSep');
+
+      // Reset main button
+      btnMain?.classList.remove('speaking', 'paused');
+      if (icoMain) icoMain.className = 'bi bi-volume-up-fill';
+      if (lblMain) lblMain.textContent = ' Đọc';
+      // Reset dropdown item icons
+      if (icoPara) icoPara.className = 'bi bi-text-paragraph';
+      if (icoAll)  icoAll.className  = 'bi bi-file-text';
+      if (lblPara) lblPara.textContent = 'Đọc đoạn này';
+      if (lblAll)  lblAll.textContent  = 'Đọc toàn bài';
+      if (stopBtn) stopBtn.style.display = 'none';
+      if (stopSep) stopSep.style.display = 'none';
+
+      if (ttsState === 'idle') return;
+
+      // Show stop button when active
+      if (stopBtn) stopBtn.style.display = '';
+      if (stopSep) stopSep.style.display = '';
+
+      const activeIco = ttsMode === 'all' ? icoAll : icoPara;
+      const activeLbl = ttsMode === 'all' ? lblAll : lblPara;
+
+      if (ttsState === 'speaking') {
+        btnMain?.classList.add('speaking');
+        if (icoMain) icoMain.className = 'bi bi-pause-fill';
+        if (lblMain) lblMain.textContent = ' Tạm dừng';
+        if (activeIco) activeIco.className = 'bi bi-pause-fill';
+        if (activeLbl) activeLbl.textContent = ttsMode === 'all' ? 'Tạm dừng toàn bài' : 'Tạm dừng đoạn';
+      } else if (ttsState === 'paused') {
+        btnMain?.classList.add('paused');
+        if (icoMain) icoMain.className = 'bi bi-play-fill';
+        if (lblMain) lblMain.textContent = ' Tiếp tục';
+        if (activeIco) activeIco.className = 'bi bi-play-fill';
+        if (activeLbl) activeLbl.textContent = ttsMode === 'all' ? 'Tiếp tục toàn bài' : 'Tiếp tục đoạn';
+      }
+    }
+
+    function toggleTTSMenu() {
+      const menu = document.getElementById('ttsMenu');
+      const btn  = document.getElementById('btn-tts');
+      if (!menu || !btn) return;
+      // If speaking/paused, clicking main button toggles pause/resume directly
+      if (ttsState === 'speaking') {
+        tts.pause(); ttsState = 'paused'; ttsUpdateUI(); return;
+      }
+      if (ttsState === 'paused') {
+        tts.resume(); ttsState = 'speaking'; ttsUpdateUI(); ttsStartKeepAlive(); return;
+      }
+      const isOpen = menu.classList.contains('open');
+      if (isOpen) { menu.classList.remove('open'); return; }
+      // Position above the button, fixed so overflow:hidden parents don't clip it
+      const r = btn.getBoundingClientRect();
+      menu.style.display = 'block'; // measure height
+      const mh = menu.offsetHeight || 120;
+      menu.style.display = '';
+      let top  = r.top - mh - 6;
+      let left = r.left;
+      if (top < 8) top = r.bottom + 6; // flip below if not enough space above
+      if (left + 190 > window.innerWidth - 8) left = r.right - 190;
+      menu.style.top  = top + 'px';
+      menu.style.left = left + 'px';
+      menu.classList.add('open');
+      setTimeout(() => document.addEventListener('click', closeTTSOnOutside, { once: true }), 10);
+    }
+
+    function closeTTSOnOutside(e) {
+      if (!document.getElementById('ttsWrap')?.contains(e.target)) {
+        document.getElementById('ttsMenu')?.classList.remove('open');
+      }
+    }
+
+    function ttsStartKeepAlive() {
+      // Chrome stops speechSynthesis after ~15s — pause/resume every 14s to reset timer
+      ttsStopKeepAlive();
+      ttsKeepAlive = setInterval(() => {
+        if (tts.speaking && !tts.paused) { tts.pause(); tts.resume(); }
+      }, 14000);
+    }
+
+    function ttsStopKeepAlive() {
+      if (ttsKeepAlive) { clearInterval(ttsKeepAlive); ttsKeepAlive = null; }
+    }
+
+    function ttsSpeak(text, fromChar) {
+      if (!text.trim()) return;
+      ttsFullText = text;
+      ttsResumeChar = fromChar || 0;
+      tts.cancel();
+      setTimeout(() => {
+        const chunk = text.slice(ttsResumeChar);
+        if (!chunk.trim()) { ttsSetIdle(); return; }
+        ttsUtterance = new SpeechSynthesisUtterance(chunk);
+        const voice = ttsGetVoice();
+        if (voice) ttsUtterance.voice = voice;
+        ttsUtterance.rate = ttsGetRate();
+        ttsUtterance.lang = 'en-US';
+        ttsUtterance.onboundary = e => {
+          if (e.name === 'word') ttsResumeChar = (fromChar || 0) + e.charIndex;
+        };
+        ttsUtterance.onstart = () => {
+          ttsState = 'speaking';
+          ttsUpdateUI();
+          ttsStartKeepAlive();
+        };
+        ttsUtterance.onend = () => { ttsSetIdle(); };
+        ttsUtterance.onerror = e => {
+          if (e.error !== 'interrupted') ttsSetIdle();
+        };
+        tts.speak(ttsUtterance);
+      }, 80);
+    }
+
+    function ttsSetIdle() {
+      ttsState = 'idle';
+      ttsMode = null;
+      ttsFullText = '';
+      ttsResumeChar = 0;
+      ttsStopKeepAlive();
+      ttsUpdateUI();
+    }
+
+    function ttsGetCurrentPara() {
+      const sel = window.getSelection();
+
+      // If user has text selected, read just that selection
+      if (sel && sel.toString().trim() && editor.contains(sel.anchorNode)) {
+        return sel.toString().trim();
+      }
+
+      // Find block element at cursor (skip #editor itself)
+      if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+        let node = sel.getRangeAt(0).startContainer;
+        if (node.nodeType === 3) node = node.parentNode; // text node → element
+        while (node && node !== editor) {
+          if (node.nodeType === 1 && (node.tagName === 'P' || node.tagName === 'DIV' || node.tagName === 'LI')) {
+            const t = node.innerText.trim();
+            if (t) return t;
+          }
+          node = node.parentNode;
+        }
+        // Cursor directly in editor with no block wrapper — get line at cursor
+        const full = editor.innerText;
+        const lines = full.split('\n').filter(l => l.trim());
+        if (lines.length === 1) return lines[0];
+        // Find which line by offset
+        const range = sel.getRangeAt(0);
+        const pre = document.createRange();
+        pre.setStart(editor, 0);
+        try { pre.setEnd(range.startContainer, range.startOffset); } catch { return lines[0] || ''; }
+        const beforeText = pre.toString();
+        let offset = 0;
+        for (const line of full.split('\n')) {
+          if (beforeText.length <= offset + line.length) return line.trim() || lines[0] || '';
+          offset += line.length + 1;
+        }
+        return lines[0] || '';
+      }
+
+      // No cursor in editor — return first non-empty paragraph
+      return editor.innerText.split(/\n+/).find(p => p.trim()) || '';
+    }
+
+    function ttsTogglePara() {
+      if (ttsState === 'speaking' && ttsMode === 'para') {
+        tts.pause(); ttsState = 'paused'; ttsUpdateUI(); return;
+      }
+      if (ttsState === 'paused' && ttsMode === 'para') {
+        tts.resume(); ttsState = 'speaking'; ttsUpdateUI();
+        ttsStartKeepAlive(); return;
+      }
+      // Stop any other mode and start para
+      tts.cancel();
+      ttsMode = 'para';
+      const para = ttsGetCurrentPara();
+      if (!para) return toast(uiLang === 'en' ? 'No text to read.' : 'Không có chữ để đọc.');
+      ttsSpeak(para, 0);
+    }
+
+    function ttsToggleAll() {
+      if (ttsState === 'speaking' && ttsMode === 'all') {
+        tts.pause(); ttsState = 'paused'; ttsUpdateUI(); return;
+      }
+      if (ttsState === 'paused' && ttsMode === 'all') {
+        tts.resume(); ttsState = 'speaking'; ttsUpdateUI();
+        ttsStartKeepAlive(); return;
+      }
+      tts.cancel();
+      ttsMode = 'all';
+      const text = editor.innerText.trim();
+      if (!text) return toast(uiLang === 'en' ? 'No text to read.' : 'Không có chữ để đọc.');
+      ttsSpeak(text, 0);
+    }
+
+    function ttsReadFrom(text) {
+      tts.cancel();
+      ttsMode = 'from';
+      ttsSpeak(text, 0);
+    }
+
+    function ttsStop() {
+      tts.cancel();
+      ttsSetIdle();
+    }
+
+    // Context menu TTS helpers
+    function ctxTTSPara() {
+      closeCtxMenu();
+      const para = ttsGetCurrentPara();
+      if (!para) return toast(uiLang === 'en' ? 'No text to read.' : 'Không có chữ để đọc.');
+      ttsMode = 'para';
+      ttsSpeak(para, 0);
+    }
+
+    function ctxTTSFrom() {
+      closeCtxMenu();
+      // Read from cursor position to end
+      const sel = window.getSelection();
+      let fromText = '';
+      if (sel && sel.rangeCount) {
+        const range = sel.getRangeAt(0).cloneRange();
+        range.setEnd(editor, editor.childNodes.length);
+        fromText = range.toString().trim();
+      }
+      if (!fromText) fromText = editor.innerText.trim();
+      if (!fromText) return toast(uiLang === 'en' ? 'No text to read.' : 'Không có chữ để đọc.');
+      ttsMode = 'from';
+      ttsSpeak(fromText, 0);
+    }
+
+    // Populate voices — voices may load async
+    if (tts) {
+      ttsPopulateVoices();
+      tts.onvoiceschanged = ttsPopulateVoices;
+      const savedRate = +(localStorage.getItem('tts_rate') || 0.9);
+      const rateRange = document.getElementById('ttsRateRange');
+      if (rateRange) { rateRange.value = savedRate; document.getElementById('ttsRateVal').textContent = savedRate.toFixed(1) + 'x'; }
+    }
+
+    // ── CONTEXT MENU ──
+    let ctxLongPressTimer = null;
+    let ctxTargetNode = null;
+
+    function showCtxMenu(x, y) {
+      const menu = document.getElementById('ctxMenu');
+      if (!menu) return;
+      const selText = window.getSelection()?.toString().trim() || '';
+      const hasSel = selText.length > 0;
+      const isShort = hasSel && selText.length <= 300 && (selText.match(/[.!?]/g) || []).length <= 1;
+
+      document.getElementById('ctx-cut')?.toggleAttribute('disabled', !hasSel);
+      document.getElementById('ctx-copy')?.toggleAttribute('disabled', !hasSel);
+
+      const show = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v ? '' : 'none'; };
+      show('ctx-sep-analysis', isShort);
+      show('ctx-paraphrase',   isShort);
+      show('ctx-explain',      isShort);
+      show('ctx-analyze',      isShort);
+
+      menu.classList.add('open');
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const mw = 200, mh = 280;
+      let left = x, top = y;
+      if (left + mw > vw - 8) left = vw - mw - 8;
+      if (top + mh > vh - 8) top = vh - mh - 8;
+      if (left < 8) left = 8;
+      if (top < 8) top = 8;
+      menu.style.left = left + 'px';
+      menu.style.top  = top + 'px';
+      setTimeout(() => document.addEventListener('pointerdown', closeCtxOnOutside, { once: true }), 10);
+    }
+
+    function closeCtxMenu() {
+      document.getElementById('ctxMenu')?.classList.remove('open');
+    }
+
+    function closeCtxOnOutside(e) {
+      if (!document.getElementById('ctxMenu')?.contains(e.target)) closeCtxMenu();
+    }
+
+
+    function ctxCut() {
+      closeCtxMenu();
+      document.execCommand('cut');
+    }
+
+    function ctxCopy() {
+      closeCtxMenu();
+      document.execCommand('copy');
+    }
+
+    async function ctxPaste() {
+      closeCtxMenu();
+      try {
+        const text = await navigator.clipboard.readText();
+        document.execCommand('insertText', false, text);
+      } catch {
+        document.execCommand('paste');
+      }
+    }
+
+    // Block native context menu on editor, show custom one
+    editor.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      ctxTargetNode = e.target;
+      showCtxMenu(e.clientX, e.clientY);
+    });
+
+    // Long-press on touch devices
+    editor.addEventListener('touchstart', e => {
+      ctxLongPressTimer = setTimeout(() => {
+        ctxTargetNode = e.target;
+        const t = e.touches[0];
+        showCtxMenu(t.clientX, t.clientY);
+      }, 600);
+    }, { passive: true });
+
+    editor.addEventListener('touchend',   () => clearTimeout(ctxLongPressTimer));
+    editor.addEventListener('touchmove',  () => clearTimeout(ctxLongPressTimer));
+    editor.addEventListener('touchcancel',() => clearTimeout(ctxLongPressTimer));
+
+    // ── NEW AI FUNCTIONS ──
+
+    function openPanelWith(title) {
+      document.getElementById('pCards').style.display = 'none';
+      document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.83rem;font-style:italic">${t('processing')}</p>`;
+      document.getElementById('panelTitle').textContent = title;
+      document.getElementById('lbar').classList.remove('hidden');
+      document.getElementById('resultPanel').classList.add('open');
+      document.getElementById('editorPane').classList.add('shifted');
+    }
+
+    async function callParaphrase() {
+      const sel = window.getSelection()?.toString().trim();
+      const text = (sel || ttsGetCurrentPara()).slice(0, 400);
+      if (!text) return toast(t('no-text'));
+      const vi = uiLang !== 'en';
+      const title = 'Diễn đạt lại';
+      openPanelWith(title);
+      const r = await callAI(
+        `Rewrite in 2 ways: 1) natural, 2) more advanced. Be brief.${vi ? ' Dịch nghĩa ngắn bằng tiếng Việt sau mỗi cách.' : ''}
+"${text}"`,
+        null, false, true, 400
+      );
+      if (r) openPanel(title, r, null);
+      else document.getElementById('lbar').classList.add('hidden');
+    }
+
+    async function callExplain() {
+      const sel = window.getSelection()?.toString().trim();
+      const text = (sel || ttsGetCurrentPara()).slice(0, 400);
+      if (!text) return toast(t('no-text'));
+      const vi = uiLang !== 'en';
+      const title = vi ? 'Giải thích' : 'Explain';
+      openPanelWith(title);
+      const r = await callAI(
+        `List key words/phrases: meaning + 1 example each. Skip very basic words.${vi ? ' Bằng tiếng Việt.' : ''}
+"${text}"`,
+        null, false, true, 500
+      );
+      if (r) openPanel(title, r, null);
+      else document.getElementById('lbar').classList.add('hidden');
+    }
+
+    async function callAnalyze() {
+      const sel = window.getSelection()?.toString().trim();
+      const text = (sel || ttsGetCurrentPara()).slice(0, 400);
+      if (!text) return toast(t('no-text'));
+      const vi = uiLang !== 'en';
+      const title = vi ? 'Phân tích ngữ pháp' : 'Grammar Analysis';
+      openPanelWith(title);
+      const r = await callAI(
+        `Grammar check: tense, structure, errors. Be concise.${vi ? ' Bằng tiếng Việt.' : ''}
+"${text}"`,
+        null, false, true, 500
+      );
+      if (r) openPanel(title, r, null);
+      else document.getElementById('lbar').classList.add('hidden');
+    }
+
+    // ── SELECTION TOOLBAR (mobile) ──
+    const selToolbar = document.getElementById('selToolbar');
+    let selHideTimer = null;
+
+    function showSelToolbar() {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !sel.toString().trim()) { hideSelToolbar(); return; }
+      if (!editor.contains(sel.anchorNode)) { hideSelToolbar(); return; }
+
+      const range = sel.getRangeAt(0);
+      const rect  = range.getBoundingClientRect();
+      if (!rect.width && !rect.height) { hideSelToolbar(); return; }
+
+      const selText = sel.toString().trim();
+      const isShort = selText.length <= 300 && (selText.match(/[.!?]/g) || []).length <= 1;
+
+      // Show/hide analysis buttons based on selection length
+      ['selParaphraseBtn','selExplainBtn','selAnalyzeBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isShort ? '' : 'none';
+      });
+
+      selToolbar.classList.add('show');
+
+      // Position above selection, centered
+      const tw = selToolbar.offsetWidth || 320;
+      let left = rect.left + rect.width / 2 - tw / 2;
+      let top  = rect.top - selToolbar.offsetHeight - 12;
+
+      // Keep in viewport
+      if (left < 8) left = 8;
+      if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
+      if (top < 8) top = rect.bottom + 12;
+
+      selToolbar.style.left = left + 'px';
+      selToolbar.style.top  = top + 'px';
+    }
+
+    function hideSelToolbar() {
+      selToolbar?.classList.remove('show');
+    }
+
+    // Show on selection change (touch devices)
+    document.addEventListener('selectionchange', () => {
+      clearTimeout(selHideTimer);
+      // Small delay so selection is finalized
+      selHideTimer = setTimeout(showSelToolbar, 300);
+    });
+
+    // Hide when tapping outside editor
+    document.addEventListener('pointerdown', e => {
+      if (!editor.contains(e.target) && !selToolbar?.contains(e.target)) hideSelToolbar();
+    });
+
+    // Selection toolbar action helpers — hide toolbar then run action
+    function selAction(fn) { hideSelToolbar(); fn(); }
+    function selCut()       { hideSelToolbar(); document.execCommand('cut'); }
+    function selCopy()      { hideSelToolbar(); document.execCommand('copy'); }
+    function selPaste()     { hideSelToolbar(); ctxPaste(); }
+    function selTTS()       { hideSelToolbar(); ctxTTSPara(); }
+    function selSuggest()   { selAction(callSuggest); }
+    function selImprove()   { selAction(callImprove); }
+    function selParaphrase(){ selAction(callParaphrase); }
+    function selExplain()   { selAction(callExplain); }
+    function selAnalyze()   { selAction(callAnalyze); }
+
     // ── PWA INSTALL BANNER ──
     (function () {
       // already installed as PWA — don't show
@@ -5896,6 +6694,33 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- CONTEXT MENU -->
+  <div id="ctxMenu" class="ctx-menu" role="menu">
+    <button class="ctx-item" id="ctx-cut" onclick="ctxCut()"><i class="bi bi-scissors"></i> <span>Cắt</span></button>
+    <button class="ctx-item" id="ctx-copy" onclick="ctxCopy()"><i class="bi bi-copy"></i> <span>Sao chép</span></button>
+    <button class="ctx-item" id="ctx-paste" onclick="ctxPaste()"><i class="bi bi-clipboard"></i> <span>Dán</span></button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-item" onclick="ctxTTSPara()"><i class="bi bi-volume-up-fill"></i> <span>Đọc đoạn này</span></button>
+    <button class="ctx-item" onclick="ctxTTSFrom()"><i class="bi bi-play-fill"></i> <span>Đọc từ đây đến hết</span></button>
+    <div class="ctx-sep" id="ctx-sep-analysis"></div>
+    <button class="ctx-item" id="ctx-paraphrase" onclick="closeCtxMenu();callParaphrase()"><i class="bi bi-arrow-repeat"></i> <span>Diễn đạt lại</span></button>
+    <button class="ctx-item" id="ctx-explain" onclick="closeCtxMenu();callExplain()"><i class="bi bi-question-circle"></i> <span>Giải thích từ/cụm</span></button>
+    <button class="ctx-item" id="ctx-analyze" onclick="closeCtxMenu();callAnalyze()"><i class="bi bi-diagram-3"></i> <span>Phân tích ngữ pháp</span></button>
+  </div>
+
+  <!-- SELECTION TOOLBAR (mobile) -->
+  <div id="selToolbar" class="sel-toolbar">
+    <button class="sel-btn" onclick="selCut()" title="Cắt"><i class="bi bi-scissors"></i></button>
+    <button class="sel-btn" onclick="selCopy()" title="Sao chép"><i class="bi bi-copy"></i></button>
+    <button class="sel-btn" onclick="selPaste()" title="Dán"><i class="bi bi-clipboard"></i></button>
+    <div class="sel-sep"></div>
+    <button class="sel-btn" onclick="selTTS()" title="Đọc đoạn"><i class="bi bi-volume-up-fill"></i></button>
+    <div class="sel-sep"></div>
+    <button class="sel-btn" id="selParaphraseBtn" onclick="selParaphrase()" title="Diễn đạt lại"><i class="bi bi-arrow-repeat"></i></button>
+    <button class="sel-btn" id="selExplainBtn" onclick="selExplain()" title="Giải thích"><i class="bi bi-question-circle"></i></button>
+    <button class="sel-btn" id="selAnalyzeBtn" onclick="selAnalyze()" title="Phân tích"><i class="bi bi-diagram-3"></i></button>
   </div>
 
 </html>

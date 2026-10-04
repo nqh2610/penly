@@ -6079,7 +6079,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
         const phonetics = entry.phonetics || [];
         const ipa = phonetics.find(p => p.text)?.text || entry.phonetic || '';
         const audioUrl = phonetics.find(p => p.audio)?.audio || '';
-        const audioProxyUrl = audioUrl ? `https://penly-proxy.nqh2610.workers.dev/audio?src=${encodeURIComponent(audioUrl)}` : '';
+        const audioProxyUrl = audioUrl;
 
         if (ipa) md += `**Phiên âm:** ${ipa}`;
         if (audioProxyUrl) md += `  <audio-btn data-src="${audioProxyUrl}"></audio-btn>`;
@@ -6104,13 +6104,17 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       openPanel(title, md, null);
       setTimeout(() => {
         document.querySelectorAll('audio-btn[data-src]').forEach(el => {
-          const src = el.getAttribute('data-src');
-          if (!src) return;
           const btn = document.createElement('button');
           btn.className = 'dict-audio-btn';
           btn.title = vi ? 'Nghe phát âm' : 'Listen';
           btn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
-          btn.onclick = () => new Audio(src).play();
+          btn.onclick = () => {
+            const u = new SpeechSynthesisUtterance(word);
+            u.lang = 'en-US';
+            u.rate = 0.85;
+            speechSynthesis.cancel();
+            speechSynthesis.speak(u);
+          };
           el.replaceWith(btn);
         });
       }, 100);

@@ -2749,6 +2749,13 @@
         padding: 0 0.75rem
       }
 
+      /* ac-chip handled by ac-bar popup on mobile — hide from statusbar */
+      #acChip { display: none !important; }
+
+      /* prevent statusbar from wrapping to 2 lines */
+      .statusbar { flex-wrap: nowrap; overflow: hidden; }
+      #wc { flex-shrink: 0; }
+
       .ac-toggle-btn {
         height: 2rem;
         padding: 0 0.65rem;

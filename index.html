@@ -3630,6 +3630,7 @@ Gợi ý:
     // ── STATE ──
     let docs = [], currentId = null;
     let saveTimer, acTimer, pendingAC = "", acSeq = 0;
+    let improveOriginalText = null; // bản gốc trước khi nâng cấp lần đầu
     let savedRange = null;
     let acEnabled = localStorage.getItem('penly_ac_enabled') === 'true';
 
@@ -3705,7 +3706,7 @@ Gợi ý:
         if (cur) cur.html = editor.innerHTML;
       }
       currentId = id;
-      const d = getDoc(id); if (!d) return;
+      improveOriginalText = null; // reset khi chuyển doc
       topicInput.value = d.topic || '';
       titleInput.value = d.titleCustom ? (d.title || '') : (d.topic || '');
       document.getElementById('audSel').value = d.aud || document.getElementById('audSel').options[1].value;
@@ -4786,14 +4787,31 @@ Return ONLY a valid JSON array, no other text:
     async function callImprove() {
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
+
+      // lưu bản gốc lần đầu; reset nếu user đã sửa đáng kể so với bản gốc
+      if (!improveOriginalText) {
+        improveOriginalText = text;
+      } else {
+        // nếu text hiện tại khác bản gốc > 40% → user đã viết lại, reset
+        const sim = text.length > 0 ? Math.min(improveOriginalText.length, text.length) / Math.max(improveOriginalText.length, text.length) : 0;
+        if (sim < 0.6) improveOriginalText = text;
+      }
+
+      const isFirstImprove = improveOriginalText === text;
+      const baseText = improveOriginalText;
+
       setPanelTitle('panel-improve');
       const r = await callAI(
         `You are an expert English language editor and experienced ESL writing coach. Your task is to IMPROVE the student's writing — not rewrite it, not simplify it, not replace their ideas.
 
-Student's original text:
+Student's ORIGINAL text (baseline — never improve beyond this):
+"""
+${baseText}
+"""
+${baseText !== text ? `\nStudent's CURRENT text (already improved once — use this as the starting point, but compare against the original above to avoid over-editing):
 """
 ${text}
-"""
+"""` : ''}
 ${ctx()}
 Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 
@@ -4818,8 +4836,9 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
 - NEVER invent new content (new people, new events, new emotions not in the original)
 - NEVER use em dash (—). Use comma or "and/but/so" instead
 - NEVER downgrade: if student wrote "I want to tell you about", keep the meaning — don't simplify to "I will talk about"
-- NEVER change the word count by more than 30%
-- Bold (**word**) ONLY the words/phrases you changed from the original
+- NEVER change the word count by more than 30% compared to the ORIGINAL text
+- If the text has already been improved once, focus on a DIFFERENT aspect (e.g. if vocabulary was improved before, now improve sentence flow or connectors) — do NOT pile more synonyms onto already-upgraded words
+- Bold (**word**) ONLY the words/phrases you changed from the current version
 
 %%IMPROVED_START%%
 (Write ONLY the improved version here. Bold every changed word/phrase. No headings, no markdown except bold.)

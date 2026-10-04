@@ -1652,6 +1652,25 @@
       padding: 1rem
     }
 
+    /* dictionary audio button */
+    .dict-audio-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 1.6rem;
+      height: 1.6rem;
+      cursor: pointer;
+      font-size: .85rem;
+      vertical-align: middle;
+      margin-left: .3rem;
+      transition: background .15s;
+    }
+    .dict-audio-btn:hover { background: var(--accent-h); }
+
     /* "Use this version" button in improve panel */
     .btn-use-improved {
       display: flex;
@@ -5873,6 +5892,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       const selText = window.getSelection()?.toString().trim() || '';
       const hasSel = selText.length > 0;
       const isShort = hasSel && selText.length <= 300 && (selText.match(/[.!?]/g) || []).length <= 1;
+      const isOneWord = hasSel && /^\s*[a-zA-Z'-]+\s*$/.test(selText);
 
       const show = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v ? '' : 'none'; };
 
@@ -5884,7 +5904,8 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
         show('ctx-sep-edit',     hasSel);
         show('ctx-tts-para',     true);
         show('ctx-tts-from',     false);
-        show('ctx-sep-analysis', isShort);
+        show('ctx-sep-analysis', isShort || isOneWord);
+        show('ctx-dict',         isOneWord);
         show('ctx-paraphrase',   isShort);
         show('ctx-explain',      isShort);
         show('ctx-analyze',      isShort);
@@ -5897,7 +5918,8 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
         show('ctx-sep-edit',     true);
         show('ctx-tts-para',     true);
         show('ctx-tts-from',     true);
-        show('ctx-sep-analysis', isShort);
+        show('ctx-sep-analysis', isShort || isOneWord);
+        show('ctx-dict',         isOneWord);
         show('ctx-paraphrase',   isShort);
         show('ctx-explain',      isShort);
         show('ctx-analyze',      isShort);
@@ -6034,6 +6056,85 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       );
       if (r) openPanel(title, r, null);
       else document.getElementById('lbar').classList.add('hidden');
+    }
+
+    async function callDict() {
+      const word = window.getSelection()?.toString().trim().toLowerCase();
+      if (!word) return toast(t('no-text'));
+      const vi = uiLang !== 'en';
+      const title = vi ? `Từ điển: ${word}` : `Dictionary: ${word}`;
+      openPanelWith(title);
+
+      // 1. Gọi Free Dictionary API
+      let dictData = null;
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        if (res.ok) dictData = await res.json();
+      } catch {}
+
+      // 2. Gọi AI dịch nghĩa tiếng Việt ngắn gọn
+      const aiPromise = callAI(
+        `Translate the English word "${word}" to Vietnamese. Give:
+1. Nghĩa chính (1-2 từ tiếng Việt)
+2. Các nghĩa phổ biến khác nếu có (tối đa 3)
+3. Ví dụ: 1 câu tiếng Anh ngắn dùng từ này + dịch tiếng Việt
+Be concise. No extra explanation.`,
+        null, false, true, 200
+      );
+
+      // 3. Render kết quả khi có
+      let md = '';
+
+      if (dictData && dictData[0]) {
+        const entry = dictData[0];
+        const phonetics = entry.phonetics || [];
+        const ipa = phonetics.find(p => p.text)?.text || entry.phonetic || '';
+        const audioUrl = phonetics.find(p => p.audio)?.audio || '';
+
+        md += `# ${word}\n\n`;
+        if (ipa) md += `**Phiên âm:** ${ipa}`;
+        if (audioUrl) md += `  <audio-btn data-src="${audioUrl}"></audio-btn>`;
+        md += '\n\n';
+
+        // định nghĩa tiếng Anh theo từ loại
+        for (const meaning of (entry.meanings || []).slice(0, 3)) {
+          md += `**${meaning.partOfSpeech}**\n`;
+          for (const def of (meaning.definitions || []).slice(0, 2)) {
+            md += `- ${def.definition}\n`;
+            if (def.example) md += `  > *${def.example}*\n`;
+          }
+          md += '\n';
+        }
+      } else {
+        md += `# ${word}\n\n`;
+        if (!vi) md += `*Word not found in dictionary.*\n\n`;
+        else md += `*Không tìm thấy từ này trong từ điển.*\n\n`;
+      }
+
+      // chờ AI xong rồi thêm vào
+      const aiResult = await aiPromise;
+      if (aiResult) {
+        md += `---\n\n## 🇻🇳 Nghĩa tiếng Việt\n\n${aiResult}`;
+      }
+
+      if (md) {
+        openPanel(title, md, null);
+        // inject audio buttons sau khi panel render
+        setTimeout(() => {
+          document.querySelectorAll('audio-btn[data-src]').forEach(el => {
+            const src = el.getAttribute('data-src');
+            if (!src) return;
+            const btn = document.createElement('button');
+            btn.className = 'dict-audio-btn';
+            btn.title = 'Phát âm';
+            btn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
+            btn.onclick = () => { new Audio(src).play(); };
+            el.replaceWith(btn);
+          });
+        }, 100);
+      } else {
+        document.getElementById('lbar').classList.add('hidden');
+      }
     }
 
     // ── SELECTION TOOLBAR (mobile) ──
@@ -6595,6 +6696,7 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
     <button class="ctx-item" id="ctx-tts-para" onclick="ctxTTSPara()"><i class="bi bi-volume-up-fill"></i> <span>Đọc đoạn này</span></button>
     <button class="ctx-item" id="ctx-tts-from" onclick="ctxTTSFrom()"><i class="bi bi-play-fill"></i> <span>Đọc từ đây đến hết</span></button>
     <div class="ctx-sep" id="ctx-sep-analysis"></div>
+    <button class="ctx-item" id="ctx-dict" onclick="closeCtxMenu();callDict()"><i class="bi bi-book"></i> <span>Tra từ điển</span></button>
     <button class="ctx-item" id="ctx-paraphrase" onclick="closeCtxMenu();callParaphrase()"><i class="bi bi-arrow-repeat"></i> <span>Diễn đạt lại</span></button>
     <button class="ctx-item" id="ctx-explain" onclick="closeCtxMenu();callExplain()"><i class="bi bi-question-circle"></i> <span>Giải thích từ/cụm</span></button>
     <button class="ctx-item" id="ctx-analyze" onclick="closeCtxMenu();callAnalyze()"><i class="bi bi-diagram-3"></i> <span>Phân tích ngữ pháp</span></button>

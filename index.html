@@ -6243,7 +6243,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
     const getSelToolbar = () => document.getElementById('selToolbar');
 
     function showSelToolbar() {
-      const sel = window.getSelection();
+      return; // disabled — context menu handles all actions
       if (!sel || sel.isCollapsed || !sel.toString().trim()) { hideSelToolbar(); return; }
       if (!editor.contains(sel.anchorNode)) { hideSelToolbar(); return; }
 

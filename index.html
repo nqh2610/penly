@@ -5242,7 +5242,8 @@ ${ctx()}
 3. Preserve the emotion and tone of the original — a cheerful text stays cheerful, a formal text stays formal
 4. Keep proper names and place names unchanged
 5. If the original English has grammar errors, still translate the intended meaning
-6. Return only the complete translation — no explanations, no notes, no headings
+6. PRESERVE paragraph structure: only start a new line when the original has a new paragraph. Do NOT break one paragraph into multiple lines.
+7. Return only the complete translation — no explanations, no notes, no headings
 
 """
 ${text}
@@ -5263,7 +5264,8 @@ ${ctx()}
 3. Giữ đúng cảm xúc và giọng điệu của bản gốc — bài vui thì dịch vui, bài trịnh trọng thì dịch trang trọng
 4. Giữ nguyên tên riêng, địa danh
 5. Nếu bản gốc có lỗi ngữ pháp tiếng Anh, vẫn dịch theo ý tác giả muốn nói
-6. Chỉ trả về bản dịch hoàn chỉnh — không giải thích, không chú thích, không tiêu đề
+6. GIỮ NGUYÊN cấu trúc đoạn văn: chỉ xuống hàng khi bản gốc có đoạn mới. KHÔNG tách một đoạn thành nhiều dòng riêng lẻ.
+7. Chỉ trả về bản dịch hoàn chỉnh — không giải thích, không chú thích, không tiêu đề
 
 """
 ${text}

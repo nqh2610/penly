@@ -5849,14 +5849,13 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       const show = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v ? '' : 'none'; };
 
       if (panelMode) {
-        // panel: chỉ hiện 3 mục phân tích, ẩn hết mục editor
+        // panel: ẩn cut/paste, giữ copy + TTS + phân tích
         show('ctx-cut',          false);
-        show('ctx-copy',         false);
+        show('ctx-copy',         hasSel);
         show('ctx-paste',        false);
-        show('ctx-sep-edit',     false);
-        show('ctx-tts-para',     false);
-        show('ctx-tts-from',     false);
-        show('ctx-sep-tts',      false);
+        show('ctx-sep-edit',     hasSel);
+        show('ctx-tts-para',     true);
+        show('ctx-tts-from',     true);
         show('ctx-sep-analysis', isShort);
         show('ctx-paraphrase',   isShort);
         show('ctx-explain',      isShort);
@@ -5870,7 +5869,6 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
         show('ctx-sep-edit',     true);
         show('ctx-tts-para',     true);
         show('ctx-tts-from',     true);
-        show('ctx-sep-tts',      true);
         show('ctx-sep-analysis', isShort);
         show('ctx-paraphrase',   isShort);
         show('ctx-explain',      isShort);

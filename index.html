@@ -3813,18 +3813,39 @@ Gợi ý:
       dd.classList.toggle('open');
     }
 
+    let _renameCb = null;
+    function showRenameDialog(current, title, cb) {
+      _renameCb = cb;
+      const overlay = document.getElementById('renameOverlay');
+      document.getElementById('renameDlgTitle').textContent = title;
+      const inp = document.getElementById('renameDlgInput');
+      inp.value = current;
+      overlay.style.display = 'flex';
+      setTimeout(() => { inp.focus(); inp.select(); }, 50);
+    }
+    function renameDialogOK() {
+      const val = document.getElementById('renameDlgInput').value.trim();
+      document.getElementById('renameOverlay').style.display = 'none';
+      if (_renameCb) { _renameCb(val); _renameCb = null; }
+    }
+    function renameDialogCancel() {
+      document.getElementById('renameOverlay').style.display = 'none';
+      _renameCb = null;
+    }
+
     function startRenameDoc() {
       document.getElementById('titleDropdown').classList.remove('open');
       const d = getDoc(currentId); if (!d) return;
       const current = titleInput.value.trim() || topicInput.value.trim() || '';
-      const newName = prompt(uiLang === 'en' ? 'Rename document:' : 'Đổi tên bài viết:', current);
-      if (newName === null) return;
-      const trimmed = newName.trim();
-      titleInput.value = trimmed;
-      d.titleCustom = trimmed !== topicInput.value.trim();
-      d.title = trimmed;
-      updateDocTitleDisplay();
-      _debouncedTitleRender();
+      const label = uiLang === 'en' ? 'Rename document' : 'Đổi tên bài viết';
+      showRenameDialog(current, label, newName => {
+        if (!newName && newName !== '') return;
+        titleInput.value = newName;
+        d.titleCustom = newName !== topicInput.value.trim();
+        d.title = newName;
+        updateDocTitleDisplay();
+        _debouncedTitleRender();
+      });
     }
 
     function confirmDeleteFromMenu() {
@@ -3944,11 +3965,13 @@ Gợi ý:
           e.stopPropagation();
           div.querySelector('.doc-dropdown').classList.remove('open');
           const current = d.title || d.topic || '';
-          const newName = prompt(uiLang === 'en' ? 'Rename document:' : 'Đổi tên bài viết:', current);
-          if (newName === null) return;
-          d.title = newName.trim(); d.titleCustom = true;
-          if (d.id === currentId) { titleInput.value = d.title; updateDocTitleDisplay(); }
-          saveDocs(); renderDocList();
+          const label = uiLang === 'en' ? 'Rename document' : 'Đổi tên bài viết';
+          showRenameDialog(current, label, newName => {
+            if (newName === null) return;
+            d.title = newName; d.titleCustom = true;
+            if (d.id === currentId) { titleInput.value = d.title; updateDocTitleDisplay(); }
+            saveDocs(); renderDocList();
+          });
         });
         if (hasFSA && div.querySelector('.doc-dd-save')) {
           div.querySelector('.doc-dd-save').addEventListener('click', e => {
@@ -6836,6 +6859,19 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
   </div>
 
   <!-- CONTEXT MENU -->
+  <!-- rename dialog -->
+  <div id="renameOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center">
+    <div style="background:var(--surface);border-radius:14px;padding:1.5rem 1.75rem;width:min(90vw,360px);box-shadow:0 8px 32px rgba(0,0,0,.25)">
+      <div style="font-size:1rem;font-weight:600;margin-bottom:.9rem" id="renameDlgTitle">Đổi tên bài viết</div>
+      <input id="renameDlgInput" type="text" style="width:100%;box-sizing:border-box;padding:.55rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem;background:var(--bg);color:var(--text);outline:none"
+        onkeydown="if(event.key==='Enter')renameDialogOK();if(event.key==='Escape')renameDialogCancel()">
+      <div style="display:flex;gap:.6rem;justify-content:flex-end;margin-top:1rem">
+        <button onclick="renameDialogCancel()" style="padding:.45rem 1.1rem;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.88rem">Huỷ</button>
+        <button onclick="renameDialogOK()" style="padding:.45rem 1.2rem;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:.88rem;font-weight:600">OK</button>
+      </div>
+    </div>
+  </div>
+
   <div id="ctxMenu" class="ctx-menu" role="menu">
     <button class="ctx-item" id="ctx-cut" onclick="ctxCut()"><i class="bi bi-scissors"></i> <span>Cắt</span></button>
     <button class="ctx-item" id="ctx-copy" onclick="ctxCopy()"><i class="bi bi-copy"></i> <span>Sao chép</span></button>

@@ -4848,6 +4848,7 @@ Rules:
 - Keep it practical: words the student can use TODAY in their writing
 - Show words IN ACTION, not just definitions
 - LANGUAGE RULE: Write ALL section headings, labels, explanations, and translations in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+- For Phrasal Verbs, Idioms, and Fixed Expressions: ONLY include if they are genuinely relevant to the topic. If there are none, SKIP that section entirely — do not force examples.
 
 ---
 
@@ -4871,12 +4872,48 @@ Rules:
 
 ---
 
+## 🔄 ${uiLang === 'en' ? 'Phrasal verbs' : 'Cụm động từ'} *(${uiLang === 'en' ? 'skip if none fit the topic' : 'bỏ qua nếu không liên quan'})*
+
+*(${uiLang === 'en' ? '3–5 phrasal verbs naturally connected to the topic' : '3–5 cụm động từ tự nhiên gắn với chủ đề'})*
+
+**phrasal verb** — ${uiLang === 'en' ? 'meaning' : 'nghĩa'}
+> *Example sentence using it in context.*
+
+*(repeat for each)*
+
+---
+
+## 💬 ${uiLang === 'en' ? 'Idioms & proverbs' : 'Thành ngữ & tục ngữ'} *(${uiLang === 'en' ? 'skip if none fit the topic' : 'bỏ qua nếu không liên quan'})*
+
+*(${uiLang === 'en' ? '2–3 idioms or proverbs that connect naturally to the topic — explain meaning, not just translate literally' : '2–3 thành ngữ hoặc tục ngữ gắn tự nhiên với chủ đề — giải thích ý nghĩa, không dịch từng chữ'})*
+
+**idiom / proverb** — ${uiLang === 'en' ? 'what it really means' : 'ý nghĩa thực sự'}
+> *Example sentence showing how to use it naturally.*
+
+*(repeat for each)*
+
+---
+
+## 📌 ${uiLang === 'en' ? 'Fixed expressions & useful phrases' : 'Cụm từ cố định & diễn đạt hay'} *(${uiLang === 'en' ? 'skip if none fit the topic' : 'bỏ qua nếu không liên quan'})*
+
+*(${uiLang === 'en' ? '3–5 fixed expressions, collocations, or set phrases common in this topic area' : '3–5 cụm từ cố định, kết hợp từ thông dụng, hoặc mẫu diễn đạt hay trong chủ đề này'})*
+
+**expression** — ${uiLang === 'en' ? 'meaning / when to use' : 'nghĩa / khi nào dùng'}
+> *Example sentence in context.*
+
+*(repeat for each)*
+
+---
+
 ## ✍️ ${uiLang === 'en' ? '3 sample sentences to use now' : '3 câu mẫu có thể dùng ngay'}
 
 > *Sentence 1 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*
 > *Sentence 2 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*
 > *Sentence 3 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*`,
-        'btn-vocab'
+        'btn-vocab',
+        false,
+        false,
+        3500
       );
       if (r) {
         if (d) { d.vocab = r; d.vocabKey = vocabKey; saveDocs(); }

@@ -6079,10 +6079,11 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
         const phonetics = entry.phonetics || [];
         const ipa = phonetics.find(p => p.text)?.text || entry.phonetic || '';
         const audioUrl = phonetics.find(p => p.audio)?.audio || '';
+        const audioProxyUrl = audioUrl ? `https://penly-proxy.nqh2610.workers.dev/audio?src=${encodeURIComponent(audioUrl)}` : '';
 
         if (ipa) md += `**Phiên âm:** ${ipa}`;
-        if (audioUrl) md += `  <audio-btn data-src="${audioUrl}"></audio-btn>`;
-        if (ipa || audioUrl) md += '\n\n';
+        if (audioProxyUrl) md += `  <audio-btn data-src="${audioProxyUrl}"></audio-btn>`;
+        if (ipa || audioProxyUrl) md += '\n\n';
 
         for (const meaning of (entry.meanings || []).slice(0, 4)) {
           md += `**${meaning.partOfSpeech}**\n`;

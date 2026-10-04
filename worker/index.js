@@ -181,6 +181,27 @@ export default {
       }
     }
 
+    // Audio proxy — streams pronunciation mp3 from dictionaryapi.dev
+    if (url.pathname === "/audio" && request.method === "GET") {
+      const src = url.searchParams.get("src");
+      if (!src || !src.startsWith("https://api.dictionaryapi.dev/")) {
+        return new Response("Invalid audio source", { status: 400 });
+      }
+      try {
+        const res = await fetch(src);
+        return new Response(res.body, {
+          status: res.status,
+          headers: {
+            "Content-Type": res.headers.get("Content-Type") || "audio/mpeg",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=86400",
+          },
+        });
+      } catch (e) {
+        return new Response("Audio fetch failed", { status: 502 });
+      }
+    }
+
     if (url.pathname.startsWith("/admin/")) {
       return handleAdmin(request, env, url);
     }

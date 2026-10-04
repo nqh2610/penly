@@ -6058,12 +6058,29 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       else document.getElementById('lbar').classList.add('hidden');
     }
 
+    // load IPA_DATA lazily on first dictionary use
+    let _ipaLoaded = false;
+    async function ensureIPA() {
+      if (_ipaLoaded || typeof IPA_DATA !== 'undefined') { _ipaLoaded = true; return; }
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'ipa-data.js';
+        s.onload = () => { _ipaLoaded = true; resolve(); };
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
     async function callDict() {
       const word = window.getSelection()?.toString().trim().toLowerCase();
       if (!word) return toast(t('no-text'));
       const vi = uiLang !== 'en';
       const title = vi ? `Từ điển: ${word}` : `Dictionary: ${word}`;
       openPanelWith(title);
+
+      // try local IPA first for instant display, then fetch full API data
+      let localIpa = null;
+      try { await ensureIPA(); localIpa = IPA_DATA[word] || null; } catch (_) {}
 
       let dictData = null;
       try {
@@ -6081,13 +6098,38 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       pContent.innerHTML = '';
 
       if (!dictData || !dictData[0]) {
-        pContent.innerHTML = `<h2 style="margin:0 0 .5rem">${word}</h2><p style="color:var(--muted);font-style:italic">${vi ? 'Không tìm thấy từ này trong từ điển.' : 'Word not found in dictionary.'}</p>`;
+        if (localIpa) {
+          // show minimal IPA-only card when API has no data but local IPA exists
+          const header = document.createElement('div');
+          header.style.cssText = 'display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem';
+          const wordEl = document.createElement('h2');
+          wordEl.style.cssText = 'margin:0;font-size:1.6rem';
+          wordEl.textContent = word;
+          header.appendChild(wordEl);
+          const ipaEl = document.createElement('span');
+          ipaEl.style.cssText = 'color:var(--muted);font-size:1rem';
+          ipaEl.textContent = localIpa;
+          header.appendChild(ipaEl);
+          const speakBtn = document.createElement('button');
+          speakBtn.className = 'dict-audio-btn';
+          speakBtn.title = vi ? 'Nghe phát âm' : 'Listen';
+          speakBtn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
+          speakBtn.onclick = () => { const u = new SpeechSynthesisUtterance(word); u.lang='en-US'; u.rate=0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); };
+          header.appendChild(speakBtn);
+          pContent.appendChild(header);
+          const note = document.createElement('p');
+          note.style.cssText = 'color:var(--muted);font-style:italic;font-size:.85rem;margin:.5rem 0 0';
+          note.textContent = vi ? 'Không có định nghĩa chi tiết.' : 'No detailed definitions available.';
+          pContent.appendChild(note);
+        } else {
+          pContent.innerHTML = `<h2 style="margin:0 0 .5rem">${word}</h2><p style="color:var(--muted);font-style:italic">${vi ? 'Không tìm thấy từ này trong từ điển.' : 'Word not found in dictionary.'}</p>`;
+        }
         return;
       }
 
       const entry = dictData[0];
       const phonetics = entry.phonetics || [];
-      const ipa = phonetics.find(p => p.text)?.text || entry.phonetic || '';
+      const ipa = phonetics.find(p => p.text)?.text || entry.phonetic || localIpa || '';
 
       // header: từ + IPA + nút phát âm
       const header = document.createElement('div');

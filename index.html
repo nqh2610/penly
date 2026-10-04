@@ -6129,8 +6129,8 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       pContent.innerHTML = '';
 
       if (!dictData || !dictData[0]) {
+        // build header with IPA if available
         if (localIpa) {
-          // show minimal IPA-only card when API has no data but local IPA exists
           const header = document.createElement('div');
           header.style.cssText = 'display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem';
           const wordEl = document.createElement('h2');
@@ -6148,12 +6148,26 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
           speakBtn.onclick = () => { const u = new SpeechSynthesisUtterance(word); u.lang='en-US'; u.rate=0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); };
           header.appendChild(speakBtn);
           pContent.appendChild(header);
-          const note = document.createElement('p');
-          note.style.cssText = 'color:var(--muted);font-style:italic;font-size:.85rem;margin:.5rem 0 0';
-          note.textContent = vi ? 'Không có định nghĩa chi tiết.' : 'No detailed definitions available.';
-          pContent.appendChild(note);
+        }
+        // fallback to AI for definition
+        const loadingEl = document.createElement('p');
+        loadingEl.style.cssText = 'color:var(--muted);font-size:.88rem;margin:.25rem 0';
+        loadingEl.textContent = vi ? 'Đang tra bằng AI...' : 'Looking up with AI...';
+        pContent.appendChild(loadingEl);
+        const aiPrompt = vi
+          ? `Tra từ tiếng Anh "${word}". Trả lời ngắn gọn bằng tiếng Việt: phiên âm IPA, loại từ, nghĩa chính (1-2 nghĩa), 1 ví dụ câu. Không giải thích dài dòng.`
+          : `Define the English word "${word}" briefly: IPA pronunciation, part of speech, 1-2 main meanings, 1 example sentence.`;
+        const aiResult = await callAI(aiPrompt, null, true, true, 400);
+        loadingEl.remove();
+        if (aiResult) {
+          const aiEl = document.createElement('div');
+          aiEl.innerHTML = marked.parse(aiResult);
+          pContent.appendChild(aiEl);
         } else {
-          pContent.innerHTML = `<h2 style="margin:0 0 .5rem">${word}</h2><p style="color:var(--muted);font-style:italic">${vi ? 'Không tìm thấy từ này trong từ điển.' : 'Word not found in dictionary.'}</p>`;
+          const errEl = document.createElement('p');
+          errEl.style.cssText = 'color:var(--muted);font-style:italic';
+          errEl.textContent = vi ? 'Không tìm thấy từ này.' : 'Word not found.';
+          pContent.appendChild(errEl);
         }
         return;
       }

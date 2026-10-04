@@ -6065,25 +6065,13 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       const title = vi ? `Từ điển: ${word}` : `Dictionary: ${word}`;
       openPanelWith(title);
 
-      // 1. Gọi Free Dictionary API
       let dictData = null;
       try {
         const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
         if (res.ok) dictData = await res.json();
       } catch {}
 
-      // 2. Gọi AI dịch nghĩa tiếng Việt ngắn gọn
-      const aiPromise = callAI(
-        `Translate the English word "${word}" to Vietnamese. Give:
-1. Nghĩa chính (1-2 từ tiếng Việt)
-2. Các nghĩa phổ biến khác nếu có (tối đa 3)
-3. Ví dụ: 1 câu tiếng Anh ngắn dùng từ này + dịch tiếng Việt
-Be concise. No extra explanation.`,
-        null, false, true, 200
-      );
-
-      // 3. Render kết quả khi có
-      let md = '';
+      let md = `# ${word}\n\n`;
 
       if (dictData && dictData[0]) {
         const entry = dictData[0];
@@ -6091,50 +6079,39 @@ Be concise. No extra explanation.`,
         const ipa = phonetics.find(p => p.text)?.text || entry.phonetic || '';
         const audioUrl = phonetics.find(p => p.audio)?.audio || '';
 
-        md += `# ${word}\n\n`;
         if (ipa) md += `**Phiên âm:** ${ipa}`;
         if (audioUrl) md += `  <audio-btn data-src="${audioUrl}"></audio-btn>`;
-        md += '\n\n';
+        if (ipa || audioUrl) md += '\n\n';
 
-        // định nghĩa tiếng Anh theo từ loại
-        for (const meaning of (entry.meanings || []).slice(0, 3)) {
+        for (const meaning of (entry.meanings || []).slice(0, 4)) {
           md += `**${meaning.partOfSpeech}**\n`;
-          for (const def of (meaning.definitions || []).slice(0, 2)) {
+          for (const def of (meaning.definitions || []).slice(0, 3)) {
             md += `- ${def.definition}\n`;
             if (def.example) md += `  > *${def.example}*\n`;
           }
           md += '\n';
         }
+
+        // synonyms
+        const synonyms = (entry.meanings || []).flatMap(m => m.synonyms || []).slice(0, 6);
+        if (synonyms.length) md += `**${vi ? 'Từ đồng nghĩa' : 'Synonyms'}:** ${synonyms.join(', ')}\n`;
       } else {
-        md += `# ${word}\n\n`;
-        if (!vi) md += `*Word not found in dictionary.*\n\n`;
-        else md += `*Không tìm thấy từ này trong từ điển.*\n\n`;
+        md += vi ? '*Không tìm thấy từ này trong từ điển.*' : '*Word not found in dictionary.*';
       }
 
-      // chờ AI xong rồi thêm vào
-      const aiResult = await aiPromise;
-      if (aiResult) {
-        md += `---\n\n## 🇻🇳 Nghĩa tiếng Việt\n\n${aiResult}`;
-      }
-
-      if (md) {
-        openPanel(title, md, null);
-        // inject audio buttons sau khi panel render
-        setTimeout(() => {
-          document.querySelectorAll('audio-btn[data-src]').forEach(el => {
-            const src = el.getAttribute('data-src');
-            if (!src) return;
-            const btn = document.createElement('button');
-            btn.className = 'dict-audio-btn';
-            btn.title = 'Phát âm';
-            btn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
-            btn.onclick = () => { new Audio(src).play(); };
-            el.replaceWith(btn);
-          });
-        }, 100);
-      } else {
-        document.getElementById('lbar').classList.add('hidden');
-      }
+      openPanel(title, md, null);
+      setTimeout(() => {
+        document.querySelectorAll('audio-btn[data-src]').forEach(el => {
+          const src = el.getAttribute('data-src');
+          if (!src) return;
+          const btn = document.createElement('button');
+          btn.className = 'dict-audio-btn';
+          btn.title = vi ? 'Nghe phát âm' : 'Listen';
+          btn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
+          btn.onclick = () => new Audio(src).play();
+          el.replaceWith(btn);
+        });
+      }, 100);
     }
 
     // ── SELECTION TOOLBAR (mobile) ──

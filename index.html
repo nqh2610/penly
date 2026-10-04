@@ -1600,7 +1600,7 @@
       border-radius: 0 7px 7px 0;
       margin: 0.55rem 0;
       font-style: italic;
-      color: var(--text);
+      color: var(--accent);
       font-weight: 500;
     }
 
@@ -3887,21 +3887,21 @@ Gợi ý:
       return MODEL_CHAIN[MODEL_CHAIN.length - 1];
     }
 
-    async function _callWorker(lk, prompt, model) {
+    async function _callWorker(lk, prompt, model, maxTokens = 2000) {
       const res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000, model })
+        body: JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: maxTokens, model })
       });
       return res.json();
     }
 
-    async function _callFallback(lk, prompt) {
+    async function _callFallback(lk, prompt, maxTokens = 2000) {
       try {
         const cfRes = await fetch(WORKER_URL.replace(/\/?$/, '') + '/cf-ai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: 2000 })
+          body: JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: maxTokens })
         });
         const cfData = await cfRes.json();
         if (cfData.content) return cfData;
@@ -3909,7 +3909,7 @@ Gợi ý:
       return null;
     }
 
-    async function callAI(prompt, btnId, silent = false, noPanel = false) {
+    async function callAI(prompt, btnId, silent = false, noPanel = false, maxTokens = 2000) {
       const lk = getLicenseKey();
       if (!lk || !(await isValidKey(lk))) {
         if (!silent) setBusy(btnId, false, !noPanel);
@@ -3923,7 +3923,7 @@ Gợi ý:
       // check if all Groq models are on cooldown — skip straight to fallback
       const allCooled = MODEL_CHAIN.every(m => _modelCooldown[m] && now < _modelCooldown[m]);
       if (allCooled) {
-        const fb = await _callFallback(lk, prompt);
+        const fb = await _callFallback(lk, prompt, maxTokens);
         if (fb) {
           if (!silent) setBusy(btnId, false, !noPanel);
           setModelChip(fb.or_model ? '__or__' : '__cf__');
@@ -3939,7 +3939,7 @@ Gợi ý:
         if (_modelCooldown[model] && now < _modelCooldown[model]) continue;
 
         try {
-          const d = await _callWorker(lk, prompt, model);
+          const d = await _callWorker(lk, prompt, model, maxTokens);
 
           if (d.content) {
             if (!silent) setBusy(btnId, false, !noPanel);
@@ -3958,7 +3958,7 @@ Gợi ý:
             const hasNext = MODEL_CHAIN.slice(i + 1).some(m => !_modelCooldown[m] || Date.now() >= _modelCooldown[m]);
             if (hasNext) continue;
             // all Groq exhausted — try fallback silently
-            const fb = await _callFallback(lk, prompt);
+            const fb = await _callFallback(lk, prompt, maxTokens);
             if (fb) {
               if (!silent) setBusy(btnId, false, !noPanel);
               setModelChip(fb.or_model ? '__or__' : '__cf__');
@@ -4179,6 +4179,15 @@ Rules:
 
       const vi = uiLang !== 'en';
 
+      // Cache check — reuse if same topic/level/tone/aud/lang
+      const d = getDoc(currentId);
+      const cacheKey = `${tp}|${level}|${tone}|${aud}|${lang}`;
+      if (d && d.outline && d.outlineKey === cacheKey) {
+        document.getElementById('pCards').style.display = 'none';
+        openPanel(t('panel-outline'), d.outline, null);
+        return;
+      }
+
       const r = await callAI(
         `You are an expert ESL writing coach. Create a clear, step-by-step writing outline that guides the student through writing the essay sentence by sentence.
 
@@ -4264,7 +4273,7 @@ ${vi ? 'Gợi ý: Điều gì chứng minh ý trên? Bạn đã trải qua đi�
 ${vi ? 'Gợi ý: Một lần cụ thể bạn còn nhớ? Ngày, giờ, địa điểm nào?' : 'Hint: A specific time you remember? What day, where, what happened?'}
 > *[Write an English example sentence for paragraph 1 — specific and vivid]*
 
-#### ④ ${vi ? 'Câu chuyển ý' : 'Transition sentence'} — ${vi ? 'khép đoạn lại và dẫn sang đoạn 2. Không thêm ý mới, chỉ kết nối' : 'closes this paragraph and leads into paragraph 2. No new ideas, just connect'}
+#### ④ ${vi ? 'Câu chuyển ý' : 'Transition sentence'} — ${vi ? 'câu cuối đoạn: khép ý đã viết lại và dẫn người đọc sang đoạn tiếp theo một cách tự nhiên' : 'the closing sentence: wraps up what you wrote and smoothly leads the reader into the next paragraph'}
 > *[Write an English transition sentence from paragraph 1 to paragraph 2]*
 
 💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **word1** *(${vi ? 'nghĩa' : 'meaning'})*, **word2** *(${vi ? 'nghĩa' : 'meaning'})*, **word3** *(${vi ? 'nghĩa' : 'meaning'})*
@@ -4373,14 +4382,17 @@ ${isAdvanced ? `### 📌 ${vi ? 'Đoạn phản biện' : 'Counterargument parag
 
 ---
 
-## 3️⃣ ${vi ? 'Kết bài' : 'Conclusion'} *(${vi ? '3 câu — KHÔNG thêm ý mới' : '3 sentences — NO new ideas'})*
+## 3️⃣ ${vi ? 'Kết bài' : 'Conclusion'} *(${vi ? '3 câu — khép lại và nâng tầm bài viết' : '3 sentences — close and elevate the essay'})*
 
 ${vi ? `> 💡 **Tại sao không thêm ý mới?** Kết bài không phải chỗ bắt đầu — người đọc đang chờ bài kết thúc. Thêm ý mới lúc này sẽ làm bài rối và thiếu chuyên nghiệp. Nhiệm vụ của kết bài là *khép lại* và *nâng tầm* những gì đã viết.` : `> 💡 **Why no new ideas?** The conclusion is not the place to start — the reader is expecting closure. Adding new ideas here makes the essay feel unfinished and disorganised. The job of the conclusion is to *close* and *elevate* what you have already written.`}
 
 ${isBasic ? `#### ① ${vi ? 'Câu nhắc lại' : 'Summary sentence'} — ${vi ? 'nhắc lại chủ đề bằng từ khác, không sao chép câu mở bài' : 'restate the topic in different words, do not copy the opening sentence'}
 > *[Write an English sentence restating "${tp}" in different words from the introduction]*
 
-#### ② ${vi ? 'Câu cảm xúc/Lời nhắn' : 'Closing thought'} — ${vi ? 'kết thúc bằng 1 câu có cảm xúc hoặc lời nhắn nhủ nhẹ nhàng' : 'end with 1 emotional sentence or a gentle message'}
+#### ② ${vi ? 'Tóm tắt ý chính' : 'Brief summary'} — ${vi ? 'nhắc lại 1–2 ý đã viết ở thân bài (tên ý, không kể lại chi tiết)' : 'name the 1–2 ideas from the body paragraphs (just the idea, no details)'}
+> *[Write 1 short English sentence naming the main ideas covered in this essay]*
+
+#### ③ ${vi ? 'Câu kết ấn tượng' : 'Closing thought'} — ${vi ? 'kết thúc bằng 1 câu có cảm xúc hoặc lời nhắn nhủ nhẹ nhàng' : 'end with 1 warm or memorable sentence'}
 > *[Write an English closing sentence — warm, personal, and memorable]*` : isMid ? `#### ① ${vi ? 'Nhắc lại luận điểm chính' : 'Restate thesis'} — ${vi ? 'viết lại câu luận điểm chính ở mở bài bằng từ khác (không copy nguyên văn)' : 'rewrite the thesis from the introduction in different words (do not copy verbatim)'}
 > *[Write an English restate sentence — same idea as the thesis, completely different words]*
 
@@ -4398,9 +4410,13 @@ ${isBasic ? `#### ① ${vi ? 'Câu nhắc lại' : 'Summary sentence'} — ${vi 
 #### ③ ${vi ? 'Câu kết mở rộng' : 'Final thought'} — ${vi ? 'câu cuối cùng nâng tầm bài viết: ý nghĩa với xã hội, lời kêu gọi hành động, hoặc hình ảnh ấn tượng. Chọn 1 trong 2:' : 'the final sentence elevates the essay to a broader level: societal significance, call to action, or a striking image. Choose 1 of 2:'}
 > *[Final thought option 1 — broader implication or societal significance of "${tp}"]*
 > *[Final thought option 2 — call to action or thought-provoking closing image]*`}`,
-        'btn-outline'
+        'btn-outline',
+        false,
+        false,
+        4000
       );
       if (r) {
+        if (d) { d.outline = r; d.outlineKey = cacheKey; saveDocs(); }
         document.getElementById('pCards').style.display = 'none';
         openPanel(t('panel-outline'), r, null);
       }
@@ -4687,6 +4703,15 @@ LANGUAGE RULE: Write ALL feedback, section headings, explanations, and suggestio
     async function callVocab() {
       const tp = topic(); const text = editor.innerText.trim();
       if (!tp && !text) return toast(t('no-text-vocab'));
+
+      // Cache check — reuse if same topic/level/lang
+      const d = getDoc(currentId);
+      const vocabKey = `${tp}|${lvlSel.value}|${uiLang}`;
+      if (d && d.vocab && d.vocabKey === vocabKey) {
+        openPanel(t('panel-vocab'), d.vocab, null);
+        return;
+      }
+
       const r = await callAI(
         `You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for this student.
 
@@ -4732,7 +4757,10 @@ Rules:
 > *Sentence 3 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*`,
         'btn-vocab'
       );
-      if (r) openPanel(t('panel-vocab'), r, null);
+      if (r) {
+        if (d) { d.vocab = r; d.vocabKey = vocabKey; saveDocs(); }
+        openPanel(t('panel-vocab'), r, null);
+      }
     }
 
     async function callTranslate() {

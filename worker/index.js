@@ -168,6 +168,19 @@ export default {
 
     const url = new URL(request.url);
 
+    // Dictionary proxy endpoint — no auth needed, just proxies free API
+    if (url.pathname === "/dict" && request.method === "GET") {
+      const word = url.searchParams.get("word");
+      if (!word) return json({ error: "word required" }, 400);
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        const data = await res.json();
+        return json(data, res.status);
+      } catch (e) {
+        return json({ error: "Dictionary API failed" }, 502);
+      }
+    }
+
     if (url.pathname.startsWith("/admin/")) {
       return handleAdmin(request, env, url);
     }

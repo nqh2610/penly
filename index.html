@@ -6067,7 +6067,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
 
       let dictData = null;
       try {
-        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        const res = await fetch(`https://penly-proxy.nqh2610.workers.dev/dict?word=${encodeURIComponent(word)}`);
         if (res.ok) dictData = await res.json();
         else console.warn('Dict API status:', res.status);
       } catch (e) { console.error('Dict API error:', e); }

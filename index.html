@@ -5804,6 +5804,16 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
     // Context menu TTS helpers
     function ctxTTSPara() {
       closeCtxMenu();
+      const sel = window.getSelection()?.toString().trim();
+      // nếu từ panel: đọc selection hoặc đoạn chứa cursor trong panel
+      if (ctxFromPanel) {
+        const pContent = document.getElementById('pContent');
+        const text = sel || pContent?.innerText?.trim();
+        if (!text) return toast(uiLang === 'en' ? 'No text to read.' : 'Không có chữ để đọc.');
+        ttsMode = 'para';
+        ttsSpeak(text, 0);
+        return;
+      }
       const para = ttsGetCurrentPara();
       if (!para) return toast(uiLang === 'en' ? 'No text to read.' : 'Không có chữ để đọc.');
       ttsMode = 'para';
@@ -5812,6 +5822,22 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
 
     function ctxTTSFrom() {
       closeCtxMenu();
+      // nếu từ panel: đọc từ selection đến hết panel
+      if (ctxFromPanel) {
+        const pContent = document.getElementById('pContent');
+        const selObj = window.getSelection();
+        let fromText = '';
+        if (selObj && selObj.rangeCount && pContent?.contains(selObj.anchorNode)) {
+          const range = selObj.getRangeAt(0).cloneRange();
+          range.setEnd(pContent, pContent.childNodes.length);
+          fromText = range.toString().trim();
+        }
+        if (!fromText) fromText = pContent?.innerText?.trim();
+        if (!fromText) return toast(uiLang === 'en' ? 'No text to read.' : 'Không có chữ để đọc.');
+        ttsMode = 'from';
+        ttsSpeak(fromText, 0);
+        return;
+      }
       // Read from cursor position to end
       const sel = window.getSelection();
       let fromText = '';
@@ -5838,8 +5864,10 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
     // ── CONTEXT MENU ──
     let ctxLongPressTimer = null;
     let ctxTargetNode = null;
+    let ctxFromPanel = false;
 
     function showCtxMenu(x, y, panelMode = false) {
+      ctxFromPanel = panelMode;
       const menu = document.getElementById('ctxMenu');
       if (!menu) return;
       const selText = window.getSelection()?.toString().trim() || '';

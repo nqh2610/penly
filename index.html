@@ -1293,7 +1293,7 @@
       flex-shrink: 0;
     }
 
-
+    .express-modal {
       display: none;
       position: fixed;
       inset: 0;
@@ -5810,10 +5810,14 @@ ${text}
       if (!menu || !btn) return;
       // If speaking/paused, clicking main button toggles pause/resume directly
       if (ttsState === 'speaking') {
-        tts.pause(); ttsState = 'paused'; ttsUpdateUI(); return;
+        tts.pause(); ttsState = 'paused'; ttsUpdateUI();
+        menu.classList.remove('open');
+        return;
       }
       if (ttsState === 'paused') {
-        tts.resume(); ttsState = 'speaking'; ttsUpdateUI(); ttsStartKeepAlive(); return;
+        tts.resume(); ttsState = 'speaking'; ttsUpdateUI(); ttsStartKeepAlive();
+        menu.classList.remove('open');
+        return;
       }
       const isOpen = menu.classList.contains('open');
       if (isOpen) { menu.classList.remove('open'); return; }

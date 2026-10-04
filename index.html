@@ -5482,42 +5482,38 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
         toggleSettings();
     });
 
-    // swipe-down or swipe-left to close settings drawer
+    // swipe-down to close settings drawer (same logic as panel)
     (() => {
       const d = document.getElementById('settingsDrawer');
-      let startX = 0, startY = 0, dragging = false;
+      let startY = 0, startX = 0, dragging = false;
       d.addEventListener('touchstart', e => {
         const body = d.querySelector('.sd-body');
         const atTop = !body || body.scrollTop <= 2;
         if (!atTop) return;
-        startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
         dragging = true;
       }, { passive: true });
       d.addEventListener('touchmove', e => {
         if (!dragging) return;
-        const dx = e.touches[0].clientX - startX;
         const dy = e.touches[0].clientY - startY;
-        const adx = Math.abs(dx), ady = Math.abs(dy);
-        // swipe down
-        if (dy > 10 && adx < ady) {
+        const dx = Math.abs(e.touches[0].clientX - startX);
+        if (dy > 10 && dx < dy) {
           d.style.transform = `translateX(0) translateY(${Math.min(dy, 200)}px)`;
-          d.style.transition = 'none';
-        }
-        // swipe left (toward right edge — closes drawer sliding back right)
-        else if (dx > 10 && ady < adx) {
-          d.style.transform = `translateX(${Math.min(dx, 280)}px)`;
           d.style.transition = 'none';
         }
       }, { passive: true });
       d.addEventListener('touchend', e => {
         if (!dragging) return;
         dragging = false;
-        const dx = e.changedTouches[0].clientX - startX;
         const dy = e.changedTouches[0].clientY - startY;
         d.style.transition = '';
-        d.style.transform = '';
-        if (dy > 80 || dx > 80) toggleSettings();
+        if (dy > 80) {
+          d.style.transform = '';
+          toggleSettings();
+        } else {
+          d.style.transform = '';
+        }
       });
     })();
 

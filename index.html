@@ -4604,225 +4604,51 @@ Rules:
       }
 
       const r = await callAI(
-        `You are an expert ESL writing coach. Create a clear, step-by-step writing outline that guides the student through writing the essay sentence by sentence.
+        `You are an expert ESL writing coach. Write a complete essay outline for this student.
 
 Topic: "${tp}"
 Level: ${level} | Tone: ${tone} | Audience: ${aud}
-Interface language: ${lang}
+Language for labels/tips: ${lang}
+Number of body paragraphs: ${isBasic ? 2 : isAdvanced ? '3–4' : 3}
 
-ABSOLUTE RULES:
-1. ALL blockquote sentences (> *...*) MUST be real, complete English sentences — not placeholders, not descriptions. Write actual sentences the student can learn from and adapt.
-2. All labels, explanations, guiding questions, and tips outside blockquotes must be in ${lang}.
-3. NO mixing Vietnamese into English blockquotes and NO mixing English labels into ${lang} explanations.
-4. NO em dash (—). Use comma or and/but/so instead.
-5. Sentences in blockquotes must match level (${level}), tone (${tone}), and audience (${aud}) exactly.
-6. Bold each suggested vocab word, italic its ${lang} meaning.
-
-SENTENCE COMPLEXITY by level:
-- A1/A2: very short simple sentences, basic vocabulary, present tense mostly
-- A2+/B1: simple to compound sentences, common vocabulary, past and present tense
-- B1+/B2: compound and complex sentences, varied vocabulary, varied tenses
-- C1/C2: sophisticated sentences, academic or nuanced vocabulary, advanced structures
+CRITICAL: Every example sentence must be a REAL, COMPLETE English sentence about "${tp}" — not a description, not a placeholder, not "[write something here]". Write the actual sentences a student can copy and adapt.
 
 ---
 
-${vi ? `## 📋 Tổng quan bài viết
-**Chủ đề:** "${tp}" | **Trình độ:** ${level} | **Giọng văn:** ${tone} | **Độc giả:** ${aud}
-**Cấu trúc:** Mở bài → Thân bài (${isBasic ? '2' : isAdvanced ? '3–4' : '3'} đoạn) → Kết bài` : `## 📋 Essay Overview
-**Topic:** "${tp}" | **Level:** ${level} | **Tone:** ${tone} | **Audience:** ${aud}
-**Structure:** Intro → Body (${isBasic ? '2' : isAdvanced ? '3–4' : '3'} paragraphs) → Conclusion`}
+${vi ? 'Viết dàn ý đầy đủ theo cấu trúc này:' : 'Write a complete outline following this structure:'}
+
+## 📋 ${vi ? 'Tổng quan' : 'Overview'}
+${vi ? `Tóm tắt 1–2 câu về hướng triển khai bài viết cho chủ đề này ở trình độ ${level}.` : `1–2 sentence summary of how to approach this topic at level ${level}.`}
 
 ---
 
-## 1️⃣ ${vi ? 'Mở bài' : 'Introduction'} *(${vi ? '3 câu' : '3 sentences'})*
+## 1️⃣ ${vi ? 'Mở bài' : 'Introduction'}
+${vi ? `Giải thích ngắn mục tiêu mở bài cho chủ đề này, rồi viết ví dụ cho từng phần:` : `Briefly explain the intro goal for this topic, then write examples for each part:`}
 
-${isBasic ? `#### ① ${vi ? 'Câu mở đầu' : 'Opening sentence'} — ${vi ? 'giới thiệu chủ đề đơn giản' : 'introduce the topic simply'}
-> *[Write a natural English opening sentence about "${tp}" for level ${level}]*
-
-#### ② ${vi ? 'Câu thesis' : 'Thesis'} — ${vi ? 'nói rõ bài viết về điều gì' : 'say what the essay is about'}
-> *[Write 1 short English sentence stating what this essay will describe]*` : isMid ? `#### ① ${vi ? 'Câu mở đầu' : 'Hook'} — ${vi ? 'câu hỏi hoặc nhận xét gây tò mò, kéo người đọc vào bài' : 'a question or observation that draws the reader in'}
-${vi ? 'Chọn 1 trong 2 câu mẫu dưới đây hoặc tự viết theo phong cách tương tự:' : 'Choose one of the two examples below or write your own in a similar style:'}
-> *[Hook option 1 — engaging question or observation about "${tp}"]*
-> *[Hook option 2 — different angle, same topic]*
-
-#### ② ${vi ? 'Bối cảnh' : 'Background'} — ${vi ? '1 câu giới thiệu chủ đề tự nhiên, không quá chi tiết' : '1 sentence that eases the reader into the topic, not too detailed'}
-> *[Write 1 English background sentence about "${tp}"]*
-
-#### ③ ${vi ? 'Luận điểm chính' : 'Thesis statement'} — ${vi ? 'câu quan trọng nhất của mở bài: báo trước bài viết có mấy ý và về điều gì' : 'the most important sentence of the introduction: announces how many points the essay covers and what they are'}
-> *[Write 1 English thesis sentence announcing the main points of this essay]*` : `#### ① ${vi ? 'Câu mở đầu' : 'Hook'} — ${vi ? 'câu gây ấn tượng mạnh ngay từ đầu. Chọn 1 trong 2 cách: đặt câu hỏi khiêu khích, hoặc nêu một thực tế bất ngờ' : 'a powerful opener. Choose 1 of 2 approaches: provocative question, or surprising fact/bold statement'}
-> *[Hook option 1 — provocative question or striking fact about "${tp}"]*
-> *[Hook option 2 — bold statement or unexpected angle about "${tp}"]*
-
-#### ② ${vi ? 'Bối cảnh' : 'Background'} — ${vi ? '1–2 câu cung cấp ngữ cảnh, viết lại chủ đề bằng từ của mình (không sao chép đề bài)' : '1–2 sentences that provide context, paraphrase the topic in your own words (do not copy the topic verbatim)'}
-> *[Write 1–2 English background sentences about "${tp}" — your own words]*
-
-#### ③ ${vi ? 'Luận điểm chính' : 'Thesis statement'} — ${vi ? 'câu quan trọng nhất: nêu rõ lập trường hoặc mục đích, cụ thể không mơ hồ. Câu này trả lời: "Bài viết sẽ chứng minh/thảo luận/mô tả điều gì?"' : 'the most important sentence: clearly states your position or purpose. It answers: "What exactly will this essay prove/discuss/describe?"'}
-> *[Write 1 English thesis sentence — specific, not vague, announcing the essay structure]*`}
+**Hook** — ${vi ? 'câu mở đầu gây ấn tượng' : 'attention-grabbing opener'} (${vi ? '2 lựa chọn' : '2 options'})
+**${vi ? 'Bối cảnh' : 'Background'}** — ${vi ? '1 câu giới thiệu chủ đề' : '1 sentence introducing the topic'}
+**${vi ? 'Luận điểm' : 'Thesis'}** — ${vi ? '1 câu báo trước ý chính' : '1 sentence announcing the main ideas'}
 
 ---
 
-## 2️⃣ ${vi ? 'Thân bài' : 'Body paragraphs'}
-
-${vi ? `> 💡 **Cách viết mỗi đoạn:** Viết theo đúng thứ tự ①②③④. Mỗi số là 1 bước — đọc hướng dẫn, xem câu mẫu, rồi tự viết câu của bạn.` : `> 💡 **How to write each paragraph:** Follow steps ①②③④ in order. Each number is one step — read the instruction, study the example, then write your own sentence.`}
-
-### 📌 ${vi ? 'Đoạn 1' : 'Paragraph 1'} — *[${vi ? 'AI điền tên ý chính cụ thể vào đây' : 'AI fills in the specific main idea here'}]*
-
-${isBasic ? `#### ① ${vi ? 'Câu mở đoạn' : 'Opening sentence'} — ${vi ? 'giới thiệu ý chính của đoạn' : 'introduce the main idea of this paragraph'}
-> *[Write a simple English opening sentence for paragraph 1 about "${tp}"]*
-
-#### ② ${vi ? 'Câu hỗ trợ' : 'Supporting sentence'} — ${vi ? 'giải thích hoặc kể thêm về ý đó' : 'explain or add detail to the main idea'}
-${vi ? 'Gợi ý: Điều đó xảy ra như thế nào? Ai, ở đâu, khi nào?' : 'Hint: How does that happen? Who, where, when?'}
-> *[Write a simple English supporting sentence for paragraph 1]*
-
-💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **word1** *(${vi ? 'nghĩa' : 'meaning'})*, **word2** *(${vi ? 'nghĩa' : 'meaning'})*
-🔗 **${vi ? 'Từ nối' : 'Connectors'}:** First, Also, And` : isMid ? `#### ① ${vi ? 'Câu chủ đề' : 'Topic sentence'} — ${vi ? 'câu đầu tiên của đoạn, nêu rõ ý chính. Người đọc chỉ đọc câu này cũng hiểu đoạn nói về gì' : 'the first sentence of the paragraph, states the main idea clearly. A reader should understand the paragraph from this sentence alone'}
-> *[Write an English topic sentence for paragraph 1 — state the main idea directly]*
-
-#### ② ${vi ? 'Câu giải thích' : 'Explanation'} — ${vi ? 'tại sao ý đó đúng? Giải thích bằng 1–2 câu' : 'why is that idea true? Explain in 1–2 sentences'}
-${vi ? 'Gợi ý: Điều gì chứng minh ý trên? Bạn đã trải qua điều đó chưa?' : 'Hint: What proves that idea? Have you experienced this?'}
-> *[Write an English explanation sentence for paragraph 1]*
-
-#### ③ ${vi ? 'Câu ví dụ cụ thể' : 'Specific example'} — ${vi ? 'kể 1 tình huống thật từ cuộc sống của bạn hoặc người bạn biết' : 'describe 1 real situation from your life or someone you know'}
-${vi ? 'Gợi ý: Một lần cụ thể bạn còn nhớ? Ngày, giờ, địa điểm nào?' : 'Hint: A specific time you remember? What day, where, what happened?'}
-> *[Write an English example sentence for paragraph 1 — specific and vivid]*
-
-#### ④ ${vi ? 'Câu chuyển ý' : 'Transition sentence'} — ${vi ? 'câu cuối đoạn: khép ý đã viết lại và dẫn người đọc sang đoạn tiếp theo một cách tự nhiên' : 'the closing sentence: wraps up what you wrote and smoothly leads the reader into the next paragraph'}
-> *[Write an English transition sentence from paragraph 1 to paragraph 2]*
-
-💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **word1** *(${vi ? 'nghĩa' : 'meaning'})*, **word2** *(${vi ? 'nghĩa' : 'meaning'})*, **word3** *(${vi ? 'nghĩa' : 'meaning'})*
-🔗 **${vi ? 'Từ nối mở câu ②' : 'Connectors for sentence ②'}:** First / In addition / For example / Therefore` : `#### ① ${vi ? 'Câu chủ đề' : 'Topic sentence'} — ${vi ? 'câu đầu tiên, nêu luận điểm rõ ràng. Đây là "hợp đồng" với người đọc: đoạn này sẽ chứng minh điều gì' : 'the first sentence, states a clear argument. This is your "contract" with the reader: what this paragraph will prove'}
-> *[Write an English topic sentence for paragraph 1 — one clear, specific argument]*
-
-#### ② ${vi ? 'Câu giải thích' : 'Explanation'} *(${vi ? '2–3 câu' : '2–3 sentences'})* — ${vi ? 'phân tích tại sao luận điểm đó đúng. Đưa ra lý do, logic, hoặc nguyên nhân' : 'analyse why that argument is true. Give reasons, logic, or causes'}
-${vi ? 'Gợi ý: Cơ chế nào khiến điều đó xảy ra? Điều gì dẫn đến điều gì?' : 'Hint: What mechanism makes this happen? What leads to what?'}
-> *[Write 1 English explanation sentence for paragraph 1 — reasoning, not just facts]*
-
-#### ③ ${vi ? 'Bằng chứng/Ví dụ' : 'Evidence/Example'} — ${vi ? 'dẫn chứng cụ thể: số liệu, nghiên cứu, hoặc ví dụ thực tế để củng cố lý do ở ②' : 'specific evidence: a statistic, study, or real-world example to back up the reasoning in ②'}
-${vi ? 'Gợi ý: Có số liệu nào liên quan không? Bạn hoặc ai đó đã trải qua điều này như thế nào?' : 'Hint: Any relevant statistics? How have you or someone experienced this?'}
-> *[Write an English evidence or example sentence for paragraph 1 — specific and concrete]*
-
-#### ④ ${vi ? 'Câu kết/Chuyển ý' : 'Closing/Transition'} — ${vi ? 'khép lại luận điểm của đoạn này và dẫn sang đoạn 2 một cách tự nhiên' : 'wraps up this paragraph argument and naturally leads into paragraph 2'}
-> *[Write an English transition sentence from paragraph 1 to paragraph 2]*
-
-💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **word1** *(${vi ? 'nghĩa' : 'meaning'})*, **word2** *(${vi ? 'nghĩa' : 'meaning'})*, **word3** *(${vi ? 'nghĩa' : 'meaning'})*, **word4** *(${vi ? 'nghĩa' : 'meaning'})*
-🔗 **${vi ? 'Từ nối mở câu ②' : 'Connectors for sentence ②'}:** Furthermore / This means that / As a result / Notably`}
-
-### 📌 ${vi ? 'Đoạn 2' : 'Paragraph 2'} — *[${vi ? 'AI điền tên ý chính cụ thể vào đây' : 'AI fills in the specific main idea here'}]*
-
-${isBasic ? `#### ① ${vi ? 'Câu mở đoạn' : 'Opening sentence'}:
-> *[Write a simple English opening sentence for paragraph 2 — a different idea from paragraph 1]*
-
-#### ② ${vi ? 'Câu hỗ trợ' : 'Supporting sentence'}:
-${vi ? 'Gợi ý: Điều đó xảy ra như thế nào trong cuộc sống hàng ngày?' : 'Hint: How does this show up in everyday life?'}
-> *[Write a simple English supporting sentence for paragraph 2]*
-
-💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **word1** *(${vi ? 'nghĩa' : 'meaning'})*, **word2** *(${vi ? 'nghĩa' : 'meaning'})*
-🔗 **${vi ? 'Từ nối' : 'Connectors'}:** Next, Then, But` : isMid ? `#### ① ${vi ? 'Câu chủ đề' : 'Topic sentence'} — ${vi ? 'ý khác với đoạn 1, không lặp lại' : 'a different idea from paragraph 1, no repetition'}
-> *[Write an English topic sentence for paragraph 2 — a new, distinct idea]*
-
-#### ② ${vi ? 'Câu giải thích' : 'Explanation'}:
-${vi ? 'Gợi ý: Tại sao ý này quan trọng? Nó ảnh hưởng đến cuộc sống như thế nào?' : 'Hint: Why does this matter? How does it affect daily life?'}
-> *[Write an English explanation sentence for paragraph 2]*
-
-#### ③ ${vi ? 'Câu ví dụ cụ thể' : 'Specific example'}:
-${vi ? 'Gợi ý: Một tình huống thật bạn nhớ rõ nhất về ý này?' : 'Hint: A real situation you remember clearly related to this idea?'}
-> *[Write an English example sentence for paragraph 2 — specific and personal]*
-
-#### ④ ${vi ? 'Câu chuyển ý' : 'Transition sentence'}:
-> *[Write an English transition sentence from paragraph 2 to paragraph 3]*
-
-💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **word1** *(${vi ? 'nghĩa' : 'meaning'})*, **word2** *(${vi ? 'nghĩa' : 'meaning'})*, **word3** *(${vi ? 'nghĩa' : 'meaning'})*
-🔗 **${vi ? 'Từ nối mở câu ②' : 'Connectors for sentence ②'}:** However / On the other hand / Additionally / As a result` : `#### ① ${vi ? 'Câu chủ đề' : 'Topic sentence'} — ${vi ? 'luận điểm khác hoàn toàn với đoạn 1' : 'a completely different argument from paragraph 1'}
-> *[Write an English topic sentence for paragraph 2 — a distinct, new argument]*
-
-#### ② ${vi ? 'Câu giải thích' : 'Explanation'} *(${vi ? '2–3 câu' : '2–3 sentences'})*:
-${vi ? 'Gợi ý: Cơ chế nào giải thích luận điểm này? Nó liên kết với điều gì trong thực tế?' : 'Hint: What mechanism explains this argument? How does it connect to real life?'}
-> *[Write 1 English explanation sentence for paragraph 2]*
-
-#### ③ ${vi ? 'Bằng chứng/Ví dụ' : 'Evidence/Example'}:
-${vi ? 'Gợi ý: Có ví dụ hoặc con số cụ thể nào không? Điều gì bạn đã chứng kiến tận mắt?' : 'Hint: Any specific examples or numbers? Something you have witnessed firsthand?'}
-> *[Write an English evidence or example sentence for paragraph 2]*
-
-#### ④ ${vi ? 'Câu kết/Chuyển ý' : 'Closing/Transition'}:
-> *[Write an English transition sentence from paragraph 2 to paragraph 3]*
-
-💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **word1** *(${vi ? 'nghĩa' : 'meaning'})*, **word2** *(${vi ? 'nghĩa' : 'meaning'})*, **word3** *(${vi ? 'nghĩa' : 'meaning'})*, **word4** *(${vi ? 'nghĩa' : 'meaning'})*
-🔗 **${vi ? 'Từ nối mở câu ②' : 'Connectors for sentence ②'}:** In contrast / Moreover / Consequently / It is worth noting that`}
-
-${!isBasic ? `### 📌 ${vi ? 'Đoạn 3' : 'Paragraph 3'} — *[${vi ? 'AI điền tên ý chính cụ thể vào đây' : 'AI fills in the specific main idea here'}]*
-
-${isMid ? `#### ① ${vi ? 'Câu chủ đề' : 'Topic sentence'} — ${vi ? 'ý thứ 3, khác hoàn toàn 2 đoạn trước' : '3rd idea, completely different from the previous two'}
-> *[Write an English topic sentence for paragraph 3 — a third distinct idea]*
-
-#### ② ${vi ? 'Câu giải thích' : 'Explanation'}:
-${vi ? 'Gợi ý: Điều này thường xảy ra khi nào? Ai bị ảnh hưởng nhiều nhất?' : 'Hint: When does this usually happen? Who is most affected?'}
-> *[Write an English explanation sentence for paragraph 3]*
-
-#### ③ ${vi ? 'Câu ví dụ cụ thể' : 'Specific example'}:
-${vi ? 'Gợi ý: Một kỷ niệm hoặc tình huống cụ thể liên quan đến ý này?' : 'Hint: A specific memory or situation related to this idea?'}
-> *[Write an English example sentence for paragraph 3]*
-
-#### ④ ${vi ? 'Câu kết đoạn' : 'Closing sentence'} — ${vi ? 'khép đoạn lại, chuẩn bị cho kết bài' : 'wraps up this paragraph, prepares for the conclusion'}
-> *[Write an English closing sentence for paragraph 3 — leads naturally into the conclusion]*
-
-💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **word1** *(${vi ? 'nghĩa' : 'meaning'})*, **word2** *(${vi ? 'nghĩa' : 'meaning'})*, **word3** *(${vi ? 'nghĩa' : 'meaning'})*
-🔗 **${vi ? 'Từ nối mở câu ②' : 'Connectors for sentence ②'}:** Finally / Most importantly / In addition` : `#### ① ${vi ? 'Câu chủ đề' : 'Topic sentence'} — ${vi ? 'luận điểm thứ 3, không trùng lặp 2 đoạn trước' : '3rd argument, no overlap with the previous two paragraphs'}
-> *[Write an English topic sentence for paragraph 3 — a third unique argument]*
-
-#### ② ${vi ? 'Câu giải thích' : 'Explanation'} *(${vi ? '2–3 câu' : '2–3 sentences'})*:
-${vi ? 'Gợi ý: Điều gì làm cho luận điểm này khác biệt và quan trọng riêng?' : 'Hint: What makes this argument distinct and independently important?'}
-> *[Write 1 English explanation sentence for paragraph 3]*
-
-#### ③ ${vi ? 'Bằng chứng/Ví dụ' : 'Evidence/Example'}:
-${vi ? 'Gợi ý: Bằng chứng mạnh nhất bạn có cho luận điểm này là gì?' : 'Hint: What is the strongest piece of evidence you have for this argument?'}
-> *[Write an English evidence or example sentence for paragraph 3]*
-
-#### ④ ${vi ? 'Câu kết/Chuyển ý' : 'Closing/Transition'} — ${vi ? 'khép lại đoạn cuối thân bài, dẫn vào kết bài một cách tự nhiên' : 'closes the final body paragraph, transitions naturally into the conclusion'}
-> *[Write an English closing sentence for paragraph 3 — signals the essay is wrapping up]*
-
-💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **word1** *(${vi ? 'nghĩa' : 'meaning'})*, **word2** *(${vi ? 'nghĩa' : 'meaning'})*, **word3** *(${vi ? 'nghĩa' : 'meaning'})*, **word4** *(${vi ? 'nghĩa' : 'meaning'})*
-🔗 **${vi ? 'Từ nối mở câu ②' : 'Connectors for sentence ②'}:** Ultimately / Beyond this / In light of this / This reinforces the idea that`}` : ''}
-
-${isAdvanced ? `### 📌 ${vi ? 'Đoạn phản biện' : 'Counterargument paragraph'} *(${vi ? 'chỉ thêm nếu chủ đề phù hợp' : 'add only if the topic suits it'})*
-
-#### ① ${vi ? 'Câu phản biện' : 'Counterargument'} — ${vi ? 'thừa nhận quan điểm đối lập một cách trung thực. Điều này cho thấy bạn suy nghĩ toàn diện' : 'honestly acknowledge the opposing viewpoint. This shows you think critically'}
-> *[Write an English counterargument sentence — state the opposing view fairly]*
-
-#### ② ${vi ? 'Câu bác bỏ' : 'Refutation'} — ${vi ? 'giải thích tại sao quan điểm đối lập đó không đủ mạnh hoặc có giới hạn' : 'explain why that opposing view is limited or not strong enough'}
-> *[Write an English refutation sentence — concede partially, then redirect to your argument]*
-
-💡 **${vi ? 'Từ gợi ý' : 'Suggested words'}:** **admittedly** *(${vi ? 'thừa nhận rằng' : 'it is true that'})*, **nevertheless** *(${vi ? 'tuy nhiên' : 'however'})*, **despite this** *(${vi ? 'mặc dù vậy' : 'even so'})*` : ''}
+## 2️⃣ ${vi ? 'Thân bài' : 'Body'}
+${vi ? `Tạo ${isBasic ? '2' : isAdvanced ? '3–4' : '3'} đoạn, mỗi đoạn phát triển 1 ý độc lập về "${tp}".
+Cho mỗi đoạn, đặt tên ý chính cụ thể, rồi viết:` : `Create ${isBasic ? '2' : isAdvanced ? '3–4' : '3'} paragraphs, each developing 1 independent idea about "${tp}".
+For each paragraph, name the specific main idea, then write:`}
+- ${vi ? 'Câu chủ đề' : 'Topic sentence'}
+- ${vi ? 'Câu giải thích (+ gợi ý hướng phát triển ý)' : 'Explanation sentence (+ tips on how to develop the idea)'}
+- ${vi ? 'Câu ví dụ cụ thể' : 'Example sentence'}
+- ${vi ? 'Câu chuyển ý' : 'Transition sentence'}
+- ${vi ? '3–4 từ vựng gợi ý (kèm nghĩa)' : '3–4 suggested vocabulary (with meanings)'}
+- ${vi ? '3–4 từ nối phù hợp' : '3–4 fitting connectors'}
 
 ---
 
-## 3️⃣ ${vi ? 'Kết bài' : 'Conclusion'} *(${vi ? '3 câu — khép lại và nâng tầm bài viết' : '3 sentences — close and elevate the essay'})*
-
-${vi ? `> 💡 **Tại sao không thêm ý mới?** Kết bài không phải chỗ bắt đầu — người đọc đang chờ bài kết thúc. Thêm ý mới lúc này sẽ làm bài rối và thiếu chuyên nghiệp. Nhiệm vụ của kết bài là *khép lại* và *nâng tầm* những gì đã viết.` : `> 💡 **Why no new ideas?** The conclusion is not the place to start — the reader is expecting closure. Adding new ideas here makes the essay feel unfinished and disorganised. The job of the conclusion is to *close* and *elevate* what you have already written.`}
-
-${isBasic ? `#### ① ${vi ? 'Câu nhắc lại' : 'Summary sentence'} — ${vi ? 'nhắc lại chủ đề bằng từ khác, không sao chép câu mở bài' : 'restate the topic in different words, do not copy the opening sentence'}
-> *[Write an English sentence restating "${tp}" in different words from the introduction]*
-
-#### ② ${vi ? 'Tóm tắt ý chính' : 'Brief summary'} — ${vi ? 'nhắc lại 1–2 ý đã viết ở thân bài (tên ý, không kể lại chi tiết)' : 'name the 1–2 ideas from the body paragraphs (just the idea, no details)'}
-> *[Write 1 short English sentence naming the main ideas covered in this essay]*
-
-#### ③ ${vi ? 'Câu kết ấn tượng' : 'Closing thought'} — ${vi ? 'kết thúc bằng 1 câu có cảm xúc hoặc lời nhắn nhủ nhẹ nhàng' : 'end with 1 warm or memorable sentence'}
-> *[Write an English closing sentence — warm, personal, and memorable]*` : isMid ? `#### ① ${vi ? 'Nhắc lại luận điểm chính' : 'Restate thesis'} — ${vi ? 'viết lại câu luận điểm chính ở mở bài bằng từ khác (không copy nguyên văn)' : 'rewrite the thesis from the introduction in different words (do not copy verbatim)'}
-> *[Write an English restate sentence — same idea as the thesis, completely different words]*
-
-#### ② ${vi ? 'Tóm tắt ý chính' : 'Summary'} — ${vi ? '1–2 câu nhắc lại tên các ý đã viết ở thân bài (không kể lại chi tiết)' : '1–2 sentences that name the main ideas from the body paragraphs (do not repeat details)'}
-> *[Write 1–2 English summary sentences naming the main points covered]*
-
-#### ③ ${vi ? 'Câu kết ấn tượng' : 'Final thought'} — ${vi ? 'câu cuối cùng của toàn bài. Chọn 1 trong 2: lời khuyên, câu hỏi mở, hoặc dự đoán tương lai' : 'the very last sentence of the essay. Choose 1 of 2: advice, open question, or future prediction'}
-> *[Final thought option 1 — advice or open question about "${tp}"]*
-> *[Final thought option 2 — prediction or memorable closing image]*` : `#### ① ${vi ? 'Nhắc lại luận điểm chính' : 'Restate thesis'} — ${vi ? 'diễn đạt lại thesis theo góc độ mới — như thể bạn đã chứng minh xong và giờ đang tổng kết' : 'rephrase the thesis from a new angle — as if you have now proven it and are summing up'}
-> *[Write an English restate sentence — elevated version of the thesis, not a copy]*
-
-#### ② ${vi ? 'Tóm tắt luận điểm' : 'Summary'} — ${vi ? '2–3 câu điểm lại 3 luận điểm đã viết, mỗi câu gợi lại 1 ý chính một cách súc tích' : '2–3 sentences that revisit the 3 arguments, each sentence briefly echoing one main point'}
-> *[Write 1 English sentence that summarises all body paragraph points in one sweep]*
-
-#### ③ ${vi ? 'Câu kết mở rộng' : 'Final thought'} — ${vi ? 'câu cuối cùng nâng tầm bài viết: ý nghĩa với xã hội, lời kêu gọi hành động, hoặc hình ảnh ấn tượng. Chọn 1 trong 2:' : 'the final sentence elevates the essay to a broader level: societal significance, call to action, or a striking image. Choose 1 of 2:'}
-> *[Final thought option 1 — broader implication or societal significance of "${tp}"]*
-> *[Final thought option 2 — call to action or thought-provoking closing image]*`}`,
+## 3️⃣ ${vi ? 'Kết bài' : 'Conclusion'}
+${vi ? `Giải thích ngắn cách kết bài hiệu quả cho chủ đề này, rồi viết ví dụ cho:` : `Briefly explain how to conclude effectively for this topic, then write examples for:`}
+- ${vi ? 'Câu nhắc lại luận điểm (bằng từ khác)' : 'Restate sentence (in different words)'}
+- ${vi ? 'Câu tóm tắt ý chính' : 'Summary sentence'}
+- ${vi ? 'Câu kết ấn tượng (2 lựa chọn)' : 'Final thought (2 options)'}`,
         'btn-outline',
         false,
         false,

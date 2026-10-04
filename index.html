@@ -5224,80 +5224,36 @@ Rules:
       if (!text) return toast(t('no-text'));
       setPanelTitle('panel-translate');
       const tp = topic();
+
+      // Count source paragraphs
+      const srcParas = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+      const nParas = srcParas.length;
+
       const r = await callAI(
-        uiLang === 'en'
-        ? `You are a professional English-Vietnamese translator who understands culture and how Vietnamese people naturally speak.
+        `Translate the following English text into natural Vietnamese.
+Return ONLY a JSON array of strings, one string per paragraph (${nParas} paragraph${nParas > 1 ? 's' : ''} total). No explanation, no markdown, no extra text — just the JSON array.
+Topic: "${tp || 'general'}"
 
-Translate the following English text into Vietnamese.
-
-Topic: "${tp || 'not specified'}"
-${ctx()}
-
-⚠️ Required rules:
-1. Translate naturally as a Vietnamese person would write — do NOT translate word-for-word
-2. Use correct pronouns based on the relationship in the text:
-   - Writing about parents → use "bố/mẹ" (not "anh ấy/cô ấy")
-   - Writing about friends → use "bạn ấy/cậu ấy/bạn"
-   - First person → use "tôi/mình/em" matching the tone
-3. Preserve the emotion and tone of the original — a cheerful text stays cheerful, a formal text stays formal
-4. Keep proper names and place names unchanged
-5. If the original English has grammar errors, still translate the intended meaning
-6. PRESERVE paragraph structure: only start a new line when the original has a new paragraph. Do NOT break one paragraph into multiple lines.
-7. Return only the complete translation — no explanations, no notes, no headings
-
-"""
-${text}
-"""`
-        : `Bạn là dịch giả tiếng Anh — tiếng Việt chuyên nghiệp, am hiểu văn hóa và cách người Việt thực sự nói chuyện.
-
-Hãy dịch đoạn văn tiếng Anh sau sang tiếng Việt.
-
-Chủ đề bài: "${tp || 'chưa rõ'}"
-${ctx()}
-
-⚠️ Yêu cầu bắt buộc:
-1. Dịch tự nhiên như người Việt viết — KHÔNG dịch từng từ theo kiểu máy
-2. Dùng đại từ nhân xưng đúng với quan hệ trong bài:
-   - Viết về bố/mẹ → dùng "bố/mẹ" (không dùng "anh ấy/cô ấy")
-   - Viết về bạn bè → dùng "bạn ấy/cậu ấy/bạn"
-   - Ngôi thứ nhất → dùng "tôi/mình/em" phù hợp văn phong
-3. Giữ đúng cảm xúc và giọng điệu của bản gốc — bài vui thì dịch vui, bài trịnh trọng thì dịch trang trọng
-4. Giữ nguyên tên riêng, địa danh
-5. Nếu bản gốc có lỗi ngữ pháp tiếng Anh, vẫn dịch theo ý tác giả muốn nói
-6. GIỮ NGUYÊN cấu trúc đoạn văn: chỉ xuống hàng khi bản gốc có đoạn mới. KHÔNG tách một đoạn thành nhiều dòng riêng lẻ.
-7. Chỉ trả về bản dịch hoàn chỉnh — không giải thích, không chú thích, không tiêu đề
-
-"""
-${text}
-"""`,
+${srcParas.map((p, i) => `Paragraph ${i+1}: "${p}"`).join('\n')}`,
         'btn-translate'
       );
+
       if (r) {
-        // Count paragraphs in source
-        const srcParas = text.split(/\n{2,}/).filter(p => p.trim());
-        const nParas = srcParas.length;
-
-        // Flatten all lines from AI into sentences
-        const sentences = r
-          .replace(/\r\n/g, '\n')
-          .split('\n')
-          .map(l => l.trim())
-          .filter(Boolean);
-
-        let translated;
-        if (nParas <= 1 || sentences.length <= nParas) {
-          // single paragraph or not enough sentences to split
-          translated = sentences.join(' ');
-        } else {
-          // distribute sentences evenly across paragraphs
-          const perPara = Math.ceil(sentences.length / nParas);
-          const paras = [];
-          for (let i = 0; i < nParas; i++) {
-            paras.push(sentences.slice(i * perPara, (i + 1) * perPara).join(' '));
+        try {
+          // Extract JSON array from response
+          const match = r.match(/\[[\s\S]*\]/);
+          if (match) {
+            const arr = JSON.parse(match[0]);
+            const translated = arr.map(p => String(p).trim()).filter(Boolean).join('\n\n');
+            openPanel(t('panel-translate'), translated, null);
+          } else {
+            // fallback: flatten all lines
+            const flat = r.replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(Boolean).join(' ');
+            openPanel(t('panel-translate'), flat, null);
           }
-          translated = paras.join('\n\n');
+        } catch {
+          openPanel(t('panel-translate'), r, null);
         }
-        openPanel(t('panel-translate'), translated, null);
       }
     }
 

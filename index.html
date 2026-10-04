@@ -5694,12 +5694,14 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       if (!menu || !btn) return;
       // If speaking/paused, clicking main button toggles pause/resume directly
       if (ttsState === 'speaking') {
-        tts.pause(); ttsState = 'paused'; ttsUpdateUI();
+        tts.cancel(); ttsState = 'paused'; ttsStopKeepAlive(); ttsUpdateUI();
         menu.classList.remove('open');
         return;
       }
       if (ttsState === 'paused') {
-        tts.resume(); ttsState = 'speaking'; ttsUpdateUI(); ttsStartKeepAlive();
+        // resume from current chunk
+        setTimeout(() => ttsPlayChunk(), 80);
+        ttsState = 'speaking'; ttsUpdateUI();
         menu.classList.remove('open');
         return;
       }
@@ -5744,33 +5746,63 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       if (ttsKeepAlive) { clearInterval(ttsKeepAlive); ttsKeepAlive = null; }
     }
 
+    // split text into sentence-boundary chunks for Android Chrome TTS bug
+    function ttsSplitChunks(text, maxLen = 200) {
+      const chunks = [];
+      let remaining = text.trim();
+      while (remaining.length > 0) {
+        if (remaining.length <= maxLen) { chunks.push(remaining); break; }
+        // find last sentence boundary within maxLen
+        const slice = remaining.slice(0, maxLen);
+        const cut = Math.max(
+          slice.lastIndexOf('. '), slice.lastIndexOf('! '), slice.lastIndexOf('? '),
+          slice.lastIndexOf('.\n'), slice.lastIndexOf('!\n'), slice.lastIndexOf('?\n')
+        );
+        const pos = cut > 20 ? cut + 1 : maxLen;
+        chunks.push(remaining.slice(0, pos).trim());
+        remaining = remaining.slice(pos).trim();
+      }
+      return chunks.filter(c => c.length > 0);
+    }
+
+    let ttsChunks = [], ttsChunkIdx = 0;
+
     function ttsSpeak(text, fromChar) {
       if (!text.trim()) return;
       ttsFullText = text;
       ttsResumeChar = fromChar || 0;
       tts.cancel();
-      setTimeout(() => {
-        const chunk = text.slice(ttsResumeChar);
-        if (!chunk.trim()) { ttsSetIdle(); return; }
-        ttsUtterance = new SpeechSynthesisUtterance(chunk);
-        const voice = ttsGetVoice();
-        if (voice) ttsUtterance.voice = voice;
-        ttsUtterance.rate = ttsGetRate();
-        ttsUtterance.lang = 'en-US';
-        ttsUtterance.onboundary = e => {
-          if (e.name === 'word') ttsResumeChar = (fromChar || 0) + e.charIndex;
-        };
-        ttsUtterance.onstart = () => {
-          ttsState = 'speaking';
-          ttsUpdateUI();
-          ttsStartKeepAlive();
-        };
-        ttsUtterance.onend = () => { ttsSetIdle(); };
-        ttsUtterance.onerror = e => {
-          if (e.error !== 'interrupted') ttsSetIdle();
-        };
-        tts.speak(ttsUtterance);
-      }, 80);
+      const startText = text.slice(ttsResumeChar);
+      ttsChunks = ttsSplitChunks(startText);
+      ttsChunkIdx = 0;
+      setTimeout(() => ttsPlayChunk(), 80);
+    }
+
+    function ttsPlayChunk() {
+      if (ttsChunkIdx >= ttsChunks.length) { ttsSetIdle(); return; }
+      const chunk = ttsChunks[ttsChunkIdx];
+      ttsUtterance = new SpeechSynthesisUtterance(chunk);
+      const voice = ttsGetVoice();
+      if (voice) ttsUtterance.voice = voice;
+      ttsUtterance.rate = ttsGetRate();
+      ttsUtterance.lang = 'en-US';
+      ttsUtterance.onstart = () => {
+        ttsState = 'speaking';
+        ttsUpdateUI();
+        ttsStartKeepAlive();
+      };
+      ttsUtterance.onend = () => {
+        ttsChunkIdx++;
+        if (ttsChunkIdx < ttsChunks.length) {
+          setTimeout(() => ttsPlayChunk(), 50);
+        } else {
+          ttsSetIdle();
+        }
+      };
+      ttsUtterance.onerror = e => {
+        if (e.error !== 'interrupted') ttsSetIdle();
+      };
+      tts.speak(ttsUtterance);
     }
 
     function ttsSetIdle() {
@@ -5825,11 +5857,11 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
 
     function ttsTogglePara() {
       if (ttsState === 'speaking' && ttsMode === 'para') {
-        tts.pause(); ttsState = 'paused'; ttsUpdateUI(); return;
+        tts.cancel(); ttsState = 'paused'; ttsStopKeepAlive(); ttsUpdateUI(); return;
       }
       if (ttsState === 'paused' && ttsMode === 'para') {
-        tts.resume(); ttsState = 'speaking'; ttsUpdateUI();
-        ttsStartKeepAlive(); return;
+        setTimeout(() => ttsPlayChunk(), 80);
+        ttsState = 'speaking'; ttsUpdateUI(); return;
       }
       // Stop any other mode and start para
       tts.cancel();
@@ -5841,11 +5873,11 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
 
     function ttsToggleAll() {
       if (ttsState === 'speaking' && ttsMode === 'all') {
-        tts.pause(); ttsState = 'paused'; ttsUpdateUI(); return;
+        tts.cancel(); ttsState = 'paused'; ttsStopKeepAlive(); ttsUpdateUI(); return;
       }
       if (ttsState === 'paused' && ttsMode === 'all') {
-        tts.resume(); ttsState = 'speaking'; ttsUpdateUI();
-        ttsStartKeepAlive(); return;
+        setTimeout(() => ttsPlayChunk(), 80);
+        ttsState = 'speaking'; ttsUpdateUI(); return;
       }
       tts.cancel();
       ttsMode = 'all';

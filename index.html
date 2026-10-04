@@ -5272,7 +5272,11 @@ ${text}
 """`,
         'btn-translate'
       );
-      if (r) openPanel(t('panel-translate'), r, null);
+      if (r) {
+        // Merge single line-breaks into spaces, keep double line-breaks as paragraph separators
+        const merged = r.replace(/([^\n])\n([^\n])/g, '$1 $2').trim();
+        openPanel(t('panel-translate'), merged, null);
+      }
     }
 
     // ── FILE ──

@@ -5839,21 +5839,43 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
     let ctxLongPressTimer = null;
     let ctxTargetNode = null;
 
-    function showCtxMenu(x, y) {
+    function showCtxMenu(x, y, panelMode = false) {
       const menu = document.getElementById('ctxMenu');
       if (!menu) return;
       const selText = window.getSelection()?.toString().trim() || '';
       const hasSel = selText.length > 0;
       const isShort = hasSel && selText.length <= 300 && (selText.match(/[.!?]/g) || []).length <= 1;
 
-      document.getElementById('ctx-cut')?.toggleAttribute('disabled', !hasSel);
-      document.getElementById('ctx-copy')?.toggleAttribute('disabled', !hasSel);
-
       const show = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v ? '' : 'none'; };
-      show('ctx-sep-analysis', isShort);
-      show('ctx-paraphrase',   isShort);
-      show('ctx-explain',      isShort);
-      show('ctx-analyze',      isShort);
+
+      if (panelMode) {
+        // panel: chỉ hiện 3 mục phân tích, ẩn hết mục editor
+        show('ctx-cut',          false);
+        show('ctx-copy',         false);
+        show('ctx-paste',        false);
+        show('ctx-sep-edit',     false);
+        show('ctx-tts-para',     false);
+        show('ctx-tts-from',     false);
+        show('ctx-sep-tts',      false);
+        show('ctx-sep-analysis', isShort);
+        show('ctx-paraphrase',   isShort);
+        show('ctx-explain',      isShort);
+        show('ctx-analyze',      isShort);
+      } else {
+        document.getElementById('ctx-cut')?.toggleAttribute('disabled', !hasSel);
+        document.getElementById('ctx-copy')?.toggleAttribute('disabled', !hasSel);
+        show('ctx-cut',          true);
+        show('ctx-copy',         true);
+        show('ctx-paste',        true);
+        show('ctx-sep-edit',     true);
+        show('ctx-tts-para',     true);
+        show('ctx-tts-from',     true);
+        show('ctx-sep-tts',      true);
+        show('ctx-sep-analysis', isShort);
+        show('ctx-paraphrase',   isShort);
+        show('ctx-explain',      isShort);
+        show('ctx-analyze',      isShort);
+      }
 
       menu.classList.add('open');
       const vw = window.innerWidth, vh = window.innerHeight;
@@ -5902,6 +5924,15 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       e.preventDefault();
       ctxTargetNode = e.target;
       showCtxMenu(e.clientX, e.clientY);
+    });
+
+    // Context menu on result panel — analysis items only
+    document.getElementById('pContent').addEventListener('contextmenu', e => {
+      const sel = window.getSelection()?.toString().trim();
+      if (!sel) return; // no selection — let browser handle it
+      e.preventDefault();
+      ctxTargetNode = e.target;
+      showCtxMenu(e.clientX, e.clientY, true); // panelMode=true
     });
 
     // Long-press on touch devices
@@ -6534,9 +6565,9 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
     <button class="ctx-item" id="ctx-cut" onclick="ctxCut()"><i class="bi bi-scissors"></i> <span>Cắt</span></button>
     <button class="ctx-item" id="ctx-copy" onclick="ctxCopy()"><i class="bi bi-copy"></i> <span>Sao chép</span></button>
     <button class="ctx-item" id="ctx-paste" onclick="ctxPaste()"><i class="bi bi-clipboard"></i> <span>Dán</span></button>
-    <div class="ctx-sep"></div>
-    <button class="ctx-item" onclick="ctxTTSPara()"><i class="bi bi-volume-up-fill"></i> <span>Đọc đoạn này</span></button>
-    <button class="ctx-item" onclick="ctxTTSFrom()"><i class="bi bi-play-fill"></i> <span>Đọc từ đây đến hết</span></button>
+    <div class="ctx-sep" id="ctx-sep-edit"></div>
+    <button class="ctx-item" id="ctx-tts-para" onclick="ctxTTSPara()"><i class="bi bi-volume-up-fill"></i> <span>Đọc đoạn này</span></button>
+    <button class="ctx-item" id="ctx-tts-from" onclick="ctxTTSFrom()"><i class="bi bi-play-fill"></i> <span>Đọc từ đây đến hết</span></button>
     <div class="ctx-sep" id="ctx-sep-analysis"></div>
     <button class="ctx-item" id="ctx-paraphrase" onclick="closeCtxMenu();callParaphrase()"><i class="bi bi-arrow-repeat"></i> <span>Diễn đạt lại</span></button>
     <button class="ctx-item" id="ctx-explain" onclick="closeCtxMenu();callExplain()"><i class="bi bi-question-circle"></i> <span>Giải thích từ/cụm</span></button>

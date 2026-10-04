@@ -6150,10 +6150,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
           pContent.appendChild(header);
         }
         // fallback to AI for definition
-        const loadingEl = document.createElement('p');
-        loadingEl.style.cssText = 'color:var(--muted);font-size:.88rem;margin:.25rem 0';
-        loadingEl.textContent = vi ? 'Đang tra bằng AI...' : 'Looking up with AI...';
-        pContent.appendChild(loadingEl);
+        const loadingEl = document.createElement('span');
         const aiPrompt = vi
           ? `Tra từ tiếng Anh "${word}". Trả lời ngắn gọn bằng tiếng Việt: phiên âm IPA, loại từ, nghĩa chính (1-2 nghĩa), 1 ví dụ câu. Không giải thích dài dòng.`
           : `Define the English word "${word}" briefly: IPA pronunciation, part of speech, 1-2 main meanings, 1 example sentence.`;

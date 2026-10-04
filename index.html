@@ -5244,7 +5244,9 @@ Rules:
           'btn-translate', true, true, 400
         );
         if (!r) { toast(t('error-generic') || 'Lỗi dịch', 'd'); return; }
-        translatedParas.push(r.trim());
+        // flatten any internal line-breaks the model added
+        const flat = r.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim();
+        translatedParas.push(flat);
       }
 
       document.getElementById('lbar').classList.add('hidden');

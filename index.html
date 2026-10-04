@@ -4984,8 +4984,19 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
       if (!text) return toast(t('no-text-review'));
       setPanelTitle('panel-review');
       const tp = topic();
-      const r = await callAI(
-        `You are an expert English writing reviewer. Give honest and helpful feedback on the student's writing.
+      const wc = text.trim().split(/\s+/).filter(Boolean).length;
+      const vi = uiLang !== 'en';
+
+      let reviewPrompt;
+
+      if (wc < 15) {
+        // too short — just tell them honestly
+        reviewPrompt = `You are an ESL writing coach. The student submitted only ${wc} word(s): "${text}".
+${vi ? 'Trả lời bằng tiếng Việt.' : 'Reply in English.'}
+Tell them kindly but directly that this is too short to review properly, and encourage them to write at least 2-3 sentences about the topic${tp ? ` "${tp}"` : ''}. Keep it to 2-3 sentences total.`;
+      } else if (wc < 60) {
+        // short text — lightweight feedback only
+        reviewPrompt = `You are an expert ESL writing reviewer. The student wrote a short piece (${wc} words).
 
 Topic: "${tp || 'not specified'}"
 Text:
@@ -4993,23 +5004,47 @@ Text:
 ${text}
 """
 ${ctx()}
-Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+Interface language: ${vi ? 'Vietnamese' : 'English'}
 
-LANGUAGE RULE: Write ALL feedback, section headings, explanations, and suggestions in ${uiLang === 'en' ? 'English' : 'Vietnamese'}. Adjust tone to match the Audience context above.
+LANGUAGE RULE: Write ALL feedback in ${vi ? 'Vietnamese' : 'English'}.
 
-## ✅ ${uiLang === 'en' ? 'Strengths' : 'Điểm làm tốt'}
-*(${uiLang === 'en' ? '2–3 points — quote specific sentences or words → explain why they work well' : '2–3 điểm — trích dẫn câu hoặc từ cụ thể → giải thích tại sao tốt, không khen chung chung'})*
+Give brief, honest feedback in 2 short sections only:
 
-## ⚠️ ${uiLang === 'en' ? 'Areas to improve' : 'Điểm cần cải thiện'}
-*(${uiLang === 'en' ? '2–3 key issues — quote original → rewrite better → short explanation' : '2–3 điểm quan trọng nhất — trích dẫn câu gốc → viết lại hay hơn → giải thích ngắn gọn'})*
+## ${vi ? '✅ Điểm tốt' : '✅ What works'}
+*(${vi ? '1–2 điểm cụ thể' : '1–2 specific points'})*
 
-## 🎯 ${uiLang === 'en' ? 'Content & flow' : 'Nội dung và mạch văn'}
-*(${uiLang === 'en' ? 'Does the essay cover the topic fully? Do sentences connect naturally? Is it appropriate for the audience? — 2–3 sentences' : 'Bài có đủ ý không? Các câu có liên kết tự nhiên không? Có phù hợp với độc giả không? — 2–3 câu nhận xét thẳng thắn'})*
+## ${vi ? '⚠️ Cần cải thiện' : '⚠️ What to improve'}
+*(${vi ? '1–2 điểm quan trọng nhất, có ví dụ cụ thể' : '1–2 key issues with specific examples'})*
 
-## 💡 ${uiLang === 'en' ? 'Two actions to take now' : 'Hai việc cụ thể nên làm ngay'}
-*(${uiLang === 'en' ? '1 sentence each — specific and actionable' : 'Mỗi việc 1 câu rõ ràng — ví dụ: "Thêm 1 câu mô tả cảm xúc khi..." hoặc "Thay từ X bằng từ Y vì..."'})*`,
-        'btn-review'
-      );
+Keep the total response concise — proportional to the short text.`;
+      } else {
+        // full review for substantial text
+        reviewPrompt = `You are an expert English writing reviewer. Give honest and helpful feedback on the student's writing.
+
+Topic: "${tp || 'not specified'}"
+Text:
+"""
+${text}
+"""
+${ctx()}
+Interface language: ${vi ? 'Vietnamese' : 'English'}
+
+LANGUAGE RULE: Write ALL feedback, section headings, explanations, and suggestions in ${vi ? 'Vietnamese' : 'English'}. Adjust tone to match the Audience context above.
+
+## ✅ ${vi ? 'Điểm làm tốt' : 'Strengths'}
+*(${vi ? '2–3 điểm — trích dẫn câu hoặc từ cụ thể → giải thích tại sao tốt, không khen chung chung' : '2–3 points — quote specific sentences or words → explain why they work well'})*
+
+## ⚠️ ${vi ? 'Điểm cần cải thiện' : 'Areas to improve'}
+*(${vi ? '2–3 điểm quan trọng nhất — trích dẫn câu gốc → viết lại hay hơn → giải thích ngắn gọn' : '2–3 key issues — quote original → rewrite better → short explanation'})*
+
+## 🎯 ${vi ? 'Nội dung và mạch văn' : 'Content & flow'}
+*(${vi ? 'Bài có đủ ý không? Các câu có liên kết tự nhiên không? Có phù hợp với độc giả không? — 2–3 câu nhận xét thẳng thắn' : 'Does the essay cover the topic fully? Do sentences connect naturally? Is it appropriate for the audience? — 2–3 sentences'})*
+
+## 💡 ${vi ? 'Hai việc cụ thể nên làm ngay' : 'Two actions to take now'}
+*(${vi ? 'Mỗi việc 1 câu rõ ràng — ví dụ: "Thêm 1 câu mô tả cảm xúc khi..." hoặc "Thay từ X bằng từ Y vì..."' : '1 sentence each — specific and actionable'})*`;
+      }
+
+      const r = await callAI(reviewPrompt, 'btn-review');
       if (r) openPanel(t('panel-review'), r, null);
     }
 

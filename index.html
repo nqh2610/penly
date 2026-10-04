@@ -5225,36 +5225,30 @@ Rules:
       setPanelTitle('panel-translate');
       const tp = topic();
 
-      // Count source paragraphs
+      // Split source into paragraphs, translate each separately then rejoin
       const srcParas = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
-      const nParas = srcParas.length;
 
-      const r = await callAI(
-        `Translate the following English text into natural Vietnamese.
-Return ONLY a JSON array of strings, one string per paragraph (${nParas} paragraph${nParas > 1 ? 's' : ''} total). No explanation, no markdown, no extra text — just the JSON array.
-Topic: "${tp || 'general'}"
+      // Show loading state
+      document.getElementById('pCards').style.display = 'none';
+      document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.83rem;font-style:italic">${t('processing')}</p>`;
+      document.getElementById('lbar').classList.remove('hidden');
+      document.getElementById('resultPanel').classList.add('open');
+      document.getElementById('editorPane').classList.add('shifted');
+      document.getElementById('panelTitle').textContent = t('panel-translate');
 
-${srcParas.map((p, i) => `Paragraph ${i+1}: "${p}"`).join('\n')}`,
-        'btn-translate'
-      );
-
-      if (r) {
-        try {
-          // Extract JSON array from response
-          const match = r.match(/\[[\s\S]*\]/);
-          if (match) {
-            const arr = JSON.parse(match[0]);
-            const translated = arr.map(p => String(p).trim()).filter(Boolean).join('\n\n');
-            openPanel(t('panel-translate'), translated, null);
-          } else {
-            // fallback: flatten all lines
-            const flat = r.replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(Boolean).join(' ');
-            openPanel(t('panel-translate'), flat, null);
-          }
-        } catch {
-          openPanel(t('panel-translate'), r, null);
-        }
+      const translatedParas = [];
+      for (const para of srcParas) {
+        const r = await callAI(
+          `Translate this English paragraph into natural Vietnamese. Return ONLY the Vietnamese translation, no explanations, no line breaks within the paragraph.
+"${para}"`,
+          'btn-translate', true, true, 400
+        );
+        if (!r) { toast(t('error-generic') || 'Lỗi dịch', 'd'); return; }
+        translatedParas.push(r.trim());
       }
+
+      document.getElementById('lbar').classList.add('hidden');
+      openPanel(t('panel-translate'), translatedParas.join('\n\n'), null);
     }
 
     // ── FILE ──

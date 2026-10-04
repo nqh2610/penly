@@ -3707,7 +3707,7 @@ Gợi ý:
       }
       currentId = id;
       improveOriginalText = null; // reset khi chuyển doc
-      topicInput.value = d.topic || '';
+      const d = getDoc(id); if (!d) return;
       titleInput.value = d.titleCustom ? (d.title || '') : (d.topic || '');
       document.getElementById('audSel').value = d.aud || document.getElementById('audSel').options[1].value;
       document.getElementById('toneSel').value = d.tone || document.getElementById('toneSel').options[1].value;

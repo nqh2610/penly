@@ -5837,8 +5837,14 @@ ${text}
     }
 
     function closeTTSOnOutside(e) {
-      if (!document.getElementById('ttsWrap')?.contains(e.target)) {
-        document.getElementById('ttsMenu')?.classList.remove('open');
+      const wrap = document.getElementById('ttsWrap');
+      const menu = document.getElementById('ttsMenu');
+      if (!menu) return;
+      if (wrap?.contains(e.target)) {
+        // click inside wrap — re-arm listener so menu can still be closed
+        setTimeout(() => document.addEventListener('pointerdown', closeTTSOnOutside, { once: true }), 10);
+      } else {
+        menu.classList.remove('open');
       }
     }
 

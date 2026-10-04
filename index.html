@@ -5833,7 +5833,7 @@ ${text}
       menu.style.top  = top + 'px';
       menu.style.left = left + 'px';
       menu.classList.add('open');
-      setTimeout(() => document.addEventListener('click', closeTTSOnOutside, { once: true }), 10);
+      setTimeout(() => document.addEventListener('pointerdown', closeTTSOnOutside, { once: true }), 10);
     }
 
     function closeTTSOnOutside(e) {

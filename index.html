@@ -1255,23 +1255,39 @@
     .ac-toggle-btn {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      width: 1.75rem;
-      height: 1.75rem;
+      gap: 4px;
+      height: 1.7rem;
+      padding: 0 0.55rem;
       border: 1.5px solid var(--border);
-      border-radius: 8px;
+      border-radius: 20px;
       background: var(--surface);
       color: var(--muted);
       cursor: pointer;
-      font-size: .82rem;
+      font-size: .72rem;
+      font-weight: 600;
       flex-shrink: 0;
+      transition: .15s;
+      white-space: nowrap;
+    }
+
+    .ac-toggle-btn i {
+      font-size: .75rem;
+    }
+
+    .ac-toggle-state {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: var(--border);
+      color: var(--muted);
       transition: .15s;
     }
 
     .ac-toggle-btn:hover {
-      background: var(--accent-soft);
-      color: var(--accent);
       border-color: var(--accent);
+      color: var(--accent);
     }
 
     .ac-toggle-btn.on {
@@ -1280,8 +1296,13 @@
       border-color: var(--accent);
     }
 
+    .ac-toggle-btn.on .ac-toggle-state {
+      background: var(--accent);
+      color: #fff;
+    }
+
     .ac-toggle-btn.off {
-      opacity: .45;
+      opacity: 1;
     }
 
     .model-chip {
@@ -2458,10 +2479,10 @@
       }
 
       .ac-toggle-btn {
-        width: 2.2rem;
-        height: 2.2rem;
-        font-size: 1rem;
-        border-radius: 10px;
+        height: 2rem;
+        padding: 0 0.65rem;
+        font-size: .8rem;
+        border-radius: 20px;
       }
 
       .doc-btn {
@@ -2983,8 +3004,10 @@ Gợi ý:
             </span>
             <span id="modelChip" class="model-chip" style="display:none"></span>
             <div class="sb-r" id="wc">0 từ</div>
-            <button id="acToggleBtn" class="ac-toggle-btn" onclick="setACEnabled(!acEnabled)" title="Bật/tắt gợi ý tự động">
+            <button id="acToggleBtn" class="ac-toggle-btn" onclick="setACEnabled(!acEnabled)" title="Gợi ý tự động khi gõ">
               <i class="bi bi-magic" id="acToggleIcon"></i>
+              <span id="acToggleLabel">AI</span>
+              <span id="acToggleState" class="ac-toggle-state">OFF</span>
             </button>
           </div>
 
@@ -3341,9 +3364,9 @@ Gợi ý:
       document.getElementById('acOn').classList.toggle('on', on);
       document.getElementById('acOff').classList.toggle('on', !on);
       const btn = document.getElementById('acToggleBtn');
-      const icon = document.getElementById('acToggleIcon');
-      if (btn) { btn.classList.toggle('on', on); btn.classList.toggle('off', !on); btn.title = on ? 'Tắt gợi ý tự động' : 'Bật gợi ý tự động'; }
-      if (icon) { icon.className = on ? 'bi bi-magic' : 'bi bi-magic'; }
+      const state = document.getElementById('acToggleState');
+      if (btn) { btn.classList.toggle('on', on); btn.classList.toggle('off', !on); btn.title = on ? 'Tắt gợi ý tự động' : 'Bật gợi ý tự động khi gõ'; }
+      if (state) state.textContent = on ? 'ON' : 'OFF';
       if (!on) { clearTimeout(acTimer); hideAC(); }
     }
 

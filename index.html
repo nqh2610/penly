@@ -4989,14 +4989,9 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
 
       let reviewPrompt;
 
-      if (wc < 15) {
-        // too short — just tell them honestly
-        reviewPrompt = `You are an ESL writing coach. The student submitted only ${wc} word(s): "${text}".
-${vi ? 'Trả lời bằng tiếng Việt.' : 'Reply in English.'}
-Tell them kindly but directly that this is too short to review properly, and encourage them to write at least 2-3 sentences about the topic${tp ? ` "${tp}"` : ''}. Keep it to 2-3 sentences total.`;
-      } else if (wc < 60) {
-        // short text — lightweight feedback only
-        reviewPrompt = `You are an expert ESL writing reviewer. The student wrote a short piece (${wc} words).
+      if (wc < 60) {
+        // short text — lightweight feedback proportional to length
+        reviewPrompt = `You are an expert ESL writing reviewer. The student wrote a short piece (${wc} word${wc===1?'':'s'}).
 
 Topic: "${tp || 'not specified'}"
 Text:
@@ -5008,15 +5003,15 @@ Interface language: ${vi ? 'Vietnamese' : 'English'}
 
 LANGUAGE RULE: Write ALL feedback in ${vi ? 'Vietnamese' : 'English'}.
 
-Give brief, honest feedback in 2 short sections only:
+Give brief, honest feedback proportional to the text length. Use 2 short sections only:
 
 ## ${vi ? '✅ Điểm tốt' : '✅ What works'}
-*(${vi ? '1–2 điểm cụ thể' : '1–2 specific points'})*
+*(${vi ? '1–2 điểm cụ thể, trích dẫn từ/cụm từ trong bài' : '1–2 specific points, quote words or phrases from the text'})*
 
 ## ${vi ? '⚠️ Cần cải thiện' : '⚠️ What to improve'}
-*(${vi ? '1–2 điểm quan trọng nhất, có ví dụ cụ thể' : '1–2 key issues with specific examples'})*
+*(${vi ? '1–2 điểm quan trọng nhất, có ví dụ cụ thể hoặc gợi ý viết lại' : '1–2 key issues with concrete suggestions or rewrites'})*
 
-Keep the total response concise — proportional to the short text.`;
+Keep response short — do not pad or invent issues that aren't there.`;
       } else {
         // full review for substantial text
         reviewPrompt = `You are an expert English writing reviewer. Give honest and helpful feedback on the student's writing.

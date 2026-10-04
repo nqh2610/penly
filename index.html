@@ -6069,7 +6069,8 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       try {
         const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
         if (res.ok) dictData = await res.json();
-      } catch {}
+        else console.warn('Dict API status:', res.status);
+      } catch (e) { console.error('Dict API error:', e); }
 
       let md = `# ${word}\n\n`;
 
@@ -6115,8 +6116,8 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
     }
 
     // ── SELECTION TOOLBAR (mobile) ──
-    const selToolbar = document.getElementById('selToolbar');
     let selHideTimer = null;
+    const getSelToolbar = () => document.getElementById('selToolbar');
 
     function showSelToolbar() {
       const sel = window.getSelection();
@@ -6136,24 +6137,25 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
         if (el) el.style.display = isShort ? '' : 'none';
       });
 
-      selToolbar.classList.add('show');
+      getSelToolbar().classList.add('show');
 
       // Position above selection, centered
-      const tw = selToolbar.offsetWidth || 320;
+      const _st = getSelToolbar();
+      const tw = _st.offsetWidth || 320;
       let left = rect.left + rect.width / 2 - tw / 2;
-      let top  = rect.top - selToolbar.offsetHeight - 12;
+      let top  = rect.top - _st.offsetHeight - 12;
 
       // Keep in viewport
       if (left < 8) left = 8;
       if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
       if (top < 8) top = rect.bottom + 12;
 
-      selToolbar.style.left = left + 'px';
-      selToolbar.style.top  = top + 'px';
+      _st.style.left = left + 'px';
+      _st.style.top  = top + 'px';
     }
 
     function hideSelToolbar() {
-      selToolbar?.classList.remove('show');
+      getSelToolbar()?.classList.remove('show');
     }
 
     // Show on selection change (touch devices)
@@ -6165,7 +6167,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
 
     // Hide when tapping outside editor
     document.addEventListener('pointerdown', e => {
-      if (!editor.contains(e.target) && !selToolbar?.contains(e.target)) hideSelToolbar();
+      if (!editor.contains(e.target) && !getSelToolbar()?.contains(e.target)) hideSelToolbar();
     });
 
     // Selection toolbar action helpers — hide toolbar then run action

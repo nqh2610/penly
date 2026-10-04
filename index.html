@@ -6122,7 +6122,10 @@ ${text}
       const title = vi ? 'Giải thích' : 'Explain';
       openPanelWith(title);
       const r = await callAI(
-        `List key words/phrases: meaning + 1 example each. Skip very basic words.${vi ? ' Bằng tiếng Việt.' : ''}
+        vi
+          ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm: nghĩa tiếng Việt đơn giản + 1 ví dụ ngắn bằng tiếng Anh. Bỏ qua từ quá đơn giản (a, the, is...).
+"${text}"`
+          : `Explain key words/phrases for an English learner. For each: simple meaning + 1 short example. Skip very basic words.
 "${text}"`,
         null, false, true, 500
       );

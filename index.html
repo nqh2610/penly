@@ -1285,7 +1285,12 @@
       transition: .15s;
     }
 
-    .ac-toggle-btn:hover {
+    .ac-toggle-btn:hover:not(.on) {
+      border-color: var(--muted);
+      color: var(--text);
+    }
+
+    .ac-toggle-btn.on:hover {
       border-color: var(--accent);
       color: var(--accent);
     }

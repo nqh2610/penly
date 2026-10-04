@@ -1253,6 +1253,11 @@
       /* arrow pointing down */
     }
 
+    /* hide selection toolbar on non-touch devices */
+    @media (hover: hover) and (pointer: fine) {
+      .sel-toolbar.show { display: none !important; }
+    }
+
     .sel-toolbar::after {
       content: '';
       position: absolute;

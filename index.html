@@ -1252,6 +1252,38 @@
       pointer-events: auto
     }
 
+    .ac-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .82rem;
+      flex-shrink: 0;
+      transition: .15s;
+    }
+
+    .ac-toggle-btn:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .ac-toggle-btn.on {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .ac-toggle-btn.off {
+      opacity: .45;
+    }
+
     .model-chip {
       display: inline-flex;
       align-items: center;
@@ -2222,6 +2254,36 @@
         transform: translateX(100%)
       }
 
+      /* larger close button and panel header on mobile */
+      .result-panel .panel-head {
+        height: 3.2rem;
+        padding: 0 1rem;
+      }
+
+      .result-panel .phb {
+        width: 2.6rem;
+        height: 2.6rem;
+        font-size: 1.1rem;
+        border-radius: 10px;
+      }
+
+      /* swipe indicator */
+      .result-panel .panel-head::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      .result-panel.open .panel-head {
+        position: relative;
+      }
+
       .result-panel.open {
         position: fixed;
         inset: 0;
@@ -2393,6 +2455,13 @@
 
       .statusbar {
         padding: 0 0.75rem
+      }
+
+      .ac-toggle-btn {
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 1rem;
+        border-radius: 10px;
       }
 
       .doc-btn {
@@ -2914,6 +2983,9 @@ Gợi ý:
             </span>
             <span id="modelChip" class="model-chip" style="display:none"></span>
             <div class="sb-r" id="wc">0 từ</div>
+            <button id="acToggleBtn" class="ac-toggle-btn" onclick="setACEnabled(!acEnabled)" title="Bật/tắt gợi ý tự động">
+              <i class="bi bi-magic" id="acToggleIcon"></i>
+            </button>
           </div>
 
           <!-- SINGLE TOOLBAR — replaces both quick-strip and action bar -->
@@ -3268,6 +3340,10 @@ Gợi ý:
       localStorage.setItem('penly_ac_enabled', on ? 'true' : 'false');
       document.getElementById('acOn').classList.toggle('on', on);
       document.getElementById('acOff').classList.toggle('on', !on);
+      const btn = document.getElementById('acToggleBtn');
+      const icon = document.getElementById('acToggleIcon');
+      if (btn) { btn.classList.toggle('on', on); btn.classList.toggle('off', !on); btn.title = on ? 'Tắt gợi ý tự động' : 'Bật gợi ý tự động'; }
+      if (icon) { icon.className = on ? 'bi bi-magic' : 'bi bi-magic'; }
       if (!on) { clearTimeout(acTimer); hideAC(); }
     }
 
@@ -3909,14 +3985,14 @@ Gợi ý:
       return null;
     }
 
-    async function callAI(prompt, btnId, silent = false, noPanel = false, maxTokens = 2000) {
+    async function callAI(prompt, btnId, silent = false, noPanel = false, maxTokens = 2000, panelTitle = null) {
       const lk = getLicenseKey();
       if (!lk || !(await isValidKey(lk))) {
         if (!silent) setBusy(btnId, false, !noPanel);
         document.getElementById('licenseGate').classList.remove('hidden');
         return null;
       }
-      if (!silent) setBusy(btnId, true, !noPanel);
+      if (!silent) setBusy(btnId, true, !noPanel, panelTitle);
 
       const now = Date.now();
 
@@ -4035,12 +4111,15 @@ Gợi ý:
       pane.classList.remove('shifted');
       pane.style.marginRight = '';
     }
+    function setPanelTitle(key) {
+      document.getElementById('panelTitle').textContent = t(key);
+    }
     function copyPanel() {
       const txt = document.getElementById('pContent').innerText;
       if (!txt.trim()) return;
       navigator.clipboard.writeText(txt).then(() => toast(t('toast-copied'), 's'));
     }
-    function setBusy(id, on, openPanel = true) {
+    function setBusy(id, on, openPanel = true, panelTitle = null) {
       if (!id) return;
       const el = document.getElementById(id); if (!el) return;
       el.classList.toggle('loading', on);
@@ -4048,6 +4127,7 @@ Gợi ý:
       if (on && openPanel) {
         document.getElementById('pCards').style.display = 'none';
         document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.83rem;font-style:italic">${t('processing')}</p>`;
+        if (panelTitle) document.getElementById('panelTitle').textContent = panelTitle;
         document.getElementById('resultPanel').classList.add('open');
         document.getElementById('editorPane').classList.add('shifted');
       }
@@ -4079,6 +4159,42 @@ Gợi ý:
         document.body.style.userSelect = 'none'; document.body.style.cursor = 'col-resize';
         document.addEventListener('mousemove', onPanelMove);
         document.addEventListener('mouseup', onPanelUp);
+      });
+    })();
+
+    // ── SWIPE DOWN TO CLOSE PANEL (mobile) ──
+    (function () {
+      const panel = document.getElementById('resultPanel');
+      let startY = 0, startX = 0, dragging = false;
+      panel.addEventListener('touchstart', e => {
+        // only trigger swipe from panel-head area or when scrolled to top
+        const body = panel.querySelector('.panel-body');
+        const atTop = !body || body.scrollTop <= 2;
+        if (!atTop) return;
+        startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
+        dragging = true;
+      }, { passive: true });
+      panel.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        const dy = e.touches[0].clientY - startY;
+        const dx = Math.abs(e.touches[0].clientX - startX);
+        if (dy > 10 && dx < dy) {
+          panel.style.transform = `translateY(${Math.min(dy, 200)}px)`;
+          panel.style.transition = 'none';
+        }
+      }, { passive: true });
+      panel.addEventListener('touchend', e => {
+        if (!dragging) return;
+        dragging = false;
+        const dy = e.changedTouches[0].clientY - startY;
+        panel.style.transition = '';
+        if (dy > 80) {
+          panel.style.transform = '';
+          closePanel();
+        } else {
+          panel.style.transform = '';
+        }
       });
     })();
 
@@ -4167,6 +4283,7 @@ Rules:
     // ══ AI FEATURES ══
     async function callOutline() {
       const tp = topic(); if (!tp) return toast(t('no-topic'));
+      setPanelTitle('panel-outline');
       const level = lvlSel.value;
       const tone = toneSel.value;
       const aud = audSel.value;
@@ -4475,6 +4592,7 @@ RULES:
     async function callSuggest() {
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text-short'));
+      setPanelTitle('panel-suggest');
 
       // Parse paragraphs — each newline = new idea
       const paras = text.split(/\n+/).filter(p => p.trim());
@@ -4546,6 +4664,7 @@ Return ONLY a valid JSON array, no other text:
     async function callImprove() {
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
+      setPanelTitle('panel-improve');
       const r = await callAI(
         `You are an expert English language editor and experienced ESL writing coach. Your task is to IMPROVE the student's writing — not rewrite it, not simplify it, not replace their ideas.
 
@@ -4670,6 +4789,7 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
     async function callReview() {
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text-review'));
+      setPanelTitle('panel-review');
       const tp = topic();
       const r = await callAI(
         `You are an expert English writing reviewer. Give honest and helpful feedback on the student's writing.
@@ -4703,6 +4823,7 @@ LANGUAGE RULE: Write ALL feedback, section headings, explanations, and suggestio
     async function callVocab() {
       const tp = topic(); const text = editor.innerText.trim();
       if (!tp && !text) return toast(t('no-text-vocab'));
+      setPanelTitle('panel-vocab');
 
       // Cache check — reuse if same topic/level/lang
       const d = getDoc(currentId);
@@ -4766,6 +4887,7 @@ Rules:
     async function callTranslate() {
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
+      setPanelTitle('panel-translate');
       const tp = topic();
       const r = await callAI(
         uiLang === 'en'
@@ -5213,6 +5335,9 @@ ${text}
 
       // language: default Vietnamese
       setLang(localStorage.getItem('ui_lang') || 'vi');
+
+      // init AC toggle button state
+      setACEnabled(acEnabled);
 
       // File System Access API
       initFSA();

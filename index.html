@@ -3333,7 +3333,7 @@ Gợi ý:
     let docs = [], currentId = null;
     let saveTimer, acTimer, pendingAC = "", acSeq = 0;
     let savedRange = null;
-    let acEnabled = localStorage.getItem('penly_ac_enabled') !== 'false';
+    let acEnabled = localStorage.getItem('penly_ac_enabled') === 'true';
 
     function setACEnabled(on) {
       acEnabled = on;

@@ -5479,6 +5479,34 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
         toggleSettings();
     });
 
+    // swipe-right to close settings drawer
+    (() => {
+      const d = document.getElementById('settingsDrawer');
+      let startX = 0, startY = 0, dragging = false;
+      d.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        dragging = true;
+      }, { passive: true });
+      d.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = Math.abs(e.touches[0].clientY - startY);
+        if (dx > 10 && dy < dx) {
+          d.style.transform = `translateX(${Math.min(dx, 280)}px)`;
+          d.style.transition = 'none';
+        }
+      }, { passive: true });
+      d.addEventListener('touchend', e => {
+        if (!dragging) return;
+        dragging = false;
+        const dx = e.changedTouches[0].clientX - startX;
+        d.style.transition = '';
+        d.style.transform = '';
+        if (dx > 80) toggleSettings();
+      });
+    })();
+
     function loadUI() {
       const uifs = +(localStorage.getItem('ui_uifs') || 15);
       document.getElementById('uiFsRange').value = uifs; setUIFs(uifs);

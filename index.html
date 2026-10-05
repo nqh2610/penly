@@ -4719,34 +4719,58 @@ ${levelRules}
         code: 'A1–A2',
         bodyCount: '2',
         sentences: '8 sentences in total (1 intro + 2 body paragraphs × 3 + 1 conclusion), about 70–100 words',
-        steps: ['Say your idea', 'Say why', 'Give an example'],
         struggle: 'afraid of not knowing enough words or grammar, and frozen by a blank page',
-        modelRule: 'Model sentences: 5–9 words, simple present only, the 1000 most common English words, one idea each.',
-        yourTurnRule: 'Your-turn line: ONE blank (___) at most, in the style `I like ___.` Under it give exactly 2 word hints as English (meaning).',
-        hardRule: 'Mark at most 2 tricky spots (typically: he/she + verb-s, "because", turning an idea into a sentence). For each give a 1–2 line plain explanation, a tiny rule, and 2 extra model sentences.',
-        language: 'Guidance language: the simplest everyday words and very short sentences. NEVER use grammar jargon (say "câu nói rõ ý chính" instead of "topic sentence").'
+        modelRule: 'Model sentences: 5–9 words, simple present only, the 1000 most common English words. Guidance text: the simplest everyday words, very short sentences, NO grammar jargon.',
+        swapRule: 'Right after each model paragraph, in one natural sentence, offer 2–3 swap words as English (meaning) for the **[ ]** parts.',
+        tipRule: 'At most 2 tips, only where beginners really slip (e.g. he/she + verb-s, "is" after It, "because"). Each tip: 1–2 lines with one right and one wrong example.',
+        sample: `### 🌸 Đoạn 1: Mùa bạn yêu nhất
+Bạn thích mùa nào nhất? Cứ nghĩ đến lúc bạn vui nhất trong năm, đó chính là câu trả lời. Không cần nghĩ nhiều đâu, ai cũng có một mùa riêng mà.
+
+> My favourite season is **[spring]**. It is **[warm]** and **[green]**. In spring, I **[play with my friends in the park]**.
+
+Chỉ cần đổi phần trong **[ ]** thành của bạn nhé: *summer* (mùa hè), *autumn* (mùa thu), *cool* (mát), *hot* (nóng).
+
+💬 Mẹo nhỏ: sau **It** ta dùng **is**. Viết *It is warm.* chứ đừng viết *It warm.*
+
+Viết xong ba câu này là bạn đã có một đoạn rồi đó. Sang đoạn 2 thôi!`
       },
       B: {
         code: 'B1–B2',
         bodyCount: '3',
         sentences: 'about 17 sentences (3 intro + 3 body paragraphs × 4 + 2–3 conclusion), about 200–280 words',
-        steps: ['Make your point', 'Explain why', 'Give an example', 'Link to the next idea'],
         struggle: 'ideas feel thin, sentences repeat the same pattern, and paragraphs do not connect',
-        modelRule: 'Model sentences: 10–18 words, one connector each, natural and a little varied (not all the same pattern).',
-        yourTurnRule: 'Your-turn line: only the first 3–5 words of a sentence starter followed by "…", so the student finishes it with their own content.',
-        hardRule: 'Mark at most 3 tricky spots (typically: a thesis that states a view, turning a vague example into a specific one, linking paragraphs). For each give a short explanation, a mini-rule, a weak vs strong version, and 2 extra model sentences.',
-        language: 'Guidance language: clear and friendly. Explain any writing term in a few plain words the first time it appears.'
+        modelRule: 'Model sentences: 10–18 words, natural and varied (not all the same pattern), with a connector where it fits. Guidance text: clear and friendly; explain any writing term in a few plain words.',
+        swapRule: 'Right after each model paragraph, in one or two natural sentences, tell the student how to make the **[ ]** parts truly theirs (what kind of detail to use). No lists.',
+        tipRule: 'At most 3 tips, only at real sticking points for this topic (e.g. stating a clear view, turning a vague example into a specific one, linking two paragraphs). Each tip: 2–4 lines, with a weak version and a stronger version.',
+        sample: `### 🍂 Đoạn 2: Vì sao mùa thu làm bạn thấy bình yên
+Đây là đoạn bạn "giải thích trái tim". Hãy nhớ một khoảnh khắc rất cụ thể: một mùi, một âm thanh, một buổi chiều nào đó. Chính chi tiết nhỏ mới làm người đọc tin bạn.
+
+> The main reason I love autumn is that everything seems to slow down. **[On my way home from school, the streets smell like roasted chestnuts]**, and **[for once I have time to think]**. This is why autumn feels like a pause button for me.
+
+Hãy thay phần trong **[ ]** bằng khoảnh khắc thật của bạn, càng cụ thể (mùi gì, ở đâu, lúc nào) càng hay.
+
+💬 Mẹo nhỏ: tránh viết chung chung kiểu *It is beautiful.* Thử: *The leaves turn the colour of tea.* Một hình ảnh luôn thắng một tính từ.
+
+Xong đoạn này, sang phần bạn nói về điều khiến mùa thu cũng có mặt khó nhé.`
       },
       C: {
         code: 'C1–C2',
         bodyCount: '3',
         sentences: 'about 16 sentences (3 intro + 3 body paragraphs × 3–4 + 2–3 conclusion), about 300–450 words',
-        steps: ['Claim', 'Evidence', 'Analysis (so what?)', 'Counterpoint or nuance'],
         struggle: 'getting past the obvious points, finding an original angle, and analysing instead of just describing',
-        modelRule: 'Model sentences: 18–30 words, sophisticated structure and precise collocations, written like strong published prose.',
-        yourTurnRule: 'Your-turn line: a short rhetorical cue of at most 6 words (e.g. `Admittedly, … yet …`) that frames the move.',
-        hardRule: 'Mark at most 3 tricky spots (typically: a narrow original thesis, concession and rebuttal, the "so what?" analysis). For each explain the move in 2–3 lines, show a plain version vs a sharper version, and give 2 alternative model sentences.',
-        language: 'Guidance language: precise and respectful of the student\'s ability. Technical terms are fine.'
+        modelRule: 'Model sentences: 18–30 words, sophisticated structure and precise collocations, like strong published prose. Guidance text: precise and respectful of the student\'s ability; technical terms are fine.',
+        swapRule: 'Right after each model paragraph, in one or two sentences, name the rhetorical move at work (e.g. concession, analysis) and say what the student must supply in the **[ ]** parts.',
+        tipRule: 'At most 3 tips, only at real sticking points (a narrow original thesis, concession and rebuttal, the "so what?" analysis). Each tip: 2–4 lines, with a plain version vs a sharper version.',
+        sample: `### 🍃 Đoạn 2: Điều người ta thường bỏ sót
+Đến đây bạn đã nêu quan điểm. Giờ là lúc thừa nhận phần đúng của phía bên kia, rồi cho thấy vì sao bạn vẫn đứng vững. Cách này làm lập luận của bạn đáng tin hơn nhiều.
+
+> Admittedly, **[critics of the idea have a point: it can feel indulgent]**. Yet this objection overlooks **[what it actually protects]**, which is **[the quiet that makes reflection possible]**.
+
+Đây là nước đi *nhượng bộ rồi phản biện*. Bạn chỉ cần điền hai chỗ **[ ]**: một lời phê bình công bằng, và điều họ bỏ sót.
+
+💬 Mẹo nhỏ: đừng bác bỏ đối phương bằng một câu mỉa mai. Hãy nói *họ đúng ở đâu* trước, rồi mới chỉ ra *họ chưa nhìn thấy gì*.
+
+Viết xong, đọc lại và hỏi: "Vậy thì sao?" Câu trả lời chính là câu tiếp theo của bạn.`
       }
     };
 
@@ -4788,7 +4812,7 @@ ${levelRules}
 
       // Cache check — reuse if same topic/level/tone/audience/language
       const d = getDoc(currentId);
-      const cacheKey = `v3|${tp}|${lvl}|${tone}|${aud}|${lang}`;
+      const cacheKey = `v4|${tp}|${lvl}|${tone}|${aud}|${lang}`;
       if (d && d.outline && d.outlineKey === cacheKey) {
         document.getElementById('pCards').style.display = 'none';
         openPanel(t('panel-outline'), d.outline, null);
@@ -4796,78 +4820,60 @@ ${levelRules}
       }
 
       const H = vi
-        ? { start: 'Trước khi bắt đầu', roadmap: 'Bản đồ bài viết', ideas: 'Chọn ý của bạn', intro: 'Mở bài', body: 'Thân bài', concl: 'Kết bài', check: 'Tự kiểm tra', model: 'Câu mẫu', turn: 'Bạn viết', hard: 'Chỗ này hay khó', done: 'Xong khi' }
-        : { start: 'Before you start', roadmap: 'Your roadmap', ideas: 'Pick your ideas', intro: 'Introduction', body: 'Body', concl: 'Conclusion', check: 'Final check', model: 'Model', turn: 'Your turn', hard: 'Tricky spot', done: 'Done when' };
+        ? { start: 'Trước khi bắt đầu', roadmap: 'Bản đồ bài viết', ideas: 'Chọn ý của bạn', intro: 'Mở bài', body: 'Thân bài', concl: 'Kết bài', words: 'Từ và cụm từ nên dùng', check: 'Tự kiểm tra' }
+        : { start: 'Before you start', roadmap: 'Your roadmap', ideas: 'Pick your ideas', intro: 'Introduction', body: 'Body', concl: 'Conclusion', words: 'Words and phrases to use', check: 'Final check' };
 
       const r = await callAI(
-        `You are a warm writing coach who truly understands this student. Build a WRITE-ALONG GUIDE: when the student finishes reading it, they can start writing immediately and finish a complete essay. The student should feel "this app understands me, I can do this, I want to write now".
+        `You are a warm writing coach sitting beside this student and talking to them like a real person, not filling in a form. Write a guide so inspiring and clear that, after reading it, the student wants to start writing right away and can finish a complete essay. They should feel "this app understands me".
 
-STUDENT PROFILE
+STUDENT
 - Topic: "${tp}"
-- Level: ${L.code}. At this level students are often: ${L.struggle}.
+- Level: ${L.code}. Students at this level are often: ${L.struggle}.
 - Tone / style: ${toneSel.value}
 - Audience (the reader): ${audSel.value}
-- Guidance language: ${lang}. ALL explanations, questions, headings and hints are in ${lang}. English appears ONLY in model sentences, your-turn lines, vocabulary and connectors.
+- Guidance language: ${lang}. All talking, questions and headings are in ${lang}. English appears only in model sentences and word lists.
 
-THREE THINGS MUST VISIBLY SHAPE THE GUIDE
-1. LEVEL: ${L.language} ${L.modelRule}
-2. TONE: ${OUTLINE_TONES[tone]}
-3. AUDIENCE: ${OUTLINE_AUDIENCES[aud]}
-Every idea and example must be specific to "${tp}", this tone and this reader. Nothing generic that could fit any topic.
+LET THESE SHAPE EVERYTHING
+- Level: ${L.modelRule}
+- Tone: ${OUTLINE_TONES[tone]}
+- Audience: ${OUTLINE_AUDIENCES[aud]}
+Every idea and example must be specific to "${tp}". Nothing generic that could fit any topic.
 
-THE CORE IDEA: MODEL FIRST, THEN MAKE IT YOURS
-- Every step has a complete MODEL SENTENCE about "${tp}" so the student always sees what a good sentence looks like.
-- All model sentences, read in order from start to finish, must form ONE coherent sample essay (${L.sentences}). The student reads them to see the finish line, then replaces the details with their own life, opinions and examples.
-- After each model sentence comes a YOUR-TURN line the student can build on. ${L.yourTurnRule}
-- Models are for inspiration: tell the student once, warmly, to change the details so the text is truly theirs.
+HOW EACH PARAGRAPH IS GUIDED
+Each part of the essay is a short, natural talk, then ONE model paragraph:
+1. Talk to the student in 2–4 lines: what this part is for, and a concrete thing to remember or imagine so ideas come easily. Ask at most one real question. Vary how you open each part; never repeat the same pattern.
+2. Show one model paragraph in a blockquote (>) about "${tp}". Wrap every detail the student should replace with their own life or opinion in **[bold brackets]**. The model sentences of the whole guide, read in order, form ONE coherent sample essay (${L.sentences}).
+3. ${L.swapRule}
+4. Only if students truly get stuck here: add a tip starting with "💬". ${L.tipRule} Skip it everywhere else.
+5. Close the part with one short, encouraging line pointing to what comes next.
 
-STRUCTURE (follow exactly, use these exact heading texts)
+STYLE SAMPLE (shows the voice and shape only; it is about a different topic, do NOT copy its content or its language of explanation if different)
+${L.sample}
 
+STRUCTURE (use exactly these heading texts as "## emoji text")
 ## 💌 ${H.start}
-3–4 sentences, speaking directly to the student ("${vi ? 'bạn' : 'you'}"), no generic praise:
-(1) name the exact feeling a student at this level has about THIS topic, so they feel understood;
-(2) one concrete reason this topic is easier or more interesting to write about than it looks;
-(3) the finish line: exactly how many sentences they will write and that it takes only a few minutes;
-(4) promise to go slower at the tricky spots (marked with 🆘).
-
+3–4 sentences speaking to the student: name the exact feeling a student like them has about THIS topic; give one concrete reason this topic is easier or more interesting than it looks; say exactly how many sentences they will write and that it takes only a few minutes. No generic praise.
 ## 🗺️ ${H.roadmap}
-One line: what kind of writing this is and the direction you recommend. Then one bullet per part (${H.intro}, ${L.bodyCount} body paragraphs, ${H.concl}) with its sentence count and one-line purpose. End with: read the model sentences once from top to bottom to see the finish line.
-
+One line on what kind of writing this is and the direction you recommend, then a short list of the parts (${H.intro}, ${L.bodyCount} body paragraphs, ${H.concl}) with a few words on each purpose. Say that the model paragraphs read from top to bottom make a complete sample essay.
 ## 💡 ${H.ideas}
-Offer 3 ready-made body ideas for "${tp}" (3–6 words each, each with a one-line example of what the student might say). Tell them to choose ${L.bodyCount}; the model sentences below use your first ${L.bodyCount}, and if they pick another idea they only change the details.
-
+3 ready-made body ideas for "${tp}" (3–6 words each, with one line on what the student might say). The model uses the first ${L.bodyCount}. If they choose another, they only change the details.
 ## 🚪 ${H.intro}
-One line on its purpose. Then each small step in this format.
-
-## ✍️ ${H.body} 1, 2 …
-Give each paragraph a short, specific, inviting title next to its number. Then one line "why this paragraph is here" (how it supports the main point and connects to the previous one). Steps: ${L.steps.join(' → ')}. End each paragraph with "✅ ${H.done}: …" (a small, concrete finish line).
-
+## ✍️ ${H.body}
+Use "### emoji short inviting title" for each body paragraph, in the style of the sample.
 ## 🏁 ${H.concl}
-One line on its purpose. Then the steps in this format.
-
+## 📚 ${H.words}
+4–6 useful words with meanings and 3–4 connectors, only those used in the model paragraphs.
 ## ☑️ ${H.check}
-3 concrete "☐" items tailored to this level and tone (not vague).
-Finish with ONE warm sentence that invites the student to write the very first sentence now.
-
-FORMAT FOR EVERY STEP (keep it short and consistent)
-① **step name** in ${lang}, one line on why this sentence matters
-> *${H.model}:* complete model sentence
-\`${H.turn}: starter for the student\`
-(For A1–A2 add the 2 word hints under it.)
-Use ①②③④ for steps. Do NOT use numbered lists.
-
-TRICKY SPOTS (the "app understands me" part)
-Do not give every step the same amount of help. Decide where students at ${L.code} genuinely get stuck on THIS topic and add a box ONLY there, headed "🆘 ${H.hard}". ${L.hardRule} Every other step stays short.
+3 concrete "☐" items for this level and tone. Finish with one warm sentence inviting the student to write the first sentence now.
 
 FORMAT RULES
-- NO tables. Use only headings, bold, italics, blockquotes (>), inline code and short bullets.
-- Headings are plain "## emoji text" lines. Never wrap a heading in bold or add extra symbols.
-- Vocabulary and connectors: put 4–6 useful words with meanings and 3–4 connectors in one short section just before ${H.check}, only those used in the model sentences.
-- Stay compact: no repetition, no filler. Every line must help the student write.`,
+- NO tables, NO step numbers, NO labels like "Step 1", "Model:", "Your turn:". Use headings, short talk, blockquotes and bold brackets only.
+- Headings are plain "## emoji text" lines; never wrap a heading in bold.
+- Be compact: no filler, no repetition. Every line must help the student write.`,
         'btn-outline',
         false,
         false,
-        6000
+        5000
       );
       if (r) {
         if (d) { d.outline = r; d.outlineKey = cacheKey; saveDocs(); }

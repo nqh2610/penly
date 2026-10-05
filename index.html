@@ -1104,8 +1104,15 @@
     }
 
     @keyframes tts-pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .65; }
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .65;
+      }
     }
 
     .tts-menu {
@@ -1114,7 +1121,7 @@
       background: var(--surface);
       border: 1.5px solid var(--border);
       border-radius: 10px;
-      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
       z-index: 9000;
       min-width: 180px;
     }
@@ -1168,18 +1175,27 @@
       background: var(--surface);
       border: 1.5px solid var(--border);
       border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .18);
       padding: 5px;
       min-width: 180px;
       animation: ctx-in .1s ease;
     }
 
     @keyframes ctx-in {
-      from { opacity: 0; transform: scale(.95); }
-      to   { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(.95);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
-    .ctx-menu.open { display: block; }
+    .ctx-menu.open {
+      display: block;
+    }
 
     .ctx-item {
       display: flex;
@@ -1222,8 +1238,17 @@
       margin: 4px 0;
     }
 
-    .ctx-sub { position: relative; }
-    .ctx-sub > .ctx-item::after { content: '›'; margin-left: auto; font-size: 1rem; opacity: .5; }
+    .ctx-sub {
+      position: relative;
+    }
+
+    .ctx-sub>.ctx-item::after {
+      content: '›';
+      margin-left: auto;
+      font-size: 1rem;
+      opacity: .5;
+    }
+
     .ctx-submenu {
       display: none;
       position: fixed;
@@ -1231,12 +1256,15 @@
       background: var(--surface);
       border: 1.5px solid var(--border);
       border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .18);
       padding: 5px;
       min-width: 180px;
       animation: ctx-in .1s ease;
     }
-    .ctx-submenu.open { display: block; }
+
+    .ctx-submenu.open {
+      display: block;
+    }
 
     /* ── Selection Toolbar (mobile floating) ── */
     .sel-toolbar {
@@ -1248,13 +1276,15 @@
       padding: 4px 6px;
       gap: 2px;
       align-items: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,.35);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .35);
       animation: ctx-in .12s ease;
       /* arrow pointing down */
     }
 
     /* selection toolbar disabled — context menu handles all actions */
-    .sel-toolbar.show { display: none !important; }
+    .sel-toolbar.show {
+      display: none !important;
+    }
 
     .sel-toolbar::after {
       content: '';
@@ -1266,7 +1296,9 @@
       border-top-color: #1f2937;
     }
 
-    .sel-toolbar.show { display: flex; }
+    .sel-toolbar.show {
+      display: flex;
+    }
 
     .sel-btn {
       display: flex;
@@ -1284,14 +1316,15 @@
       flex-shrink: 0;
     }
 
-    .sel-btn:hover, .sel-btn:active {
-      background: rgba(255,255,255,.15);
+    .sel-btn:hover,
+    .sel-btn:active {
+      background: rgba(255, 255, 255, .15);
     }
 
     .sel-sep {
       width: 1px;
       height: 1.4rem;
-      background: rgba(255,255,255,.2);
+      background: rgba(255, 255, 255, .2);
       margin: 0 2px;
       flex-shrink: 0;
     }
@@ -1517,7 +1550,11 @@
       animation: spin .7s linear infinite;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
     .model-chip {
       display: inline-flex;
@@ -1653,7 +1690,10 @@
       margin-left: .3rem;
       transition: background .15s;
     }
-    .dict-audio-btn:hover { background: var(--accent-h); }
+
+    .dict-audio-btn:hover {
+      background: var(--accent-h);
+    }
 
     /* "Use this version" button in improve panel */
     .btn-use-improved {
@@ -2665,7 +2705,8 @@
         flex: 1;
         display: flex;
       }
-      .tb-row-2 .tts-wrap > .tb-btn {
+
+      .tb-row-2 .tts-wrap>.tb-btn {
         flex: 1;
       }
 
@@ -2731,11 +2772,19 @@
       }
 
       /* ac-chip handled by ac-bar popup on mobile — hide from statusbar */
-      #acChip { display: none !important; }
+      #acChip {
+        display: none !important;
+      }
 
       /* prevent statusbar from wrapping to 2 lines */
-      .statusbar { flex-wrap: nowrap; overflow: hidden; }
-      #wc { flex-shrink: 0; }
+      .statusbar {
+        flex-wrap: nowrap;
+        overflow: hidden;
+      }
+
+      #wc {
+        flex-shrink: 0;
+      }
 
       .ac-toggle-btn {
         height: 2rem;
@@ -2792,10 +2841,14 @@
     }
 
     @media (prefers-color-scheme: dark) {
-      #licenseGate { background: linear-gradient(145deg, #0f1117 0%, #13101f 100%) }
+      #licenseGate {
+        background: linear-gradient(145deg, #0f1117 0%, #13101f 100%)
+      }
     }
 
-    #licenseGate.hidden { display: none }
+    #licenseGate.hidden {
+      display: none
+    }
 
     .lk-box {
       width: 100%;
@@ -2804,7 +2857,7 @@
       border: 1px solid var(--border);
       border-radius: 20px;
       padding: 1.75rem 1.5rem 1.5rem;
-      box-shadow: 0 12px 48px rgba(99,102,241,.12), 0 2px 8px rgba(0,0,0,.06);
+      box-shadow: 0 12px 48px rgba(99, 102, 241, .12), 0 2px 8px rgba(0, 0, 0, .06);
       display: flex;
       flex-direction: column;
       gap: .9rem;
@@ -2829,7 +2882,7 @@
       align-items: center;
       justify-content: center;
       font-size: 1.4rem;
-      box-shadow: 0 4px 16px rgba(99,102,241,.35);
+      box-shadow: 0 4px 16px rgba(99, 102, 241, .35);
       margin-bottom: .25rem;
     }
 
@@ -2891,7 +2944,9 @@
       color: var(--muted);
     }
 
-    .lk-input-wrap { position: relative }
+    .lk-input-wrap {
+      position: relative
+    }
 
     .lk-input {
       width: 100%;
@@ -2919,9 +2974,19 @@
     }
 
     @keyframes lk-shake {
-      0%, 100% { transform: translateX(0) }
-      25% { transform: translateX(-6px) }
-      75% { transform: translateX(6px) }
+
+      0%,
+      100% {
+        transform: translateX(0)
+      }
+
+      25% {
+        transform: translateX(-6px)
+      }
+
+      75% {
+        transform: translateX(6px)
+      }
     }
 
     .lk-err {
@@ -2931,7 +2996,9 @@
       margin-top: -.4rem;
     }
 
-    .lk-err.show { display: block }
+    .lk-err.show {
+      display: block
+    }
 
     .lk-btn {
       width: 100%;
@@ -2947,9 +3014,18 @@
       letter-spacing: .01em;
     }
 
-    .lk-btn:hover { opacity: .88 }
-    .lk-btn:active { transform: scale(.98) }
-    .lk-btn:disabled { opacity: .5; cursor: not-allowed }
+    .lk-btn:hover {
+      opacity: .88
+    }
+
+    .lk-btn:active {
+      transform: scale(.98)
+    }
+
+    .lk-btn:disabled {
+      opacity: .5;
+      cursor: not-allowed
+    }
 
     .lk-install-row {
       display: flex;
@@ -3005,7 +3081,9 @@
       flex-shrink: 0;
     }
 
-    .lk-install-btn:hover { opacity: .85 }
+    .lk-install-btn:hover {
+      opacity: .85
+    }
 
     .lk-contact {
       font-size: .78rem;
@@ -3020,7 +3098,9 @@
       font-weight: 600;
     }
 
-    .lk-contact a:hover { text-decoration: underline }
+    .lk-contact a:hover {
+      text-decoration: underline
+    }
   </style>
   <script>
     // Apply saved UI settings before first render to avoid flash
@@ -3081,8 +3161,8 @@
       <div>
         <div class="lk-section-label" style="margin-bottom:.5rem">Nhập mã kích hoạt</div>
         <div class="lk-input-wrap">
-          <input class="lk-input" id="lkInput" type="text" placeholder="PENLY-XXXX-XXXX-XXXX"
-            autocomplete="off" spellcheck="false" autocapitalize="characters" />
+          <input class="lk-input" id="lkInput" type="text" placeholder="PENLY-XXXX-XXXX-XXXX" autocomplete="off"
+            spellcheck="false" autocapitalize="characters" />
         </div>
         <div class="lk-err" id="lkErr">Mã không hợp lệ. Vui lòng kiểm tra lại.</div>
       </div>
@@ -3305,13 +3385,17 @@ Gợi ý:
               <!-- TTS dropdown -->
               <div class="tts-wrap" id="ttsWrap">
                 <button class="tb-btn c-tts" id="btn-tts" onclick="toggleTTSMenu()" title="Đọc văn bản">
-                  <i class="bi bi-volume-up-fill" id="ico-tts-main"></i><span class="tb-label" id="lbl-tts-main"> Đọc</span>
+                  <i class="bi bi-volume-up-fill" id="ico-tts-main"></i><span class="tb-label" id="lbl-tts-main">
+                    Đọc</span>
                 </button>
                 <div class="tts-menu" id="ttsMenu">
-                  <button onclick="ttsTogglePara()"><i class="bi bi-text-paragraph" id="ico-tts-para"></i> <span id="lbl-tts-para">Đọc đoạn này</span></button>
-                  <button onclick="ttsToggleAll()"><i class="bi bi-file-text" id="ico-tts-all"></i> <span id="lbl-tts-all">Đọc toàn bài</span></button>
+                  <button onclick="ttsTogglePara()"><i class="bi bi-text-paragraph" id="ico-tts-para"></i> <span
+                      id="lbl-tts-para">Đọc đoạn này</span></button>
+                  <button onclick="ttsToggleAll()"><i class="bi bi-file-text" id="ico-tts-all"></i> <span
+                      id="lbl-tts-all">Đọc toàn bài</span></button>
                   <div class="tts-menu-sep" id="ttsStopSep" style="display:none"></div>
-                  <button id="ttsStopBtn" onclick="ttsStop()" style="display:none"><i class="bi bi-stop-fill"></i> <span>Dừng hẳn</span></button>
+                  <button id="ttsStopBtn" onclick="ttsStop()" style="display:none"><i class="bi bi-stop-fill"></i>
+                    <span>Dừng hẳn</span></button>
                 </div>
               </div>
             </div>
@@ -3441,13 +3525,15 @@ Gợi ý:
 
             <!-- TTS VOICE -->
             <div class="sd-row" style="border-top:1px solid var(--border);padding-top:1.25rem;margin-top:0.25rem">
-              <div class="sd-label"><i class="bi bi-volume-up-fill" style="color:var(--accent)"></i> <span id="lbl-sd-tts">Giọng đọc (Text-to-Speech)</span></div>
+              <div class="sd-label"><i class="bi bi-volume-up-fill" style="color:var(--accent)"></i> <span
+                  id="lbl-sd-tts">Giọng đọc (Text-to-Speech)</span></div>
               <select class="sd-select" id="ttsVoiceSel" onchange="saveTTSVoice()" style="margin-top:0.5rem">
                 <option value="">-- Chọn giọng đọc --</option>
               </select>
               <div class="sd-range-row" style="margin-top:0.6rem">
                 <span style="font-size:.7rem;color:var(--muted)" id="lbl-tts-slow">Chậm</span>
-                <input type="range" id="ttsRateRange" min="0.6" max="1.4" step="0.1" value="0.9" oninput="saveTTSRate(+this.value)">
+                <input type="range" id="ttsRateRange" min="0.6" max="1.4" step="0.1" value="0.9"
+                  oninput="saveTTSRate(+this.value)">
                 <span style="font-size:.7rem;color:var(--muted)" id="lbl-tts-fast">Nhanh</span>
                 <span class="sd-val" id="ttsRateVal">0.9x</span>
               </div>
@@ -3532,7 +3618,8 @@ Gợi ý:
     <span class="ac-bar-label">✦ Gợi ý AI</span>
     <span class="ac-bar-text" id="acBarText"></span>
     <div class="ac-bar-actions">
-      <button class="ac-bar-btn" id="acBarInsertBtn" onclick="acceptACBar()"><i class="bi bi-check-lg"></i> Chèn</button>
+      <button class="ac-bar-btn" id="acBarInsertBtn" onclick="acceptACBar()"><i class="bi bi-check-lg"></i>
+        Chèn</button>
       <button class="ac-bar-dismiss" onclick="hideAC()"><i class="bi bi-x"></i></button>
     </div>
   </div>
@@ -4294,7 +4381,7 @@ Gợi ý:
         });
         const cfData = await cfRes.json();
         if (cfData.content) return cfData;
-      } catch (_) {}
+      } catch (_) { }
       return null;
     }
 
@@ -4568,8 +4655,8 @@ ${levelRules}
 - NO em dash (—), NO quotes, NO explanation — output the sentence only`
 
         : essayStage === 'new paragraph start'
-        // User pressed Enter — starting a new paragraph
-        ? `You are an English writing coach helping a student practise writing.
+          // User pressed Enter — starting a new paragraph
+          ? `You are an English writing coach helping a student practise writing.
 Topic: "${tp || 'general'}"
 ${ctx()}
 ${prevSummary}
@@ -4579,9 +4666,9 @@ ${levelRules}
 - The sentence must be clearly different from previous paragraphs
 - NO em dash (—), NO quotes, NO explanation — output the sentence only`
 
-        : !endsWithPunct
-        // Mid-sentence — complete the current sentence
-        ? `You are an English writing coach helping a student practise writing.
+          : !endsWithPunct
+            // Mid-sentence — complete the current sentence
+            ? `You are an English writing coach helping a student practise writing.
 Topic: "${tp || 'general'}"
 ${ctx()}
 Current paragraph so far: "${currentPara.trim()}"
@@ -4591,8 +4678,8 @@ Task: Complete this unfinished sentence naturally — add only the missing endin
 - Do NOT start a new sentence
 - NO em dash (—), NO quotes, NO explanation — output only the completion words`
 
-        // End of sentence — suggest what comes next based on role
-        : `You are an English writing coach helping a student practise writing.
+            // End of sentence — suggest what comes next based on role
+            : `You are an English writing coach helping a student practise writing.
 Topic: "${tp || 'general'}"
 ${ctx()}
 ${prevSummary ? prevSummary + '\n' : ''}Current paragraph (sentence ${sentencesInPara} of this paragraph):
@@ -4625,25 +4712,93 @@ ${levelRules}
       }
     }
 
+
+    // ── OUTLINE PROFILES: level, tone and audience each shape the outline ──
+    const OUTLINE_LEVELS = {
+      A: {
+        code: 'A1–A2',
+        bodyCount: '2',
+        length: '80–120 words, about 6–8 sentences in total',
+        steps: ['Say your idea', 'Say why', 'Give an example'],
+        scaffold: `MAXIMUM SUPPORT — STEP BY STEP, ONE IDEA AT A TIME.
+- OVERALL STRUCTURE: First ask a concrete question to help the student prepare. Then show the 3 steps (Say your idea, Say why, Give an example) with ONE sentence frame per step, using only simple present tense (is, has, likes, helps, can).
+- EACH STEP:
+  (a) ONE concrete thinking question in italics SPECIFIC TO THE TOPIC (not generic). Example for "my family": instead of "What does your family do?", ask "Does your mom or dad cook at home?" or "Who helps you with homework?"
+  (b) ONE sentence frame with AT MOST ONE blank (___) in a blockquote (>).
+  (c) ONE or TWO word hints below the frame, listed as: English (meaning in Vietnamese or explanation). Do not give 3 hints—that's too many choices.
+  (d) AFTER THE STEP, ONE small model or prompt: "Write down your answer on paper first. For example: My mother cooks dinner."
+- PREPARE EACH PARAGRAPH: Before the 3 steps, ask "Think of ONE person in your family. Who is it? What do they do that helps you?" Give them space to write the answer before they start Step 1.
+- Introduction = 1 sentence frame only ("My family ___"). Conclusion = 1 sentence frame only.
+- VOCABULARY AND CONNECTORS: At the end of the whole outline, add a short list of 5–6 easy words (with meanings) and 2–3 simple connectors (because, for example, also).
+- TONE: Speak like a friend helping them, not a teacher giving rules. Use simple, warm language even when writing in English examples.
+- FINAL CHECK: 3 simple tick-boxes (☐) that are concrete, not vague. Example: ☐ Each sentence has only ONE main verb. ☐ Your examples are about YOUR family, not someone else's.
+- Output budget: about 400–450 words total. NOT a wall of text—break into short chunks.`
+      },
+      B: {
+        code: 'B1–B2',
+        bodyCount: '3',
+        length: '200–280 words in 4–5 paragraphs',
+        steps: ['Make your point', 'Explain why', 'Give an example', 'Link to the next idea'],
+        scaffold: `MEDIUM SUPPORT.
+- Every step has (a) a THINKING QUESTION in italics that helps the student find their own content, and (b) ONLY the first 3–5 words of a sentence starter in a blockquote (>) followed by "…" so the student finishes the sentence.
+- Explain every writing term in one short plain line the first time it appears (e.g. "topic sentence = the sentence that tells the reader what this paragraph is about").
+- Each body paragraph = 4 steps: Make your point, Explain why, Give an example, Link to the next idea.
+- Add 3–4 useful words (with short meanings) and 2–3 connectors per paragraph.
+- Introduction = 3 small moves (set the scene, state your view, preview your ideas). Conclusion = 2–3 moves, no new ideas.
+- At most ONE short model sentence per section, only when the student could get stuck.`
+      },
+      C: {
+        code: 'C1–C2',
+        bodyCount: '3–4',
+        length: '300–450 words in 5–6 paragraphs',
+        steps: ['Claim', 'Evidence', 'Analysis (so what?)', 'Counterpoint or nuance', 'Link'],
+        scaffold: `LIGHT SUPPORT, STRATEGIC GUIDANCE ONLY.
+- NO sentence frames and NO ready-made sentences. Give sharp strategic questions and rhetorical moves instead.
+- Each body paragraph = 5 moves: Claim, Evidence, Analysis ("so what?"), Counterpoint or nuance, Link.
+- For the thesis, push the student past a simple yes/no toward a narrower, more original angle, and show how to find one.
+- Per paragraph add ONE language challenge (e.g. concession, nominalisation, inversion, hedging), named with a fragment of at most 6 words, plus 3–4 sophisticated collocations (gloss only rare ones).
+- Conclusion: do NOT just summarise. Show how to widen the perspective or raise the stakes.`
+      }
+    };
+
+    const OUTLINE_TONES = {
+      storytelling: `Narrative arc. Body paragraphs are STORY MOMENTS (opening scene → what happened → turning point → what I learned), not abstract reasons. "Developing an idea" means adding action, sensory detail and feeling. Use time connectors (one day, suddenly, in the end).`,
+      casual: `Friendly personal talk. Body paragraphs are personal reasons or experiences told like chatting to someone. Ideas grow from "what happened to me / what I do". Contractions and direct address are fine.`,
+      humorous: `Each body paragraph is one FUNNY ANGLE (exaggeration, surprise, self-mockery, unexpected comparison). For each, show where the setup goes and where the punchline goes. Still keep a clear idea underneath.`,
+      professional: `Formal argument. Body paragraphs follow claim → reason → evidence → implication. Impersonal voice, avoid "I" and slang. Ideas grow from facts, data, institutions and cause-effect logic.`,
+      persuasive: `Persuasive argument. Choose a clear position, order the reasons from strongest to supporting, include one counter-argument that the student answers, and end with a call to action. Ideas grow from reason → proof → rebuttal.`,
+      emotional: `Emotional, personal writing. Body paragraphs are meaningful MOMENTS or feelings. Ideas grow by showing instead of telling: what I saw, heard and felt, and why it mattered.`
+    };
+
+    const OUTLINE_AUDIENCES = {
+      children: `The reader is a young child. Ideas must be concrete and easy to picture (animals, games, family, school). Very short sentences, simple words, a playful voice, maybe one question to the reader.`,
+      friends: `The reader is a close friend or family member. Warm, direct, personal. Examples come from shared everyday life and real stories. Informal expressions are welcome.`,
+      public: `The reader is the general public. Clear, polite and neutral. Use everyday examples most people know and explain any special word.`,
+      pro: `The reader is a teacher or professional. Precise, well-organised, formal. Examples should come from evidence, research, institutions or real cases. No slang.`
+    };
+
+    function outlineKeys() {
+      const lvl = (lvlSel.value.match(/^[ABC]/) || ['B'])[0];
+      const toneWord = (toneSel.value.split(/[\s—]/)[0] || 'casual').toLowerCase();
+      const tone = OUTLINE_TONES[toneWord] ? toneWord : 'casual';
+      const a = audSel.value;
+      const aud = /children/i.test(a) ? 'children'
+        : /friends|family/i.test(a) ? 'friends'
+        : /teachers|professionals/i.test(a) ? 'pro' : 'public';
+      return { lvl, tone, aud };
+    }
+
     // ══ AI FEATURES ══
     async function callOutline() {
       const tp = topic(); if (!tp) return toast(t('no-topic'));
       setPanelTitle('panel-outline');
-      const level = lvlSel.value;
-      const tone = toneSel.value;
-      const aud = audSel.value;
+      const { lvl, tone, aud } = outlineKeys();
+      const L = OUTLINE_LEVELS[lvl];
       const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
 
-      // Determine depth by level
-      const isAdvanced = ['B2','C1','C2'].includes(level);
-      const isMid = ['B1','B1+'].includes(level);
-      const isBasic = ['A1','A2','A2+'].includes(level);
-
-      const vi = uiLang !== 'en';
-
-      // Cache check — reuse if same topic/level/tone/aud/lang
+      // Cache check — reuse if same topic/level/tone/audience/language
       const d = getDoc(currentId);
-      const cacheKey = `${tp}|${level}|${tone}|${aud}|${lang}`;
+      const cacheKey = `v2|${tp}|${lvl}|${tone}|${aud}|${lang}`;
       if (d && d.outline && d.outlineKey === cacheKey) {
         document.getElementById('pCards').style.display = 'none';
         openPanel(t('panel-outline'), d.outline, null);
@@ -4651,51 +4806,47 @@ ${levelRules}
       }
 
       const r = await callAI(
-        `You are an expert ESL writing coach. Write a complete essay outline for this student.
+        `You are a warm, encouraging English writing coach. Build a STEP-BY-STEP WRITING ROADMAP that teaches the student HOW to find ideas and develop them into a complete essay. This is NOT a finished essay: the student must write the sentences themselves.
 
-Topic: "${tp}"
-Level: ${level} | Tone: ${tone} | Audience: ${aud}
-Language for labels/tips: ${lang}
-Number of body paragraphs: ${isBasic ? 2 : isAdvanced ? '3–4' : 3}
+STUDENT PROFILE
+- Topic: "${tp}"
+- Level: ${L.code}
+- Tone / style: ${toneSel.value}
+- Audience (the reader): ${audSel.value}
+- Guidance language: ${lang} (all explanations, questions, headings and hints). English is used ONLY for sentence frames, starters, vocabulary and connectors.
 
-CRITICAL: Every example sentence must be a REAL, COMPLETE English sentence about "${tp}" — not a description, not a placeholder, not "[write something here]". Write the actual sentences a student can copy and adapt.
+THREE THINGS MUST VISIBLY SHAPE THE OUTLINE
+1. LEVEL → ${L.scaffold}
+2. TONE → ${OUTLINE_TONES[tone]}
+3. AUDIENCE → ${OUTLINE_AUDIENCES[aud]}
+Choose the main ideas, examples, vocabulary and connectors so they really fit this tone and this reader, and the topic "${tp}". Never produce generic ideas that could fit any topic.
 
----
+STRUCTURE (follow this order)
+## 🗺️ Roadmap
+Say in 1–2 lines what kind of writing this is and which direction you recommend. Then list the parts of the essay (Introduction, ${L.bodyCount} body paragraphs, Conclusion) with a one-line purpose each. Target length: ${L.length}.
 
-${vi ? 'Viết dàn ý đầy đủ theo cấu trúc này:' : 'Write a complete outline following this structure:'}
+## 💡 Find your ideas
+Give 2–3 thinking questions specific to "${tp}" that help the student discover their own content. Then name the ${L.bodyCount} main ideas you recommend (3–6 words each, specific to the topic) with one line on why each fits this tone and reader.
 
-## 📋 ${vi ? 'Tổng quan' : 'Overview'}
-${vi ? `Tóm tắt 1–2 câu về hướng triển khai bài viết cho chủ đề này ở trình độ ${level}.` : `1–2 sentence summary of how to approach this topic at level ${level}.`}
+## 🚪 Introduction
+One line on its purpose, then the steps for this level.
 
----
+## ✍️ Body paragraph 1, 2, … (give each a short, specific, inviting title)
+For each: one line "Why this paragraph is here" (how it connects to the previous one and to the thesis), then these steps: ${L.steps.join(' → ')}. End each paragraph with "✅ Done when: …" (a small concrete finish line).
 
-## 1️⃣ ${vi ? 'Mở bài' : 'Introduction'}
-${vi ? `Giải thích ngắn mục tiêu mở bài cho chủ đề này, rồi viết ví dụ cho từng phần:` : `Briefly explain the intro goal for this topic, then write examples for each part:`}
+## 🏁 Conclusion
+One line on its purpose, then the steps for this level.
 
-**Hook** — ${vi ? 'câu mở đầu gây ấn tượng' : 'attention-grabbing opener'} (${vi ? '2 lựa chọn' : '2 options'})
-**${vi ? 'Bối cảnh' : 'Background'}** — ${vi ? '1 câu giới thiệu chủ đề' : '1 sentence introducing the topic'}
-**${vi ? 'Luận điểm' : 'Thesis'}** — ${vi ? '1 câu báo trước ý chính' : '1 sentence announcing the main ideas'}
+## ☑️ Final check
+3–4 short check items starting with "☐", tailored to this level and tone.
 
----
+End with ONE warm, encouraging sentence in ${lang}.
 
-## 2️⃣ ${vi ? 'Thân bài' : 'Body'}
-${vi ? `Tạo ${isBasic ? '2' : isAdvanced ? '3–4' : '3'} đoạn, mỗi đoạn phát triển 1 ý độc lập về "${tp}".
-Cho mỗi đoạn, đặt tên ý chính cụ thể, rồi viết:` : `Create ${isBasic ? '2' : isAdvanced ? '3–4' : '3'} paragraphs, each developing 1 independent idea about "${tp}".
-For each paragraph, name the specific main idea, then write:`}
-- ${vi ? 'Câu chủ đề' : 'Topic sentence'}
-- ${vi ? 'Câu giải thích (+ gợi ý hướng phát triển ý)' : 'Explanation sentence (+ tips on how to develop the idea)'}
-- ${vi ? 'Câu ví dụ cụ thể' : 'Example sentence'}
-- ${vi ? 'Câu chuyển ý' : 'Transition sentence'}
-- ${vi ? '3–4 từ vựng gợi ý (kèm nghĩa)' : '3–4 suggested vocabulary (with meanings)'}
-- ${vi ? '3–4 từ nối phù hợp' : '3–4 fitting connectors'}
-
----
-
-## 3️⃣ ${vi ? 'Kết bài' : 'Conclusion'}
-${vi ? `Giải thích ngắn cách kết bài hiệu quả cho chủ đề này, rồi viết ví dụ cho:` : `Briefly explain how to conclude effectively for this topic, then write examples for:`}
-- ${vi ? 'Câu nhắc lại luận điểm (bằng từ khác)' : 'Restate sentence (in different words)'}
-- ${vi ? 'Câu tóm tắt ý chính' : 'Summary sentence'}
-- ${vi ? 'Câu kết ấn tượng (2 lựa chọn)' : 'Final thought (2 options)'}`,
+FORMAT RULES
+- NO tables at all. Use only headings, bold, italics, blockquotes (>) and short bullet lists.
+- Speak directly to the student in a friendly coach voice, like a teacher talking with them. Avoid dry form-like labels.
+- Sentence frames and starters must be about "${tp}", natural English, and grammatical once the blanks are filled with the student's own experience.
+- Never write a complete paragraph for the student.`,
         'btn-outline',
         false,
         false,
@@ -4784,27 +4935,27 @@ RULES:
       // Dynamic 3 angles based on context
       const angles = isIntro && sentencesInPara <= 1
         ? [
-            'hook the reader with a surprising fact, question, or relatable situation about this topic',
-            'state the writer\'s main opinion or stance on this topic clearly',
-            'mention 2–3 aspects the essay will cover (a brief signpost sentence)',
-          ]
+          'hook the reader with a surprising fact, question, or relatable situation about this topic',
+          'state the writer\'s main opinion or stance on this topic clearly',
+          'mention 2–3 aspects the essay will cover (a brief signpost sentence)',
+        ]
         : isNewPara
-        ? [
+          ? [
             'open with a clear topic sentence that introduces a NEW idea not covered in previous paragraphs',
             'open with a contrasting idea that challenges something from the previous paragraph',
             'open with a question or observation that leads into a new angle on the topic',
           ]
-        : isParaLong
-        ? [
-            'wrap up this paragraph with a sentence that ties the ideas together',
-            'write a transition sentence that signals a new idea is coming next',
-            `push the last point further — the last sentence said: "${lastSentence}" — add a specific consequence or real-world example`,
-          ]
-        : [
-            `support the last sentence ("${lastSentence}") with a specific fact, statistic, or example`,
-            `explain WHY the last point matters — give a reason or consequence`,
-            `add a personal feeling, experience, or opinion that connects to the last sentence`,
-          ];
+          : isParaLong
+            ? [
+              'wrap up this paragraph with a sentence that ties the ideas together',
+              'write a transition sentence that signals a new idea is coming next',
+              `push the last point further — the last sentence said: "${lastSentence}" — add a specific consequence or real-world example`,
+            ]
+            : [
+              `support the last sentence ("${lastSentence}") with a specific fact, statistic, or example`,
+              `explain WHY the last point matters — give a reason or consequence`,
+              `add a personal feeling, experience, or opinion that connects to the last sentence`,
+            ];
 
       const levelRules = `STRICTLY match the student's level:
 - A1/A2: max 8–10 words, basic vocabulary, "and/but/so" connectors only
@@ -5007,7 +5158,7 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
 
       if (wc < 60) {
         // short text — lightweight feedback proportional to length
-        reviewPrompt = `You are an expert ESL writing reviewer. The student wrote a short piece (${wc} word${wc===1?'':'s'}).
+        reviewPrompt = `You are an expert ESL writing reviewer. The student wrote a short piece (${wc} word${wc === 1 ? '' : 's'}).
 
 Topic: "${tp || 'not specified'}"
 Text:
@@ -5170,7 +5321,7 @@ Rules:
 
       const r = await callAI(
         `Translate to Vietnamese naturally. One paragraph per line, ${srcParas.length} line(s) total. No extra text.
-${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
+${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
         'btn-translate', false, false, 600, t('panel-translate')
       );
 
@@ -5708,9 +5859,9 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       const icoMain = document.getElementById('ico-tts-main');
       const lblMain = document.getElementById('lbl-tts-main');
       const icoPara = document.getElementById('ico-tts-para');
-      const icoAll  = document.getElementById('ico-tts-all');
+      const icoAll = document.getElementById('ico-tts-all');
       const lblPara = document.getElementById('lbl-tts-para');
-      const lblAll  = document.getElementById('lbl-tts-all');
+      const lblAll = document.getElementById('lbl-tts-all');
       const stopBtn = document.getElementById('ttsStopBtn');
       const stopSep = document.getElementById('ttsStopSep');
 
@@ -5720,9 +5871,9 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       if (lblMain) lblMain.textContent = ' Đọc';
       // Reset dropdown item icons
       if (icoPara) icoPara.className = 'bi bi-text-paragraph';
-      if (icoAll)  icoAll.className  = 'bi bi-file-text';
+      if (icoAll) icoAll.className = 'bi bi-file-text';
       if (lblPara) lblPara.textContent = 'Đọc đoạn này';
-      if (lblAll)  lblAll.textContent  = 'Đọc toàn bài';
+      if (lblAll) lblAll.textContent = 'Đọc toàn bài';
       if (stopBtn) stopBtn.style.display = 'none';
       if (stopSep) stopSep.style.display = 'none';
 
@@ -5752,7 +5903,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
 
     function toggleTTSMenu() {
       const menu = document.getElementById('ttsMenu');
-      const btn  = document.getElementById('btn-tts');
+      const btn = document.getElementById('btn-tts');
       if (!menu || !btn) return;
       // If speaking/paused, clicking main button toggles pause/resume directly
       if (ttsState === 'speaking') {
@@ -5774,11 +5925,11 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       menu.style.display = 'block'; // measure height
       const mh = menu.offsetHeight || 120;
       menu.style.display = '';
-      let top  = r.top - mh - 6;
+      let top = r.top - mh - 6;
       let left = r.left;
       if (top < 8) top = r.bottom + 6; // flip below if not enough space above
       if (left + 190 > window.innerWidth - 8) left = r.right - 190;
-      menu.style.top  = top + 'px';
+      menu.style.top = top + 'px';
       menu.style.left = left + 'px';
       menu.classList.add('open');
       setTimeout(() => document.addEventListener('pointerdown', closeTTSOnOutside, { once: true }), 10);
@@ -6037,31 +6188,31 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
 
       if (panelMode) {
         // panel: ẩn cut/paste/tts-from, giữ copy + đọc đoạn + phân tích
-        show('ctx-cut',          false);
-        show('ctx-copy',         hasSel);
-        show('ctx-paste',        false);
-        show('ctx-sep-edit',     hasSel);
-        show('ctx-tts-para',     true);
-        show('ctx-tts-from',     false);
+        show('ctx-cut', false);
+        show('ctx-copy', hasSel);
+        show('ctx-paste', false);
+        show('ctx-sep-edit', hasSel);
+        show('ctx-tts-para', true);
+        show('ctx-tts-from', false);
         show('ctx-sep-analysis', isShort || isOneWord);
-        show('ctx-dict',         isOneWord);
-        show('ctx-paraphrase',   isShort);
-        show('ctx-explain',      isShort);
-        show('ctx-analyze',      isShort);
+        show('ctx-dict', isOneWord);
+        show('ctx-paraphrase', isShort);
+        show('ctx-explain', isShort);
+        show('ctx-analyze', isShort);
       } else {
         document.getElementById('ctx-cut')?.toggleAttribute('disabled', !hasSel);
         document.getElementById('ctx-copy')?.toggleAttribute('disabled', !hasSel);
-        show('ctx-cut',          true);
-        show('ctx-copy',         true);
-        show('ctx-paste',        true);
-        show('ctx-sep-edit',     true);
-        show('ctx-tts-para',     true);
-        show('ctx-tts-from',     true);
+        show('ctx-cut', true);
+        show('ctx-copy', true);
+        show('ctx-paste', true);
+        show('ctx-sep-edit', true);
+        show('ctx-tts-para', true);
+        show('ctx-tts-from', true);
         show('ctx-sep-analysis', isShort || isOneWord);
-        show('ctx-dict',         isOneWord);
-        show('ctx-paraphrase',   isShort);
-        show('ctx-explain',      isShort);
-        show('ctx-analyze',      isShort);
+        show('ctx-dict', isOneWord);
+        show('ctx-paraphrase', isShort);
+        show('ctx-explain', isShort);
+        show('ctx-analyze', isShort);
       }
 
       menu.classList.add('open');
@@ -6073,7 +6224,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       if (left < 8) left = 8;
       if (top < 8) top = 8;
       menu.style.left = left + 'px';
-      menu.style.top  = top + 'px';
+      menu.style.top = top + 'px';
       setTimeout(() => document.addEventListener('pointerdown', closeCtxOnOutside, { once: true }), 10);
     }
 
@@ -6131,9 +6282,9 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       }, 600);
     }, { passive: true });
 
-    editor.addEventListener('touchend',   () => clearTimeout(ctxLongPressTimer));
-    editor.addEventListener('touchmove',  () => clearTimeout(ctxLongPressTimer));
-    editor.addEventListener('touchcancel',() => clearTimeout(ctxLongPressTimer));
+    editor.addEventListener('touchend', () => clearTimeout(ctxLongPressTimer));
+    editor.addEventListener('touchmove', () => clearTimeout(ctxLongPressTimer));
+    editor.addEventListener('touchcancel', () => clearTimeout(ctxLongPressTimer));
 
     // ── NEW AI FUNCTIONS ──
 
@@ -6256,7 +6407,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
           speakBtn.className = 'dict-audio-btn';
           speakBtn.title = vi ? 'Nghe phát âm' : 'Listen';
           speakBtn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
-          speakBtn.onclick = () => { const u = new SpeechSynthesisUtterance(word); u.lang='en-US'; u.rate=0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); };
+          speakBtn.onclick = () => { const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); };
           header.appendChild(speakBtn);
           pContent.appendChild(header);
         }
@@ -6356,14 +6507,14 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       if (!editor.contains(sel.anchorNode)) { hideSelToolbar(); return; }
 
       const range = sel.getRangeAt(0);
-      const rect  = range.getBoundingClientRect();
+      const rect = range.getBoundingClientRect();
       if (!rect.width && !rect.height) { hideSelToolbar(); return; }
 
       const selText = sel.toString().trim();
       const isShort = selText.length <= 300 && (selText.match(/[.!?]/g) || []).length <= 1;
 
       // Show/hide analysis buttons based on selection length
-      ['selParaphraseBtn','selExplainBtn','selAnalyzeBtn'].forEach(id => {
+      ['selParaphraseBtn', 'selExplainBtn', 'selAnalyzeBtn'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = isShort ? '' : 'none';
       });
@@ -6374,7 +6525,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       const _st = getSelToolbar();
       const tw = _st.offsetWidth || 320;
       let left = rect.left + rect.width / 2 - tw / 2;
-      let top  = rect.top - _st.offsetHeight - 12;
+      let top = rect.top - _st.offsetHeight - 12;
 
       // Keep in viewport
       if (left < 8) left = 8;
@@ -6382,7 +6533,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       if (top < 8) top = rect.bottom + 12;
 
       _st.style.left = left + 'px';
-      _st.style.top  = top + 'px';
+      _st.style.top = top + 'px';
     }
 
     function hideSelToolbar() {
@@ -6403,15 +6554,15 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
 
     // Selection toolbar action helpers — hide toolbar then run action
     function selAction(fn) { hideSelToolbar(); fn(); }
-    function selCut()       { hideSelToolbar(); document.execCommand('cut'); }
-    function selCopy()      { hideSelToolbar(); document.execCommand('copy'); }
-    function selPaste()     { hideSelToolbar(); ctxPaste(); }
-    function selTTS()       { hideSelToolbar(); ctxTTSPara(); }
-    function selSuggest()   { selAction(callSuggest); }
-    function selImprove()   { selAction(callImprove); }
-    function selParaphrase(){ selAction(callParaphrase); }
-    function selExplain()   { selAction(callExplain); }
-    function selAnalyze()   { selAction(callAnalyze); }
+    function selCut() { hideSelToolbar(); document.execCommand('cut'); }
+    function selCopy() { hideSelToolbar(); document.execCommand('copy'); }
+    function selPaste() { hideSelToolbar(); ctxPaste(); }
+    function selTTS() { hideSelToolbar(); ctxTTSPara(); }
+    function selSuggest() { selAction(callSuggest); }
+    function selImprove() { selAction(callImprove); }
+    function selParaphrase() { selAction(callParaphrase); }
+    function selExplain() { selAction(callExplain); }
+    function selAnalyze() { selAction(callAnalyze); }
 
     // ── PWA INSTALL BANNER ──
     (function () {
@@ -6899,14 +7050,19 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
 
   <!-- CONTEXT MENU -->
   <!-- rename dialog -->
-  <div id="renameOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center">
-    <div style="background:var(--surface);border-radius:14px;padding:1.5rem 1.75rem;width:min(90vw,360px);box-shadow:0 8px 32px rgba(0,0,0,.25)">
+  <div id="renameOverlay"
+    style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center">
+    <div
+      style="background:var(--surface);border-radius:14px;padding:1.5rem 1.75rem;width:min(90vw,360px);box-shadow:0 8px 32px rgba(0,0,0,.25)">
       <div style="font-size:1rem;font-weight:600;margin-bottom:.9rem" id="renameDlgTitle">Đổi tên bài viết</div>
-      <input id="renameDlgInput" type="text" style="width:100%;box-sizing:border-box;padding:.55rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem;background:var(--bg);color:var(--text);outline:none"
+      <input id="renameDlgInput" type="text"
+        style="width:100%;box-sizing:border-box;padding:.55rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem;background:var(--bg);color:var(--text);outline:none"
         onkeydown="if(event.key==='Enter')renameDialogOK();if(event.key==='Escape')renameDialogCancel()">
       <div style="display:flex;gap:.6rem;justify-content:flex-end;margin-top:1rem">
-        <button onclick="renameDialogCancel()" style="padding:.45rem 1.1rem;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.88rem">Huỷ</button>
-        <button onclick="renameDialogOK()" style="padding:.45rem 1.2rem;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:.88rem;font-weight:600">OK</button>
+        <button onclick="renameDialogCancel()"
+          style="padding:.45rem 1.1rem;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.88rem">Huỷ</button>
+        <button onclick="renameDialogOK()"
+          style="padding:.45rem 1.2rem;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:.88rem;font-weight:600">OK</button>
       </div>
     </div>
   </div>
@@ -6914,15 +7070,22 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
   <div id="ctxMenu" class="ctx-menu" role="menu">
     <button class="ctx-item" id="ctx-cut" onclick="ctxCut()"><i class="bi bi-scissors"></i> <span>Cắt</span></button>
     <button class="ctx-item" id="ctx-copy" onclick="ctxCopy()"><i class="bi bi-copy"></i> <span>Sao chép</span></button>
-    <button class="ctx-item" id="ctx-paste" onclick="ctxPaste()"><i class="bi bi-clipboard"></i> <span>Dán</span></button>
+    <button class="ctx-item" id="ctx-paste" onclick="ctxPaste()"><i class="bi bi-clipboard"></i>
+      <span>Dán</span></button>
     <div class="ctx-sep" id="ctx-sep-edit"></div>
-    <button class="ctx-item" id="ctx-tts-para" onclick="ctxTTSPara()"><i class="bi bi-volume-up-fill"></i> <span>Đọc đoạn này</span></button>
-    <button class="ctx-item" id="ctx-tts-from" onclick="ctxTTSFrom()"><i class="bi bi-play-fill"></i> <span>Đọc từ đây đến hết</span></button>
+    <button class="ctx-item" id="ctx-tts-para" onclick="ctxTTSPara()"><i class="bi bi-volume-up-fill"></i> <span>Đọc
+        đoạn này</span></button>
+    <button class="ctx-item" id="ctx-tts-from" onclick="ctxTTSFrom()"><i class="bi bi-play-fill"></i> <span>Đọc từ đây
+        đến hết</span></button>
     <div class="ctx-sep" id="ctx-sep-analysis"></div>
-    <button class="ctx-item" id="ctx-dict" onclick="closeCtxMenu();callDict()"><i class="bi bi-book"></i> <span>Tra từ điển</span></button>
-    <button class="ctx-item" id="ctx-paraphrase" onclick="closeCtxMenu();callParaphrase()"><i class="bi bi-arrow-repeat"></i> <span>Diễn đạt lại</span></button>
-    <button class="ctx-item" id="ctx-explain" onclick="closeCtxMenu();callExplain()"><i class="bi bi-question-circle"></i> <span>Giải thích từ/cụm</span></button>
-    <button class="ctx-item" id="ctx-analyze" onclick="closeCtxMenu();callAnalyze()"><i class="bi bi-diagram-3"></i> <span>Phân tích ngữ pháp</span></button>
+    <button class="ctx-item" id="ctx-dict" onclick="closeCtxMenu();callDict()"><i class="bi bi-book"></i> <span>Tra từ
+        điển</span></button>
+    <button class="ctx-item" id="ctx-paraphrase" onclick="closeCtxMenu();callParaphrase()"><i
+        class="bi bi-arrow-repeat"></i> <span>Diễn đạt lại</span></button>
+    <button class="ctx-item" id="ctx-explain" onclick="closeCtxMenu();callExplain()"><i
+        class="bi bi-question-circle"></i> <span>Giải thích từ/cụm</span></button>
+    <button class="ctx-item" id="ctx-analyze" onclick="closeCtxMenu();callAnalyze()"><i class="bi bi-diagram-3"></i>
+      <span>Phân tích ngữ pháp</span></button>
   </div>
 
   <!-- SELECTION TOOLBAR (mobile) -->
@@ -6933,9 +7096,12 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
     <div class="sel-sep"></div>
     <button class="sel-btn" onclick="selTTS()" title="Đọc đoạn"><i class="bi bi-volume-up-fill"></i></button>
     <div class="sel-sep"></div>
-    <button class="sel-btn" id="selParaphraseBtn" onclick="selParaphrase()" title="Diễn đạt lại"><i class="bi bi-arrow-repeat"></i></button>
-    <button class="sel-btn" id="selExplainBtn" onclick="selExplain()" title="Giải thích"><i class="bi bi-question-circle"></i></button>
-    <button class="sel-btn" id="selAnalyzeBtn" onclick="selAnalyze()" title="Phân tích"><i class="bi bi-diagram-3"></i></button>
+    <button class="sel-btn" id="selParaphraseBtn" onclick="selParaphrase()" title="Diễn đạt lại"><i
+        class="bi bi-arrow-repeat"></i></button>
+    <button class="sel-btn" id="selExplainBtn" onclick="selExplain()" title="Giải thích"><i
+        class="bi bi-question-circle"></i></button>
+    <button class="sel-btn" id="selAnalyzeBtn" onclick="selAnalyze()" title="Phân tích"><i
+        class="bi bi-diagram-3"></i></button>
   </div>
 
 </html>

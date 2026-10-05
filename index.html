@@ -4836,6 +4836,17 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
       }
       return out.join('\n');
     }
+    // Counts "meaning – *English*" options whose two sides are identical (an untranslated gloss)
+    function glossStats(md) {
+      const re = /([^·\n*–]+?)\s+–\s+\*([^*\n]+)\*/g;
+      const norm = x => x.toLowerCase().replace(/[^\p{L}]/gu, '');
+      let total = 0, same = 0, m;
+      while ((m = re.exec(md))) {
+        total++;
+        if (norm(m[1]) === norm(m[2])) same++;
+      }
+      return { total, same };
+    }
     function showOutline(md) {
       document.getElementById('pCards').style.display = 'none';
       openPanel(t('panel-outline'), tidyOutlineMd(md), null, false, { breaks: true });
@@ -4852,7 +4863,7 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
 
       // Cache check — reuse if same topic/level/tone/audience/language
       const d = getDoc(currentId);
-      const cacheKey = `v7|${tp}|${lvl}|${tone}|${aud}|${lang}`;
+      const cacheKey = `v8|${tp}|${lvl}|${tone}|${aud}|${lang}`;
       if (d && d.outline && d.outlineKey === cacheKey) {
         showOutline(d.outline);
         return;
@@ -4862,8 +4873,7 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
         ? { start: 'Trước khi bắt đầu', roadmap: 'Bản đồ bài viết', intro: 'Mở bài', body: 'Thân bài', concl: 'Kết bài', check: 'Tự kiểm tra', build: 'Ghép thành câu', extra: 'Cụm từ nên có thêm', vocabBtn: 'Từ vựng', own: 'của riêng bạn' }
         : { start: 'Before you start', roadmap: 'Your roadmap', intro: 'Introduction', body: 'Body', concl: 'Conclusion', check: 'Final check', build: 'Build your sentences', extra: 'More phrases to use', vocabBtn: 'Vocabulary', own: 'your own idea' };
 
-      const r = await callAI(
-        `You are a warm writing coach sitting beside this student, talking like a real person, not filling in a form. Your guide must remove the three things that stop students from writing: (1) not knowing WHAT to say, (2) not having the ENGLISH WORDS for it, (3) not knowing HOW to build the sentence. After reading it, the student can write a complete essay without a dictionary or a teacher, and feels "this app understands me".
+      const prompt = `You are a warm writing coach sitting beside this student, talking like a real person, not filling in a form. Your guide must remove the three things that stop students from writing: (1) not knowing WHAT to say, (2) not having the ENGLISH WORDS for it, (3) not knowing HOW to build the sentence. After reading it, the student can write a complete essay without a dictionary or a teacher, and feels "this app understands me".
 
 STUDENT
 - Topic: "${tp}"
@@ -4878,22 +4888,25 @@ Level: ${L.modelRule}
 Tone: ${OUTLINE_TONES[tone]}
 Audience: ${OUTLINE_AUDIENCES[aud]}
 Every idea, word and example must be specific to "${tp}". Nothing generic that could fit any topic.
+The parts must form one small story or description with a clear thread (who or what it is about, then what happens or what they do, then how the student feels), not a list of unrelated facts.
 Never assume facts about the student's life (a brother, a pet, a yard, a trip). Turn such details into a slot with several options, or keep the sentence neutral ("my family", "we"). Name parts by the KIND of moment, not by fixed facts (for example "A morning moment", not "The funny morning in the kitchen").
 
 HOW EACH PART IS GUIDED (${H.intro}, each body paragraph, ${H.concl}). ONE block per PART, never one per sentence.
-1. A short, human talk of 2–3 lines: what this part is for, and one concrete thing to imagine or remember so ideas come easily. Vary how you open each part. This talk is mandatory.
+1. A short, human talk of 2–3 lines: what this part is for, and one concrete thing to imagine or remember so ideas come easily. Vary how you open each part. This talk is mandatory and must describe exactly what the finished example below does.
 2. 🧩 **${H.build}**: ${L.builderRule}
 3. Then the finished example in a blockquote (>) with the parts the student picks shown in **bold**, followed by a BLANK LINE.
 4. ${L.extraRule.replace('{extra}', H.extra)}
-5. Where students genuinely get stuck, a tip starting with "💬". ${L.tipRule} Skip it everywhere else.
+5. Where students genuinely get stuck, a tip starting with "💬". ${L.tipRule} A tip must target a mistake students at ${L.code} really make with THESE patterns (for example the verb ending after "my mother" versus "my parents"), never a rule they would rarely break. Skip it everywhere else.
 6. One short, encouraging line pointing to what comes next.
 
 RULES FOR OPTIONS (very important)
 - Every slot is exactly ONE kind of unit (a noun phrase, OR a verb phrase in ONE stated tense, OR a full clause), and ALL its options are that same kind and form. Use the same tense in all verb slots of a story (past simple), never a participle or a mix.
-- The slot sits inside the pattern as a complete unit. The pattern must NOT add words that only fit some options (never write "[C] happened" or "played [A]" if an option would break it).
+- FIXED TEXT in a pattern may contain ONLY grammar words (a, an, the, in, on, at, of, to, and, is, am, are, do, does, can, my, we, I, because, then, and similar). EVERY content word (noun, verb, adjective, adverb, place, time) must come from a slot. So never write fixed phrases such as "at the game", "laughs loudly" or "happened" next to a slot.
+- All sentences of one paragraph share ONE time frame (for example habits in the present simple, or past simple for a story). Never mix "one morning", "every day" and "today" in the same paragraph.
 - Options of one slot must be INDEPENDENT of every other slot: any combination must read as a correct, sensible text. Never tie an option to another slot (for example a game in slot A and a matching action in slot B).
 - Before you finish, mentally put EVERY option into its pattern and read it aloud. If one sounds wrong, rewrite the option or the pattern. Fixed words in the pattern must be natural, common English at this level (no odd words).
-- EVERY option has its meaning written in ${lang}, never in English, not even the first option. Never leave an English phrase without a gloss.
+- EVERY option is written as "meaning in ${lang} – *English*", and the part BEFORE the dash MUST be a real translation in ${lang}. NEVER put the same word on both sides (WRONG: small – *small*; RIGHT: ${vi ? "nhỏ – *small*, mẹ – *mother*" : "not big – *small*"}). This applies to every option, including the first.
+- English words in options must be words a student at ${L.code} really knows or can learn at once. No abstract or rare words (for example not "togetherness").
 - End EVERY slot line with the exact text " · ✏️ ${H.own}" so the student can use their own real idea instead.
 - The finished examples of the whole guide, read in order, form ONE coherent sample essay (${L.sentences}). The number of sentences you promise in "${H.start}" must equal the number of sentences in those examples.
 
@@ -4904,23 +4917,32 @@ STRUCTURE (use exactly these heading texts as "## emoji text")
 ## 💌 ${H.start}
 3–4 sentences speaking to the student: name the exact feeling a student like them has about THIS topic; give one concrete reason this topic is easier or more interesting than it looks; say exactly how many sentences they will write and a realistic time (${L.time}); say that the options are only suggestions: if their real story is different they keep the sentence frame and fill it with their own details; say that if they need more words about the topic they can press the "${H.vocabBtn}" button. No generic praise.
 ## 🗺️ ${H.roadmap}
-One line on what kind of writing this is and the direction you recommend, then a short list of the parts (${H.intro}, ${L.bodyCount} body paragraphs, ${H.concl}), each with a concrete title and what the student will talk about. Say that the finished examples read from top to bottom make a complete sample essay.
+One line on what kind of writing this is and the direction you recommend (plain words only; at A1–A2 never use essay terms such as narrative, overview or thesis), then a short list of the parts (${H.intro}, ${L.bodyCount} body paragraphs, ${H.concl}), each with a concrete title and what the student will talk about. Say that the finished examples read from top to bottom make a complete sample essay.
 ## 🚪 ${H.intro}
 ## ✍️ ${H.body}
 Use "### emoji short inviting title" for each body paragraph, in the style of the sample.
 ## 🏁 ${H.concl}
 ## ☑️ ${H.check}
-3 "☐" items written as questions the student asks about THEIR OWN text (for example whether every sentence is really about their own topic, or whether they included a real detail). Never mention word counts, never mention rules from this prompt, never forbid "I". Finish with one warm sentence inviting the student to write the first sentence now.
+3 "☐" items written as questions the student asks about THEIR OWN text (for example whether every sentence is really about their own topic, or whether they included a real detail). Never mention how many sentences or words, never mention slots or letters such as [A], never mention rules from this prompt, never forbid "I". Finish with one warm sentence inviting the student to write the first sentence now.
 
 FORMAT RULES
 - NO tables, NO step numbers, NO labels such as "Câu 1", "Step 1", "Sentence 1" or "Claim/Reason/Evidence".
 - Headings are plain "## emoji text" lines; never wrap a heading in bold.
-- Be compact: no filler, no repetition. Every line must help the student write.`,
-        'btn-outline',
-        false,
-        false,
-        6000
-      );
+- Be compact: no filler, no repetition. Every line must help the student write.`;
+
+      const ask = p => callAI(p, 'btn-outline', false, false, 6000);
+      let r = await ask(prompt);
+      // Models sometimes copy the English phrase to both sides of the dash; retry once with a precise correction
+      if (r && vi) {
+        const g = glossStats(r);
+        if (g.total >= 3 && g.same / g.total > 0.25) {
+          const r2 = await ask(prompt + '\n\nCORRECTION: in your previous answer many options had English on BOTH sides of the dash (for example "small – *small*"). The part BEFORE the dash MUST be a Vietnamese translation (for example "nhỏ – *small*", "mẹ – *mother*", "nấu ăn – *cook dinner*"). Write the whole guide again and obey every other rule.');
+          if (r2) {
+            const g2 = glossStats(r2);
+            if (g2.total === 0 || g2.same / g2.total < g.same / g.total) r = r2;
+          }
+        }
+      }
       if (r) {
         if (d) { d.outline = r; d.outlineKey = cacheKey; saveDocs(); }
         showOutline(r);

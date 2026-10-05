@@ -4852,8 +4852,293 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
       openPanel(t('panel-outline'), tidyOutlineMd(md), null, false, { breaks: true });
     }
 
-    // ══ AI FEATURES ══
+    // ══ STRUCTURED OUTLINE: the AI returns data, the app validates it and builds the screen ══
+    const OUTLINE_PLAN = {
+      A: { parts: ['intro', 'body', 'body', 'concl'], sentences: { intro: 1, body: 3, concl: 1 }, maxFixed: { intro: 5, body: 10, concl: 5 }, tips: 2, minutes: '10–15' },
+      B: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: { intro: 3, body: 4, concl: 2 }, maxFixed: { intro: 10, body: 16, concl: 8 }, tips: 3, minutes: '25–35' },
+      C: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: {}, maxFixed: {}, tips: 3, minutes: '40–60' }
+    };
+
+    const OUTLINE_TXT = {
+      vi: {
+        start: 'Trước khi bắt đầu', roadmap: 'Bản đồ bài viết', intro: 'Mở bài', body: 'Thân bài', concl: 'Kết bài', check: 'Tự kiểm tra',
+        build: 'Ghép thành câu', moves: 'Chọn nước đi', extra: 'Cụm từ nên có thêm', tip: 'Mẹo nhỏ', own: 'của riêng bạn',
+        countLine: (n, m) => `Bạn sẽ viết **${n} câu** trong khoảng **${m} phút**.`,
+        optNote: 'Các lựa chọn chỉ là gợi ý. Nếu chuyện thật của bạn khác, cứ giữ khung câu và điền chi tiết của riêng bạn.',
+        vocabNote: 'Cần thêm từ về chủ đề này? Bấm nút “Từ vựng”.',
+        readAll: 'Các ví dụ dưới đây, đọc từ trên xuống, tạo thành một bài hoàn chỉnh.',
+        checkDefault: ['Mỗi câu mình viết có thật sự nói về chuyện của mình không?', 'Mình đã thay các gợi ý bằng chi tiết thật của mình chưa?', 'Đọc to cả bài một lần: có chỗ nào đọc vấp không?'],
+        closingDefault: 'Giờ hãy viết câu đầu tiên nhé, bạn làm được!'
+      },
+      en: {
+        start: 'Before you start', roadmap: 'Your roadmap', intro: 'Introduction', body: 'Body', concl: 'Conclusion', check: 'Final check',
+        build: 'Build your sentences', moves: 'Choose your move', extra: 'More phrases to use', tip: 'Tip', own: 'your own idea',
+        countLine: (n, m) => `You will write **${n} sentences** in about **${m} minutes**.`,
+        optNote: 'The options are only suggestions. If your real story is different, keep the sentence frame and fill it with your own details.',
+        vocabNote: 'Need more words about this topic? Press the “Vocabulary” button.',
+        readAll: 'The examples below, read from top to bottom, make one complete sample.',
+        checkDefault: ['Is every sentence really about my own story?', 'Did I replace the suggestions with my own real details?', 'Read the whole text aloud once: does anything sound awkward?'],
+        closingDefault: 'Now write your first sentence. You can do this!'
+      }
+    };
+
+    const OUTLINE_JSON_SAMPLE = {
+      A: `{"type":"body","title":"Mùa bạn yêu nhất","purpose":"Nói về mùa bạn thích và điều bạn làm","talk":"Nghĩ đến lúc bạn vui nhất trong năm. Lúc đó trời thế nào, bạn đang làm gì? Chỉ cần chọn 3 mảnh ghép là có ngay 3 câu.","pattern":"My favourite season is {A}. It is {B}. I like to {C} in this season.","slots":[{"id":"A","ask":"Mùa nào?","options":[{"gloss":"mùa xuân","en":"spring"},{"gloss":"mùa hè","en":"summer"},{"gloss":"mùa thu","en":"autumn"}]},{"id":"B","ask":"Trời thế nào?","options":[{"gloss":"ấm áp","en":"warm"},{"gloss":"mát mẻ","en":"cool"},{"gloss":"nóng","en":"hot"}]},{"id":"C","ask":"Bạn thích làm gì?","options":[{"gloss":"đi dạo","en":"walk outside"},{"gloss":"chơi với bạn","en":"play with friends"},{"gloss":"uống trà nóng","en":"drink hot tea"}]}],"extra":[],"tip":"Sau like to ta dùng động từ nguyên mẫu: like to walk, đừng viết like to walking."}`,
+      B: `{"type":"body","title":"Vì sao mùa thu làm bạn thấy bình yên","purpose":"Giải thích lý do bạn yêu mùa thu bằng một chi tiết cụ thể","talk":"Đây là đoạn bạn giải thích trái tim. Một chi tiết cụ thể (một mùi, một âm thanh, một buổi chiều) thuyết phục hơn mười tính từ.","pattern":"The main reason I love autumn is that {A}. For example, {B}. This is why {C}.","slots":[{"id":"A","ask":"Lý do chính của bạn?","options":[{"gloss":"mọi thứ chậm lại","en":"everything seems to slow down"},{"gloss":"có thời gian suy nghĩ","en":"I finally have time to think"},{"gloss":"không khí dễ chịu","en":"the air feels fresh"}]},{"id":"B","ask":"Một chi tiết cụ thể?","options":[{"gloss":"đường về nhà thơm mùi hạt dẻ","en":"the streets smell like roasted chestnuts on my way home"},{"gloss":"lá đổi màu trà","en":"the leaves turn the colour of tea"}]},{"id":"C","ask":"Điều đó nghĩa là gì với bạn?","options":[{"gloss":"mùa thu như nút tạm dừng","en":"autumn feels like a pause button for me"},{"gloss":"mùa thu cho tôi thở","en":"autumn gives me room to breathe"}]}],"extra":[{"gloss":"thư thả","en":"at a relaxed pace"},{"gloss":"lấy lại năng lượng","en":"recharge"},{"gloss":"thật sự","en":"genuinely"}],"tip":""}`,
+      C: `{"type":"body","title":"Điều người ta thường bỏ sót","purpose":"Thừa nhận phần đúng của phía bên kia rồi phản biện","move":"nhượng bộ rồi phản biện","talk":"Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía bên kia, rồi cho thấy vì sao bạn vẫn đứng vững.","moves":[{"angle":"Họ cho rằng đó là chiều chuộng bản thân","text":"Admittedly, critics may call it indulgent. Yet this objection overlooks what it protects: the quiet that makes reflection possible."},{"angle":"Họ cho rằng thiếu thực tế","text":"To some extent, it is impractical. That said, practicality is a poor measure of what keeps people steady."},{"angle":"Họ cho rằng lãng phí thời gian","text":"It is easy to dismiss it as wasted time. Yet the hours it takes are precisely what the rest of the week depends on."}],"extra":[{"gloss":"","en":"to some extent"},{"gloss":"tuy vậy","en":"that said"},{"gloss":"","en":"is a poor measure of"}],"tip":"Nói họ đúng ở đâu trước, rồi mới chỉ ra họ chưa nhìn thấy gì."}`
+    };
+
+    const _vnChars = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
+    const _normTxt = x => String(x || '').toLowerCase().replace(/[^\p{L}]/gu, '');
+    const _countSentences = x => String(x || '').split(/[.!?]+(?:\s|$)/).filter(z => z.trim()).length;
+    const _capSentences = x => x.replace(/(^|[.!?]\s+)(\**)([a-z])/g, (m, a, b, c) => a + b + c.toUpperCase());
+    const _fillPattern = (pattern, slots, bold) => pattern.replace(/\{([A-C])\}/g, (m, id) => {
+      const s = slots.find(z => z.id === id);
+      const en = s && s.options[0] ? s.options[0].en : '…';
+      return bold ? `**${en}**` : en;
+    });
+
+    function parseJsonLoose(txt) {
+      const t = strip(String(txt || ''));
+      const a = t.indexOf('{'), b = t.lastIndexOf('}');
+      if (a < 0 || b <= a) return null;
+      try { return JSON.parse(t.slice(a, b + 1)); } catch { return null; }
+    }
+
+    // Drops unusable options (no real translation, Vietnamese inside English, duplicates) instead of rejecting the whole part
+    function sanitizeOutlinePart(p, vi, lvl) {
+      const needGloss = lvl !== 'C';
+      const ok = o => o && typeof o.en === 'string' && o.en.trim() && !_vnChars.test(o.en)
+        && (!needGloss || (typeof o.gloss === 'string' && o.gloss.trim() && !(vi && _normTxt(o.gloss) === _normTxt(o.en))));
+      const clean = arr => {
+        const seen = new Set();
+        return (Array.isArray(arr) ? arr : []).filter(ok).filter(o => {
+          const k = _normTxt(o.en);
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        }).map(o => ({ gloss: String(o.gloss || '').trim(), en: o.en.trim() }));
+      };
+      if (Array.isArray(p.slots)) p.slots = p.slots.map(s => ({ id: String((s && s.id) || '').toUpperCase(), ask: String((s && s.ask) || '').trim(), options: clean(s && s.options) }));
+      if (Array.isArray(p.moves)) p.moves = p.moves.filter(m => m && typeof m.text === 'string' && m.text.trim() && !_vnChars.test(m.text)).map(m => ({ angle: String(m.angle || '').trim(), text: m.text.trim() }));
+      p.extra = clean(p.extra).slice(0, 4);
+      p.tip = typeof p.tip === 'string' ? p.tip.trim() : '';
+      return p;
+    }
+
+    function validateOutlinePart(p, type, lvl) {
+      const plan = OUTLINE_PLAN[lvl];
+      const bad = [];
+      if (!p || typeof p !== 'object') return ['the part is not a JSON object'];
+      if (String(p.talk || '').trim().length < 20) bad.push('"talk" is missing or too short');
+      if (!String(p.purpose || '').trim()) bad.push('"purpose" is missing');
+      if (type === 'body' && !String(p.title || '').trim()) bad.push('"title" is missing');
+      if (lvl === 'C') {
+        if (!Array.isArray(p.moves) || p.moves.length < 3) bad.push('"moves" needs 3-4 complete moves, each with English "text"');
+      } else {
+        const pattern = String(p.pattern || '');
+        const ids = [...new Set([...pattern.matchAll(/\{([A-C])\}/g)].map(m => m[1]))];
+        const slots = Array.isArray(p.slots) ? p.slots : [];
+        if (!ids.length || ids.length > 3) bad.push('"pattern" must contain 1 to 3 different slots written {A} {B} {C}');
+        if (ids.slice().sort().join() !== slots.map(s => s.id).sort().join()) bad.push('slot ids must match the placeholders in "pattern" exactly');
+        slots.forEach(s => {
+          if (!s.ask) bad.push(`slot ${s.id} has no "ask" question`);
+          if (s.options.length < 3) bad.push(`slot ${s.id} needs at least 3 valid options (English "en" only, and "gloss" a real translation in the guidance language, never the same word as "en")`);
+        });
+        const fixed = pattern.replace(/\{[A-C]\}/g, ' ').split(/\s+/).filter(w => /\p{L}/u.test(w)).length;
+        const maxFixed = plan.maxFixed[type];
+        if (maxFixed && fixed > maxFixed) bad.push(`"pattern" has ${fixed} fixed words, the maximum for this part is ${maxFixed}: move content words into slots`);
+        const want = plan.sentences[type], n = _countSentences(pattern);
+        if (want && (n < want - 1 || n > want + 1)) bad.push(`"pattern" should have about ${want} sentence(s), it has ${n}`);
+      }
+      return bad;
+    }
+
+    function outlineStudentBlock(c) {
+      const { tp, lvl, tone, aud, L, lang } = c;
+      return `STUDENT
+- Topic: "${tp}"
+- Level: ${L.code}. Students at this level are often: ${L.struggle}.
+- Tone / style: ${toneSel.value}
+- Audience (the reader): ${audSel.value}
+- Guidance language: ${lang}. Fields kind, opening, title, purpose, talk, ask, gloss, move, angle, tip, checklist and closing are in ${lang}. English appears only in pattern, en, and moves text.
+
+CONTENT DIRECTION
+${L.topicRule}
+Level: ${L.modelRule}
+Tone: ${OUTLINE_TONES[tone]}
+Audience: ${OUTLINE_AUDIENCES[aud]}
+Every idea, word and example must be specific to "${tp}". Never assume facts about the student's life (a brother, a pet, a trip): offer them as options.`;
+    }
+
+    function outlineSlotRules(c) {
+      const { lvl, L, lang } = c;
+      const plan = OUTLINE_PLAN[lvl];
+      if (lvl === 'C') {
+        return `MOVES (this level has no slots)
+- Each part has "move" (the rhetorical move at work, in a few words) and "moves": 3 or 4 DIFFERENT complete choices, each {"angle": the line of argument described in ${lang}, "text": 1–2 polished English sentences of 18–30 words}.
+- Do not write "pattern" or "slots".
+- "extra": body parts only, 3–4 precise collocations or discourse markers NOT used in the moves, as {"gloss","en"} (gloss may be "" for common ones). Empty list for intro and conclusion.`;
+      }
+      return `SLOT RULES
+- "pattern": English with slots written {A} {B} {C} (1 to 3 slots). Sentences per part: intro ${plan.sentences.intro}, body ${plan.sentences.body}, conclusion ${plan.sentences.concl}.
+- Fixed text outside slots: grammar words only (a, the, in, at, my, we, I, is, to, and, because…), at most ${plan.maxFixed.intro} words in an intro, ${plan.maxFixed.body} in a body part, ${plan.maxFixed.concl} in a conclusion. EVERY content word (noun, verb, adjective, place, time) must be inside a slot.
+- A slot is ONE complete unit. NEVER put a verb in one slot and its object in another: use a full predicate in one slot ("cooks dinner", "plays soccer"). If a subject slot exists, all its options are singular (mother, father, brother), so every verb option agrees.
+- All options of a slot have the same grammatical form, and slots never depend on each other: EVERY combination must be correct and sensible. Mentally put EVERY option into the pattern and read it aloud.
+- 3 or 4 options per slot as {"gloss","en"}. "gloss" is a REAL translation in ${lang} (WRONG: gloss "small" with en "small"; RIGHT: gloss ${lang === 'Vietnamese' ? '"nhỏ"' : '"not big"'} with en "small"). "en" is English only, in the exact form the pattern needs, and words must suit ${L.code}.
+- All sentences of one part share ONE time frame (present habits, or past simple for a story).
+- "extra": ${lvl === 'B' ? 'body parts only: exactly 3 useful collocations or connectors NOT in the options, as {"gloss","en"}. Empty list for intro and conclusion.' : 'always an empty list.'}`;
+    }
+
+    function buildOutlineJsonPrompt(c) {
+      const { lvl, L } = c;
+      const plan = OUTLINE_PLAN[lvl];
+      const list = plan.parts.map((t, i) => `${i + 1}. ${t}`).join(', ');
+      return `You are a warm writing coach. Return ONLY one JSON object (no markdown, no comments, no text around it) containing a write-along guide for this student. The app turns it into the final screen, so follow the schema exactly.
+
+${outlineStudentBlock(c)}
+
+PARTS, in exactly this order (${plan.parts.length} parts): ${list}  (intro = introduction, body = body paragraph, concl = conclusion)
+
+SCHEMA
+{"kind": "...", "opening": "...", "parts": [ {part}, … ], "checklist": ["...","...","..."], "closing": "..."}
+Each part has: "type" (intro|body|concl), "title" (body parts only, "" otherwise), "purpose", "talk", ${lvl === 'C' ? '"move", "moves"' : '"pattern", "slots"'}, "extra", "tip".
+Example of ONE body part (different topic, shows shape and voice only; do NOT copy its content):
+${OUTLINE_JSON_SAMPLE[lvl]}
+
+FIELD RULES
+- "kind": one plain line on what kind of writing this is${lvl === 'A' ? ' (never essay terms such as narrative, overview or thesis)' : ''}.
+- "opening": 3 sentences speaking to the student: name the exact feeling a student like them has about THIS topic and give one concrete reason this topic is easier or more interesting than it looks. No numbers, no generic praise.
+- "purpose": what the student will talk about in this part, in plain words.
+- "title": a short inviting title naming the KIND of moment, not fixed facts.
+- "talk": 2–3 human lines: what this part is for, and one concrete thing to imagine so ideas come easily. It must describe exactly what the example built from the FIRST options does. Vary how you open each part.
+- "tip": "" for most parts. At most ${plan.tips} non-empty tips in the whole guide, only for a mistake students at ${L.code} really make with THESE patterns.
+- "checklist": 3 questions the student asks about THEIR OWN text. Never mention counts, slots, letters or rules.
+- "closing": one warm sentence inviting the student to write the first sentence now.
+- The first options of all parts, read in order, form ONE coherent sample (a small story or description with a thread: who or what it is about, then what happens or what they do, then how the student feels).
+
+${outlineSlotRules(c)}`;
+    }
+
+    function buildOutlineRepairPrompt(c, part, type, problems) {
+      return `You are fixing ONE part of a writing guide. Return ONLY the corrected JSON object of this part (same fields, no text around it).
+
+${outlineStudentBlock(c)}
+
+This part has type "${type}". Problems found by the app:
+${problems.map(x => '- ' + x).join('\n')}
+
+${outlineSlotRules(c)}
+
+Part to fix:
+${JSON.stringify(part)}`;
+    }
+
+    function renderOutlineMd(data, lvl, vi) {
+      const X = OUTLINE_TXT[vi ? 'vi' : 'en'];
+      const plan = OUTLINE_PLAN[lvl];
+      const emoji = ['🌱', '🌿', '🍃', '🌟'];
+      let tips = 0, total = 0, bodyN = 0;
+      const optLine = o => (o.gloss ? `${o.gloss} – *${o.en}*` : `*${o.en}*`);
+
+      const blocks = data.parts.map((p, i) => {
+        const type = plan.parts[i];
+        const out = [String(p.talk).trim(), ''];
+        if (lvl === 'C') {
+          out.push(`🧩 **${X.moves}**${p.move ? ` (${String(p.move).trim()})` : ''}`);
+          p.moves.forEach(m => out.push(`- ${m.angle ? `*${m.angle}:* ` : ''}${m.text}`));
+          out.push('');
+          total += _countSentences(p.moves[0].text);
+        } else {
+          total += _countSentences(_fillPattern(p.pattern, p.slots, false));
+          out.push(`🧩 **${X.build}**`, '`' + p.pattern.replace(/\{([A-C])\}/g, '[$1]') + '`', '');
+          p.slots.forEach(s => out.push(`**${s.id}.** ${s.ask} ${s.options.map(o => `${o.gloss} – *${o.en}*`).join(' · ')} · ✏️ ${X.own}`));
+          out.push('', '> ' + _capSentences(_fillPattern(p.pattern, p.slots, true)), '');
+        }
+        if (type === 'body' && p.extra.length) out.push(`🧰 **${X.extra}:** ${p.extra.map(optLine).join(' · ')}`, '');
+        if (p.tip && tips < plan.tips) { tips++; out.push(`💬 ${X.tip}: ${p.tip}`, ''); }
+        return out.join('\n');
+      });
+
+      const md = [];
+      md.push(`## 💌 ${X.start}`, String(data.opening).trim(), X.countLine(total, plan.minutes), X.optNote, X.vocabNote, '');
+      md.push(`## 🗺️ ${X.roadmap}`, String(data.kind).trim(), '');
+      data.parts.forEach((p, i) => {
+        const type = plan.parts[i];
+        const name = type === 'intro' ? X.intro : type === 'concl' ? X.concl : String(p.title).trim();
+        md.push(`- **${name}** – ${String(p.purpose).trim()}`);
+      });
+      md.push('', X.readAll, '');
+      data.parts.forEach((p, i) => {
+        const type = plan.parts[i];
+        if (type === 'intro') md.push(`## 🚪 ${X.intro}`);
+        else if (type === 'concl') md.push(`## 🏁 ${X.concl}`);
+        else {
+          if (bodyN === 0) md.push(`## ✍️ ${X.body}`, '');
+          md.push(`### ${emoji[bodyN++ % emoji.length]} ${String(p.title).trim()}`);
+        }
+        md.push(blocks[i]);
+      });
+      let items = (Array.isArray(data.checklist) ? data.checklist : []).map(x => String(x).trim()).filter(x => x.length >= 8 && x.length <= 160 && !/[\d\[\]{}]/.test(x));
+      if (items.length < 3) items = X.checkDefault;
+      md.push(`## ☑️ ${X.check}`, ...items.slice(0, 3).map(x => `☐ ${x}`), '');
+      const closing = String(data.closing || '').trim();
+      md.push(closing.length >= 8 && closing.length <= 200 ? closing : X.closingDefault);
+      return md.join('\n');
+    }
+
+    // Returns markdown on success, null if the AI call itself failed, false if the structured result is unusable
+    async function buildStructuredOutline(c, vi) {
+      const plan = OUTLINE_PLAN[c.lvl];
+      const ask = (p, tokens) => callAI(p, 'btn-outline', false, false, tokens);
+      const raw = await ask(buildOutlineJsonPrompt(c), 6000);
+      if (!raw) return null;
+      const data = parseJsonLoose(raw);
+      if (!data || !Array.isArray(data.parts) || data.parts.length !== plan.parts.length || !data.kind || !data.opening) return false;
+      const failing = [];
+      data.parts.forEach((p, i) => {
+        if (!p || typeof p !== 'object') { failing.push([i, ['the part is not a JSON object']]); return; }
+        sanitizeOutlinePart(p, vi, c.lvl);
+        const problems = validateOutlinePart(p, plan.parts[i], c.lvl);
+        if (problems.length) failing.push([i, problems]);
+      });
+      for (const [i, problems] of failing) {
+        const rawFix = await ask(buildOutlineRepairPrompt(c, data.parts[i], plan.parts[i], problems), 2500);
+        let fixed = rawFix && parseJsonLoose(rawFix);
+        if (fixed && fixed.part) fixed = fixed.part;
+        if (!fixed || typeof fixed !== 'object') return false;
+        sanitizeOutlinePart(fixed, vi, c.lvl);
+        if (validateOutlinePart(fixed, plan.parts[i], c.lvl).length) return false;
+        data.parts[i] = fixed;
+      }
+      return renderOutlineMd(data, c.lvl, vi);
+    }
+
     async function callOutline() {
+      const tp = topic(); if (!tp) return toast(t('no-topic'));
+      setPanelTitle('panel-outline');
+      const { lvl, tone, aud } = outlineKeys();
+      const L = OUTLINE_LEVELS[lvl];
+      const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
+      const vi = uiLang !== 'en';
+
+      // Cache check — reuse if same topic/level/tone/audience/language
+      const d = getDoc(currentId);
+      const cacheKey = `v9|${tp}|${lvl}|${tone}|${aud}|${lang}`;
+      if (d && d.outline && d.outlineKey === cacheKey) {
+        showOutline(d.outline);
+        return;
+      }
+
+      const md = await buildStructuredOutline({ tp, lvl, tone, aud, L, lang }, vi);
+      if (md === null) return;
+      if (md === false) return callOutlineLegacy();
+      if (d) { d.outline = md; d.outlineKey = cacheKey; saveDocs(); }
+      showOutline(md);
+    }
+
+    // Fallback: one long markdown prompt, used only when the structured result is unusable
+    async function callOutlineLegacy() {
       const tp = topic(); if (!tp) return toast(t('no-topic'));
       setPanelTitle('panel-outline');
       const { lvl, tone, aud } = outlineKeys();

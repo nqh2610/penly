@@ -4717,6 +4717,7 @@ ${levelRules}
     const OUTLINE_LEVELS = {
       A: {
         code: 'A1–A2',
+        time: 'about 10–15 minutes',
         bodyCount: '2',
         sentences: '8 sentences in total (1 intro + 2 body paragraphs × 3 + 1 conclusion), about 70–100 words',
         struggle: 'afraid of not knowing enough words or grammar, and frozen by a blank page',
@@ -4724,16 +4725,16 @@ ${levelRules}
         modelRule: 'English: sentences of 5–9 words, simple present only, the 1000 most common words. Guidance text: the simplest everyday words, very short sentences, NO grammar jargon. Describe each part of the essay by what the student will TALK ABOUT (e.g. "Giới thiệu một người trong nhà"), never by essay terms.',
         builderRule: 'ONE builder per part: a single inline-code line with 1–3 short sentences and lettered slots [A] [B] [C] (at most 3). Under it, ONE line per slot: bold letter, a short question in the guidance language, then 3–5 options as meaning – *English*, separated by " · ". Put every word the student needs INSIDE the options; do NOT add a separate word bank.',
         extraRule: 'No extra phrase line at this level.',
-        tipRule: 'At most 2 tips, only where beginners really slip (e.g. verb after "like to", he/she + verb-s, "is" after It). Each tip: 1–2 lines with one right and one wrong example.',
+        tipRule: 'In the WHOLE guide at most 2 tips in total (most parts have none), only where beginners really slip (e.g. verb after "like to", he/she + verb-s, "is" after It). Each tip: 1–2 lines with one right and one wrong example.',
         sample: `### 🌸 Đoạn 1: Mùa bạn yêu nhất
 Nghĩ đến lúc bạn thấy vui nhất trong năm. Lúc đó trời thế nào, bạn đang làm gì? Chỉ cần chọn 3 mảnh ghép là có ngay 3 câu.
 
 🧩 **Ghép thành câu**
 \`My favourite season is [A]. It is [B]. I like to [C] in this season.\`
 
-**A.** Mùa nào? mùa xuân – *spring* · mùa hè – *summer* · mùa thu – *autumn* · mùa đông – *winter*
-**B.** Trời thế nào? ấm áp – *warm* · mát mẻ – *cool* · nóng – *hot* · lạnh – *cold*
-**C.** Bạn thích làm gì? đi dạo – *walk outside* · chơi với bạn – *play with friends* · ngủ nướng – *sleep in* · uống trà nóng – *drink hot tea*
+**A.** Mùa nào? mùa xuân – *spring* · mùa hè – *summer* · mùa thu – *autumn* · mùa đông – *winter* · ✏️ của riêng bạn
+**B.** Trời thế nào? ấm áp – *warm* · mát mẻ – *cool* · nóng – *hot* · lạnh – *cold* · ✏️ của riêng bạn
+**C.** Bạn thích làm gì? đi dạo – *walk outside* · chơi với bạn – *play with friends* · ngủ nướng – *sleep in* · uống trà nóng – *drink hot tea* · ✏️ của riêng bạn
 
 > My favourite season is **spring**. It is **warm**. I like to **walk outside** in this season.
 
@@ -4743,23 +4744,24 @@ Xong ba câu này là bạn đã có đoạn đầu rồi. Sang đoạn 2 thôi!
       },
       B: {
         code: 'B1–B2',
+        time: 'about 25–35 minutes',
         bodyCount: '3',
         sentences: 'about 17 sentences (3 intro + 3 body paragraphs × 4 + 2–3 conclusion), about 200–280 words',
         struggle: 'ideas feel thin, sentences repeat the same pattern, and paragraphs do not connect',
         topicRule: 'If the topic is a general noun or an open question, choose the angle that matches the tone (personal story, opinion, argument) and keep a personal anchor the student can supply from their own experience.',
         modelRule: 'English: sentences of 10–18 words, natural and varied, with a connector where it fits. Guidance text: clear and friendly; explain any writing term in a few plain words.',
         builderRule: 'ONE builder per part: a single inline-code line with 2–4 sentences and lettered slots [A] [B] [C] (at most 3). Under it, ONE line per slot: bold letter, a short question in the guidance language, then 3–4 options as meaning – *English phrase*, separated by " · ".',
-        extraRule: 'After the example add one line "🧰 **{extra}:**" with 3–5 extra collocations or connectors that are NOT already in the options, each as meaning – *English*.',
-        tipRule: 'At most 3 tips, only at real sticking points (stating a clear view, turning a vague example into a specific one, linking paragraphs). Each tip: 2–4 lines, with a weak and a stronger version.',
+        extraRule: 'ONLY in body paragraphs (not intro or conclusion) add one line "🧰 **{extra}:**" with exactly 3 genuinely useful collocations or connectors that are NOT in the options and NOT trivial, each as meaning – *English*.',
+        tipRule: 'In the WHOLE guide at most 3 tips in total (most parts have none), only at real sticking points (stating a clear view, turning a vague example into a specific one, linking paragraphs). Each tip: 2–4 lines, with a weak and a stronger version.',
         sample: `### 🍂 Đoạn 2: Vì sao mùa thu làm bạn thấy bình yên
 Đây là đoạn bạn "giải thích trái tim". Một chi tiết cụ thể (một mùi, một âm thanh, một buổi chiều) thuyết phục hơn mười tính từ.
 
 🧩 **Ghép thành câu**
 \`The main reason I love autumn is that [A]. For example, [B]. This is why [C].\`
 
-**A.** Lý do chính của bạn? mọi thứ chậm lại – *everything seems to slow down* · có thời gian suy nghĩ – *I finally have time to think* · không khí dễ chịu – *the air feels fresh*
-**B.** Một chi tiết cụ thể? đường về nhà thơm mùi hạt dẻ – *the streets smell like roasted chestnuts on my way home* · lá đổi màu trà – *the leaves turn the colour of tea*
-**C.** Điều đó nghĩa là gì với bạn? mùa thu như nút tạm dừng – *autumn feels like a pause button for me* · mùa thu cho tôi thở – *autumn gives me room to breathe*
+**A.** Lý do chính của bạn? mọi thứ chậm lại – *everything seems to slow down* · có thời gian suy nghĩ – *I finally have time to think* · không khí dễ chịu – *the air feels fresh* · ✏️ của riêng bạn
+**B.** Một chi tiết cụ thể? đường về nhà thơm mùi hạt dẻ – *the streets smell like roasted chestnuts on my way home* · lá đổi màu trà – *the leaves turn the colour of tea* · ✏️ của riêng bạn
+**C.** Điều đó nghĩa là gì với bạn? mùa thu như nút tạm dừng – *autumn feels like a pause button for me* · mùa thu cho tôi thở – *autumn gives me room to breathe* · ✏️ của riêng bạn
 
 > The main reason I love autumn is that **everything seems to slow down**. For example, **the streets smell like roasted chestnuts on my way home**. This is why **autumn feels like a pause button for me**.
 
@@ -4771,14 +4773,15 @@ Xong đoạn này, sang đoạn nói về mặt khó của mùa thu nhé.`
       },
       C: {
         code: 'C1–C2',
+        time: 'about 40–60 minutes',
         bodyCount: '3',
         sentences: 'about 16 sentences (3 intro + 3 body paragraphs × 3–4 + 2–3 conclusion), about 300–450 words',
         struggle: 'getting past the obvious points, finding an original angle, and analysing instead of just describing',
         topicRule: 'Push beyond the obvious: offer genuinely distinct angles, including at least one less common one, and keep a personal anchor or concrete case the student can supply.',
         modelRule: 'English: sentences of 18–30 words, sophisticated structure and precise collocations, like strong published prose. Guidance text: precise and respectful of the student\'s ability; technical terms are fine.',
         builderRule: 'Instead of slots, per part offer 3–4 complete MOVES to choose from (1–2 polished sentences each, in a bullet list), each introduced by a short description of the angle in the guidance language. Name the rhetorical move at work (e.g. concession and rebuttal) in a few words.',
-        extraRule: 'After the moves add one line "🧰 **{extra}:**" with 4–6 precise collocations or discourse markers NOT already used in the moves; gloss only the rare ones.',
-        tipRule: 'At most 3 tips, only at real sticking points (a narrow original thesis, concession and rebuttal, the "so what?" analysis). Each tip: 2–4 lines, plain version vs sharper version.',
+        extraRule: 'ONLY in body paragraphs add one line "🧰 **{extra}:**" with exactly 3–4 precise collocations or discourse markers NOT already used in the moves; gloss only the rare ones.',
+        tipRule: 'In the WHOLE guide at most 3 tips in total (most parts have none), only at real sticking points (a narrow original thesis, concession and rebuttal, the "so what?" analysis). Each tip: 2–4 lines, plain version vs sharper version.',
         sample: `### 🍃 Đoạn 2: Điều người ta thường bỏ sót
 Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía bên kia, rồi cho thấy vì sao bạn vẫn đứng vững. Cách này làm lập luận đáng tin hơn nhiều.
 
@@ -4849,15 +4852,15 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
 
       // Cache check — reuse if same topic/level/tone/audience/language
       const d = getDoc(currentId);
-      const cacheKey = `v6|${tp}|${lvl}|${tone}|${aud}|${lang}`;
+      const cacheKey = `v7|${tp}|${lvl}|${tone}|${aud}|${lang}`;
       if (d && d.outline && d.outlineKey === cacheKey) {
         showOutline(d.outline);
         return;
       }
 
       const H = vi
-        ? { start: 'Trước khi bắt đầu', roadmap: 'Bản đồ bài viết', intro: 'Mở bài', body: 'Thân bài', concl: 'Kết bài', check: 'Tự kiểm tra', build: 'Ghép thành câu', extra: 'Cụm từ nên có thêm', vocabBtn: 'Từ vựng' }
-        : { start: 'Before you start', roadmap: 'Your roadmap', intro: 'Introduction', body: 'Body', concl: 'Conclusion', check: 'Final check', build: 'Build your sentences', extra: 'More phrases to use', vocabBtn: 'Vocabulary' };
+        ? { start: 'Trước khi bắt đầu', roadmap: 'Bản đồ bài viết', intro: 'Mở bài', body: 'Thân bài', concl: 'Kết bài', check: 'Tự kiểm tra', build: 'Ghép thành câu', extra: 'Cụm từ nên có thêm', vocabBtn: 'Từ vựng', own: 'của riêng bạn' }
+        : { start: 'Before you start', roadmap: 'Your roadmap', intro: 'Introduction', body: 'Body', concl: 'Conclusion', check: 'Final check', build: 'Build your sentences', extra: 'More phrases to use', vocabBtn: 'Vocabulary', own: 'your own idea' };
 
       const r = await callAI(
         `You are a warm writing coach sitting beside this student, talking like a real person, not filling in a form. Your guide must remove the three things that stop students from writing: (1) not knowing WHAT to say, (2) not having the ENGLISH WORDS for it, (3) not knowing HOW to build the sentence. After reading it, the student can write a complete essay without a dictionary or a teacher, and feels "this app understands me".
@@ -4875,6 +4878,7 @@ Level: ${L.modelRule}
 Tone: ${OUTLINE_TONES[tone]}
 Audience: ${OUTLINE_AUDIENCES[aud]}
 Every idea, word and example must be specific to "${tp}". Nothing generic that could fit any topic.
+Never assume facts about the student's life (a brother, a pet, a yard, a trip). Turn such details into a slot with several options, or keep the sentence neutral ("my family", "we"). Name parts by the KIND of moment, not by fixed facts (for example "A morning moment", not "The funny morning in the kitchen").
 
 HOW EACH PART IS GUIDED (${H.intro}, each body paragraph, ${H.concl}). ONE block per PART, never one per sentence.
 1. A short, human talk of 2–3 lines: what this part is for, and one concrete thing to imagine or remember so ideas come easily. Vary how you open each part. This talk is mandatory.
@@ -4885,17 +4889,20 @@ HOW EACH PART IS GUIDED (${H.intro}, each body paragraph, ${H.concl}). ONE block
 6. One short, encouraging line pointing to what comes next.
 
 RULES FOR OPTIONS (very important)
-- Options of one slot must be INDEPENDENT of the other slots: any combination the student picks must read as a correct, sensible text. A slot must never depend on what was chosen in another slot.
-- All options of a slot must have the same grammatical form so the pattern works for every one (same number and person for verb agreement, -ing form or bare verb exactly as the pattern needs, singular or plural alike). Avoid he/she when it depends on another slot: repeat the noun instead.
-- EVERY option has its meaning in ${lang}. Never leave an English phrase without a gloss.
-- The finished examples of the whole guide, read in order, form ONE coherent sample essay (${L.sentences}).
+- Every slot is exactly ONE kind of unit (a noun phrase, OR a verb phrase in ONE stated tense, OR a full clause), and ALL its options are that same kind and form. Use the same tense in all verb slots of a story (past simple), never a participle or a mix.
+- The slot sits inside the pattern as a complete unit. The pattern must NOT add words that only fit some options (never write "[C] happened" or "played [A]" if an option would break it).
+- Options of one slot must be INDEPENDENT of every other slot: any combination must read as a correct, sensible text. Never tie an option to another slot (for example a game in slot A and a matching action in slot B).
+- Before you finish, mentally put EVERY option into its pattern and read it aloud. If one sounds wrong, rewrite the option or the pattern. Fixed words in the pattern must be natural, common English at this level (no odd words).
+- EVERY option has its meaning written in ${lang}, never in English, not even the first option. Never leave an English phrase without a gloss.
+- End EVERY slot line with the exact text " · ✏️ ${H.own}" so the student can use their own real idea instead.
+- The finished examples of the whole guide, read in order, form ONE coherent sample essay (${L.sentences}). The number of sentences you promise in "${H.start}" must equal the number of sentences in those examples.
 
 STYLE SAMPLE (shows voice and shape only; it is about a different topic. Do NOT copy its content)
 ${L.sample}
 
 STRUCTURE (use exactly these heading texts as "## emoji text")
 ## 💌 ${H.start}
-3–4 sentences speaking to the student: name the exact feeling a student like them has about THIS topic; give one concrete reason this topic is easier or more interesting than it looks; say exactly how many sentences they will write and that it takes only a few minutes; say that if they need more words about the topic they can press the "${H.vocabBtn}" button. No generic praise.
+3–4 sentences speaking to the student: name the exact feeling a student like them has about THIS topic; give one concrete reason this topic is easier or more interesting than it looks; say exactly how many sentences they will write and a realistic time (${L.time}); say that the options are only suggestions: if their real story is different they keep the sentence frame and fill it with their own details; say that if they need more words about the topic they can press the "${H.vocabBtn}" button. No generic praise.
 ## 🗺️ ${H.roadmap}
 One line on what kind of writing this is and the direction you recommend, then a short list of the parts (${H.intro}, ${L.bodyCount} body paragraphs, ${H.concl}), each with a concrete title and what the student will talk about. Say that the finished examples read from top to bottom make a complete sample essay.
 ## 🚪 ${H.intro}

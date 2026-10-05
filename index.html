@@ -4949,40 +4949,43 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
       const t = strip(String(txt || ''));
       const a = t.indexOf('{'), b = t.lastIndexOf('}');
       if (a < 0 || b <= a) return null;
-      try { return JSON.parse(t.slice(a, b + 1)); } catch { return null; }
+      const body = t.slice(a, b + 1);
+      try { return JSON.parse(body); } catch { /* try the tolerant form below */ }
+      try { return JSON.parse(body.replace(/[\r\n\t]+/g, ' ').replace(/,\s*([}\]])/g, '$1')); } catch { return null; }
     }
 
     // Drops unusable options (no real translation, Vietnamese inside English, duplicates) instead of rejecting the whole part
     function sanitizeOutlinePart(p, vi, lvl) {
       const needGloss = lvl !== 'C';
-      const maxWords = { A: 6, B: 14 }[lvl] || 99;
-      const ok = o => o && typeof o.en === 'string' && o.en.trim() && !_vnChars.test(o.en) && o.en.trim().split(/\s+/).length <= maxWords
+      const maxWords = { A: 6, B: 14 }[lvl] || 0;
+      const words = x => x.trim().split(/\s+/).length;
+      const ok = o => o && typeof o.en === 'string' && o.en.trim() && !_vnChars.test(o.en)
         && (!needGloss || (typeof o.gloss === 'string' && o.gloss.trim() && !(vi && _normTxt(o.gloss) === _normTxt(o.en))));
-      const clean = arr => {
+      const clean = (arr, limit) => {
         const seen = new Set();
-        return (Array.isArray(arr) ? arr : []).filter(ok).filter(o => {
+        const base = (Array.isArray(arr) ? arr : []).filter(ok).filter(o => {
           const k = _normTxt(o.en);
           if (seen.has(k)) return false;
           seen.add(k);
           return true;
         }).map(o => ({ gloss: String(o.gloss || '').trim(), en: o.en.trim() }));
+        const short = limit ? base.filter(o => words(o.en) <= limit) : base;
+        return short.length >= 2 ? short : base;
       };
-      if (Array.isArray(p.slots)) p.slots = p.slots.map(s => ({ id: String((s && s.id) || '').toUpperCase(), ask: String((s && s.ask) || '').trim(), options: clean(s && s.options) }));
+      if (Array.isArray(p.slots)) p.slots = p.slots.map(s => ({ id: String((s && s.id) || '').toUpperCase(), ask: String((s && s.ask) || '').trim(), options: clean(s && s.options, maxWords) }));
       if (Array.isArray(p.moves)) p.moves = p.moves.filter(m => m && typeof m.text === 'string' && m.text.trim() && !_vnChars.test(m.text)).map(m => ({ angle: String(m.angle || '').trim(), text: m.text.trim() }));
-      p.extra = clean(p.extra).slice(0, 4);
+      p.extra = clean(p.extra, 0).slice(0, 4);
       p.tip = typeof p.tip === 'string' && !/[{}\[\]]|slot|placeholder/i.test(p.tip) ? p.tip.trim() : '';
       return p;
     }
 
+    // Only structural problems are reported: every report costs one more AI call, so style rules live in the prompt only
     function validateOutlinePart(p, type, lvl) {
-      const plan = OUTLINE_PLAN[lvl];
       const bad = [];
       if (!p || typeof p !== 'object') return ['the part is not a JSON object'];
-      if (String(p.talk || '').trim().length < 20) bad.push('"talk" is missing or too short');
-      if (!String(p.purpose || '').trim()) bad.push('"purpose" is missing');
-      if (type === 'body' && !String(p.title || '').trim()) bad.push('"title" is missing');
+      if (String(p.talk || '').trim().length < 10) bad.push('"talk" is missing or too short');
       if (lvl === 'C') {
-        if (!Array.isArray(p.moves) || p.moves.length < 3) bad.push('"moves" needs 3-4 complete moves, each with English "text"');
+        if (!Array.isArray(p.moves) || p.moves.length < 2) bad.push('"moves" needs 3-4 complete moves, each with English "text"');
       } else {
         const pattern = String(p.pattern || '');
         const ids = [...new Set([...pattern.matchAll(/\{([A-C])\}/g)].map(m => m[1]))];
@@ -4990,14 +4993,8 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
         if (!ids.length || ids.length > 3) bad.push('"pattern" must contain 1 to 3 different slots written {A} {B} {C}');
         if (ids.slice().sort().join() !== slots.map(s => s.id).sort().join()) bad.push('slot ids must match the placeholders in "pattern" exactly');
         slots.forEach(s => {
-          if (!s.ask) bad.push(`slot ${s.id} has no "ask" question`);
-          if (s.options.length < 3) bad.push(`slot ${s.id} needs at least 3 valid options (short English fragment in "en", not a whole sentence, and "gloss" a real translation in the guidance language, never the same word as "en")`);
+          if (s.options.length < 2) bad.push(`slot ${s.id} needs at least 3 valid options (short English fragment in "en", and "gloss" a real translation in the guidance language, never the same word as "en")`);
         });
-        const fixed = pattern.replace(/\{[A-C]\}/g, ' ').split(/\s+/).filter(w => /\p{L}/u.test(w)).length;
-        const maxFixed = plan.maxFixed[type];
-        if (maxFixed && fixed > maxFixed) bad.push(`"pattern" has ${fixed} fixed words, the maximum for this part is ${maxFixed}: move content words into slots`);
-        const want = plan.sentences[type], n = _countSentences(pattern);
-        if (want && (n < want - 1 || n > want + 1)) bad.push(`"pattern" should have about ${want} sentence(s), it has ${n}`);
       }
       return bad;
     }
@@ -5113,7 +5110,7 @@ ${JSON.stringify(part)}`;
 
       const nameOf = (p, i) => {
         const type = plan.parts[i];
-        return type === 'intro' ? X.intro : type === 'concl' ? X.concl : String(p.title).trim();
+        return type === 'intro' ? X.intro : type === 'concl' ? X.concl : (String(p.title || '').trim() || X.body);
       };
 
       let h = '<div class="ol">';
@@ -5121,7 +5118,7 @@ ${JSON.stringify(part)}`;
       h += `<p class="ol-meta">${_mdBold(_esc(X.countLine(total, plan.minutes)))}</p>`;
       h += `<p class="ol-note">${_esc(X.optNote)} ${_esc(X.vocabNote)}</p>`;
       h += `<h2>🗺️ ${_esc(X.roadmap)}</h2><p>${_esc(data.kind)}</p><ol class="ol-road">`;
-      data.parts.forEach((p, i) => { h += `<li><b>${_esc(nameOf(p, i))}</b><span>${_esc(p.purpose)}</span></li>`; });
+      data.parts.forEach((p, i) => { h += `<li><b>${_esc(nameOf(p, i))}</b>${p.purpose ? `<span>${_esc(p.purpose)}</span>` : ''}</li>`; });
       h += `</ol><p class="ol-note">${_esc(X.readAll)}</p>`;
 
       data.parts.forEach((p, i) => {
@@ -5218,30 +5215,42 @@ ${JSON.stringify(part)}`;
       openPanel(t('panel-outline'), tidyOutlineMd(stored), null, false, { breaks: true });
     }
 
-    // Returns the validated data on success, null if the AI call itself failed, false if the structured result is unusable
+    // Returns the validated data on success, null if the AI call itself failed, false if the structured result is unusable.
+    // Worst case: 1 main call + 1 parallel repair round (max 2 parts, to stay under the provider's per-minute limit).
     async function buildStructuredOutline(c, vi) {
       const plan = OUTLINE_PLAN[c.lvl];
       const ask = (p, tokens) => callAI(p, 'btn-outline', false, false, tokens);
+      const t0 = Date.now();
       const raw = await ask(buildOutlineJsonPrompt(c), plan.maxTokens);
       if (!raw) return null;
+      const tMain = Date.now() - t0;
       const data = parseJsonLoose(raw);
-      if (!data || !Array.isArray(data.parts) || data.parts.length !== plan.parts.length || !data.kind || !data.opening) return false;
+      if (!data || !Array.isArray(data.parts) || data.parts.length !== plan.parts.length || !data.kind || !data.opening) {
+        console.info(`[outline] unusable JSON after ${tMain} ms`);
+        return false;
+      }
       const failing = [];
       data.parts.forEach((p, i) => {
-        if (!p || typeof p !== 'object') { failing.push([i, ['the part is not a JSON object']]); return; }
-        sanitizeOutlinePart(p, vi, c.lvl);
+        if (p && typeof p === 'object') sanitizeOutlinePart(p, vi, c.lvl);
         const problems = validateOutlinePart(p, plan.parts[i], c.lvl);
         if (problems.length) failing.push([i, problems]);
       });
-      for (const [i, problems] of failing) {
-        const rawFix = await ask(buildOutlineRepairPrompt(c, data.parts[i], plan.parts[i], problems), 2500);
-        let fixed = rawFix && parseJsonLoose(rawFix);
-        if (fixed && fixed.part) fixed = fixed.part;
-        if (!fixed || typeof fixed !== 'object') return false;
-        sanitizeOutlinePart(fixed, vi, c.lvl);
-        if (validateOutlinePart(fixed, plan.parts[i], c.lvl).length) return false;
-        data.parts[i] = fixed;
+      if (failing.length) {
+        const batch = failing.slice(0, 2);
+        const replies = await Promise.all(batch.map(([i, problems]) => ask(buildOutlineRepairPrompt(c, data.parts[i], plan.parts[i], problems), 2000)));
+        batch.forEach(([i], k) => {
+          let fixed = replies[k] && parseJsonLoose(replies[k]);
+          if (fixed && fixed.part) fixed = fixed.part;
+          if (!fixed || typeof fixed !== 'object') return;
+          sanitizeOutlinePart(fixed, vi, c.lvl);
+          if (!validateOutlinePart(fixed, plan.parts[i], c.lvl).length) data.parts[i] = fixed;
+        });
+        if (failing.some(([i]) => validateOutlinePart(data.parts[i], plan.parts[i], c.lvl).length)) {
+          console.info(`[outline] repair failed after ${Date.now() - t0} ms`);
+          return false;
+        }
       }
+      console.info(`[outline] ready in ${Date.now() - t0} ms (main ${tMain} ms, repaired ${failing.length} part(s))`);
       return data;
     }
 
@@ -5263,14 +5272,14 @@ ${JSON.stringify(part)}`;
 
       const data = await buildStructuredOutline({ tp, lvl, tone, aud, L, lang }, vi);
       if (data === null) return showOutlineError(vi);
-      if (data === false) return callOutlineLegacy();
+      if (data === false) return callOutlineLegacy(true);
       const stored = OL_PREFIX + JSON.stringify({ lvl, vi, data });
       if (d) { d.outline = stored; d.outlineKey = cacheKey; saveDocs(); }
       showOutline(stored);
     }
 
     // Fallback: one long markdown prompt, used only when the structured result is unusable
-    async function callOutlineLegacy() {
+    async function callOutlineLegacy(skipRetry) {
       const tp = topic(); if (!tp) return toast(t('no-topic'));
       setPanelTitle('panel-outline');
       const { lvl, tone, aud } = outlineKeys();
@@ -5350,7 +5359,7 @@ FORMAT RULES
       const ask = p => callAI(p, 'btn-outline', false, false, 6000);
       let r = await ask(prompt);
       // Models sometimes copy the English phrase to both sides of the dash; retry once with a precise correction
-      if (r && vi) {
+      if (r && vi && !skipRetry) {
         const g = glossStats(r);
         if (g.total >= 3 && g.same / g.total > 0.25) {
           const r2 = await ask(prompt + '\n\nCORRECTION: in your previous answer many options had English on BOTH sides of the dash (for example "small – *small*"). The part BEFORE the dash MUST be a Vietnamese translation (for example "nhỏ – *small*", "mẹ – *mother*", "nấu ăn – *cook dinner*"). Write the whole guide again and obey every other rule.');

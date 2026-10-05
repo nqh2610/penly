@@ -4481,7 +4481,9 @@ Gợi ý:
               d.error.toLowerCase().includes("not found") ||
               d.error.toLowerCase().includes("do not have access")
             );
-            _modelCooldown[model] = Date.now() + (isPermError ? 24 * 60 * 60 * 1000 : 2 * 60 * 1000);
+            const isDaily = d.error && /per day|\bTPD\b|\bRPD\b/i.test(d.error);
+            _modelCooldown[model] = Date.now() + (isPermError ? 24 * 60 * 60 * 1000 : isDaily ? 30 * 60 * 1000 : 2 * 60 * 1000);
+            console.info(`[ai] ${model} unavailable${isDaily ? ' (daily quota)' : ''}: ${String(d.error || '').slice(0, 200)}`);
             // check if there's a next non-cooled model
             const hasNext = chain.slice(i + 1).some(m => !_modelCooldown[m] || Date.now() >= _modelCooldown[m]);
             if (hasNext) continue;
@@ -4836,7 +4838,7 @@ ${levelRules}
         checkDefault: ['Mỗi câu mình viết có thật sự nói về chuyện của mình không?', 'Mình đã thay các gợi ý bằng chi tiết thật của mình chưa?', 'Đọc to cả bài một lần: có chỗ nào đọc vấp không?'],
         closingDefault: 'Giờ hãy viết câu đầu tiên nhé, bạn làm được!',
         fail: 'Chưa lấy được dàn ý. Máy chủ AI đang quá tải hoặc tạm hết lượt. Bạn đợi 1–2 phút rồi thử lại nhé.',
-        retry: 'Thử lại', writing: 'Đang viết phần này…', partFail: 'Chưa tạo được phần này.',
+        retry: 'Thử lại', writing: 'Đang viết phần này…', writingSlow: 'AI chính đang bận nên hơi chậm, bạn đợi một chút nhé…', partFail: 'Chưa tạo được phần này.',
         preview: 'Câu của bạn', insert: 'Chèn vào bài', ownHint: '✏️ Muốn nói điều khác? Cứ giữ khung câu và gõ chuyện của riêng bạn vào bài.'
       },
       en: {
@@ -4850,7 +4852,7 @@ ${levelRules}
         checkDefault: ['Is every sentence really about my own story?', 'Did I replace the suggestions with my own real details?', 'Read the whole text aloud once: does anything sound awkward?'],
         closingDefault: 'Now write your first sentence. You can do this!',
         fail: 'Could not get the outline. The AI service is busy or temporarily out of quota. Please wait 1–2 minutes and try again.',
-        retry: 'Try again', writing: 'Writing this part…', partFail: 'This part could not be created.',
+        retry: 'Try again', writing: 'Writing this part…', writingSlow: 'The main AI is busy, so this takes a little longer…', partFail: 'This part could not be created.',
         preview: 'Your sentences', insert: 'Insert into text', ownHint: '✏️ Want to say something else? Keep the frame and type your own story into the text.'
       }
     };
@@ -5028,6 +5030,32 @@ Example of ONE part (different topic, shows shape only; do NOT copy its content)
 ${OUTLINE_JSON_SAMPLE[lvl]}`;
     }
 
+    // The same instructions as one part, for every part at once
+    function buildOutlineAllPartsPrompt(c, data) {
+      const { lvl, L, lang } = c;
+      const plan = OUTLINE_PLAN[lvl], n = plan.parts.length;
+      const fields = lvl === 'C' ? 'talk, move, moves, extra, tip' : 'talk, pattern, slots, extra, tip';
+      const list = data.parts.map((p, i) => `${i + 1}. ${plan.parts[i]}${p.title ? ` – "${p.title}"` : ''}${p.purpose ? ` – ${p.purpose}` : ''}${p.beat ? ` – the FIRST option of each slot (or the first move) must say: ${p.beat}` : ''}`).join('\n');
+      const sizes = lvl === 'C' ? '' : `\nPattern size: intro about ${plan.sentences.intro} sentence(s) with at most ${plan.maxFixed.intro} fixed words; body about ${plan.sentences.body} with at most ${plan.maxFixed.body}; conclusion about ${plan.sentences.concl} with at most ${plan.maxFixed.concl}.`;
+      return `You are a warm writing coach writing ALL ${n} parts of a write-along guide. Return ONLY one JSON object (no markdown, no text around it): {"parts":[ ${n} objects, in the order below ]}. Each object has exactly these fields: ${fields}.
+
+${outlineStudentBlock(c)}
+
+THE GUIDE
+Storyline of the sample: ${data.storyline || 'a coherent small story or description'}
+${list}
+
+FIELD RULES
+- "talk": 2–3 human lines in ${lang}: what the part is for and one concrete thing to imagine so ideas come easily. It must describe exactly what the example built from the FIRST options does.
+- "tip": "" unless students at ${L.code} really make a mistake with THESE patterns; then one short sentence. At most ${plan.tips} non-empty tips in total.
+- "extra": ${lvl === 'A' ? 'always []' : lvl === 'B' ? 'body parts only: exactly 3 useful collocations or connectors NOT in the options, as {"gloss","en"}; [] for intro and conclusion' : 'body parts only: 3 or 4 precise collocations or discourse markers NOT used in the moves, as {"gloss","en"} (gloss may be "" for common ones); [] for intro and conclusion'}.
+
+${outlineSlotRules(c, 'body')}${sizes}
+
+Example of ONE part (different topic, shows shape only; do NOT copy its content):
+${OUTLINE_JSON_SAMPLE[lvl]}`;
+    }
+
     // ── rendering ──
     const olIcon = (lvl, i) => {
       const types = OUTLINE_PLAN[lvl].parts;
@@ -5045,7 +5073,7 @@ ${OUTLINE_JSON_SAMPLE[lvl]}`;
       const { lvl, vi, data } = state, p = data.parts[i];
       const X = OUTLINE_TXT[vi ? 'vi' : 'en'], type = OUTLINE_PLAN[lvl].parts[i];
       const st = olStatus(p);
-      if (st === 'pending') return `<div class="ol-skel"><i></i><i></i><i></i></div><p class="ol-note">${_esc(X.writing)}</p>`;
+      if (st === 'pending') return `<div class="ol-skel"><i></i><i></i><i></i></div><p class="ol-note">${_esc(state.slow ? X.writingSlow : X.writing)}</p>`;
       if (st === 'failed') return `<p class="ol-note">${_esc(X.partFail)}</p><button type="button" class="ol-ins ol-retry" data-i="${i}">${_esc(X.retry)}</button>`;
       let h = `<p class="ol-talk">${_esc(p.talk)}</p>`;
       if (lvl === 'C') {
@@ -5166,8 +5194,6 @@ ${OUTLINE_JSON_SAMPLE[lvl]}`;
     if (_olPanel && _olPanel.addEventListener) _olPanel.addEventListener('click', onOutlineClick);
 
     // ── orchestration ──
-    const _sleep = ms => new Promise(r => setTimeout(r, ms));
-
     // Runs worker(item) for every item, at most `limit` at a time
     async function runLimited(items, limit, worker) {
       let next = 0;
@@ -5176,17 +5202,21 @@ ${OUTLINE_JSON_SAMPLE[lvl]}`;
       }));
     }
 
+    // Turns one raw part object into { ok } or { problems }
+    function checkOutlinePart(state, i, o) {
+      const { lvl, vi } = state;
+      if (o && o.part) o = o.part;
+      if (!o || typeof o !== 'object') return { problems: ['no usable answer was received for this part'] };
+      sanitizeOutlinePart(o, vi, lvl);
+      const problems = validateOutlinePart(o, OUTLINE_PLAN[lvl].parts[i], lvl);
+      return problems.length ? { problems } : { ok: o };
+    }
+
     // One AI call for one part: { ok } with a usable part, or { problems } explaining what was wrong
     async function tryOutlinePart(state, i, note) {
-      const { c, lvl, vi, data } = state;
-      const plan = OUTLINE_PLAN[lvl];
-      const raw = await callAI(buildOutlinePartPrompt(c, data, i) + (note || ''), 'btn-outline', true, true, plan.partTokens, null, outlineModels());
-      let o = raw && parseJsonLoose(raw);
-      if (o && o.part) o = o.part;
-      if (!o || typeof o !== 'object') return { problems: [raw ? 'the answer was not a valid JSON object' : 'no answer was received from the AI service'] };
-      sanitizeOutlinePart(o, vi, lvl);
-      const problems = validateOutlinePart(o, plan.parts[i], lvl);
-      return problems.length ? { problems } : { ok: o };
+      const { c, lvl, data } = state;
+      const raw = await callAI(buildOutlinePartPrompt(c, data, i) + (note || ''), 'btn-outline', true, true, OUTLINE_PLAN[lvl].partTokens, null, outlineModels());
+      return checkOutlinePart(state, i, raw && parseJsonLoose(raw));
     }
     const outlineRetryNote = problems => '\n\nYOUR PREVIOUS ANSWER WAS REJECTED. Answer again and fix these problems:\n' + problems.map(x => '- ' + x).join('\n');
 
@@ -5265,26 +5295,37 @@ ${OUTLINE_JSON_SAMPLE[lvl]}`;
         checklist: pl.checklist, closing: pl.closing,
         parts: pl.parts.map(p => ({ title: String((p && p.title) || ''), purpose: String((p && p.purpose) || ''), beat: String((p && p.beat) || ''), status: 'pending' }))
       };
-      const state = { lvl, vi, data, c, d, cacheKey };
+      // When every main model is busy only the slower fallback service answers
+      const fallbackMode = typeof _modelCooldown !== 'undefined' && outlineModels().every(m => _modelCooldown[m] && Date.now() < _modelCooldown[m]);
+      const state = { lvl, vi, data, c, d, cacheKey, slow: fallbackMode };
       showOutlineState(state);
 
-      // Stage 2: parts run in parallel and each card fills in as soon as its own answer arrives.
-      // When every main model is busy the weaker fallback service answers, so go easier on it.
-      const fallbackMode = typeof _modelCooldown !== 'undefined' && outlineModels().every(m => _modelCooldown[m] && Date.now() < _modelCooldown[m]);
+      // Stage 2. Normal: one small request per part, all in parallel, each card filling in as it arrives.
+      // Fallback: that service is slow, so ask for every part in ONE request and wait only once.
       setBusy('btn-outline', true, false);
       const indices = data.parts.map((_, i) => i);
       const rejected = [];
-      await runLimited(indices, fallbackMode ? 2 : indices.length, async i => {
-        const r = await tryOutlinePart(state, i);
+      if (fallbackMode) {
+        const raw2 = await callAI(buildOutlineAllPartsPrompt(c, data), 'btn-outline', true, true, Math.min(6000, plan.partTokens * indices.length), null, outlineModels());
         if (run !== _olRun) return;
-        if (r.ok) setOutlinePart(state, i, r);
-        else rejected.push([i, r]);
-      });
-      // Second pass for the parts that failed: calmer, and the model is told what was wrong
+        const all = raw2 && parseJsonLoose(raw2);
+        const arr = all && Array.isArray(all.parts) ? all.parts : [];
+        indices.forEach(i => {
+          const r = checkOutlinePart(state, i, arr[i]);
+          if (r.ok) setOutlinePart(state, i, r); else rejected.push([i, r]);
+        });
+      } else {
+        await runLimited(indices, indices.length, async i => {
+          const r = await tryOutlinePart(state, i);
+          if (run !== _olRun) return;
+          if (r.ok) setOutlinePart(state, i, r);
+          else rejected.push([i, r]);
+        });
+      }
+      // Second pass for the parts that failed, at most two at a time; the model is told what was wrong
       await runLimited(rejected, 2, async ([i, first]) => {
         if (run !== _olRun) return;
         console.info(`[outline] part ${i + 1} first try rejected: ${first.problems.join('; ')}`);
-        if (fallbackMode) await _sleep(1500);
         const r = await tryOutlinePart(state, i, outlineRetryNote(first.problems));
         if (run !== _olRun) return;
         setOutlinePart(state, i, r);

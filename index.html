@@ -4718,46 +4718,35 @@ ${levelRules}
       A: {
         code: 'A1–A2',
         bodyCount: '2',
-        length: '80–120 words, about 6–8 sentences in total',
+        sentences: '8 sentences in total (1 intro + 2 body paragraphs × 3 + 1 conclusion), about 70–100 words',
         steps: ['Say your idea', 'Say why', 'Give an example'],
-        scaffold: `MAXIMUM SUPPORT — STEP BY STEP, ONE IDEA AT A TIME.
-- OVERALL STRUCTURE: First ask a concrete question to help the student prepare. Then show the 3 steps (Say your idea, Say why, Give an example) with ONE sentence frame per step, using only simple present tense (is, has, likes, helps, can).
-- EACH STEP:
-  (a) ONE concrete thinking question in italics SPECIFIC TO THE TOPIC (not generic). Example for "my family": instead of "What does your family do?", ask "Does your mom or dad cook at home?" or "Who helps you with homework?"
-  (b) ONE sentence frame with AT MOST ONE blank (___) in a blockquote (>).
-  (c) ONE or TWO word hints below the frame, listed as: English (meaning in Vietnamese or explanation). Do not give 3 hints—that's too many choices.
-  (d) AFTER THE STEP, ONE small model or prompt: "Write down your answer on paper first. For example: My mother cooks dinner."
-- PREPARE EACH PARAGRAPH: Before the 3 steps, ask "Think of ONE person in your family. Who is it? What do they do that helps you?" Give them space to write the answer before they start Step 1.
-- Introduction = 1 sentence frame only ("My family ___"). Conclusion = 1 sentence frame only.
-- VOCABULARY AND CONNECTORS: At the end of the whole outline, add a short list of 5–6 easy words (with meanings) and 2–3 simple connectors (because, for example, also).
-- TONE: Speak like a friend helping them, not a teacher giving rules. Use simple, warm language even when writing in English examples.
-- FINAL CHECK: 3 simple tick-boxes (☐) that are concrete, not vague. Example: ☐ Each sentence has only ONE main verb. ☐ Your examples are about YOUR family, not someone else's.
-- Output budget: about 400–450 words total. NOT a wall of text—break into short chunks.`
+        struggle: 'afraid of not knowing enough words or grammar, and frozen by a blank page',
+        modelRule: 'Model sentences: 5–9 words, simple present only, the 1000 most common English words, one idea each.',
+        yourTurnRule: 'Your-turn line: ONE blank (___) at most, in the style `I like ___.` Under it give exactly 2 word hints as English (meaning).',
+        hardRule: 'Mark at most 2 tricky spots (typically: he/she + verb-s, "because", turning an idea into a sentence). For each give a 1–2 line plain explanation, a tiny rule, and 2 extra model sentences.',
+        language: 'Guidance language: the simplest everyday words and very short sentences. NEVER use grammar jargon (say "câu nói rõ ý chính" instead of "topic sentence").'
       },
       B: {
         code: 'B1–B2',
         bodyCount: '3',
-        length: '200–280 words in 4–5 paragraphs',
+        sentences: 'about 17 sentences (3 intro + 3 body paragraphs × 4 + 2–3 conclusion), about 200–280 words',
         steps: ['Make your point', 'Explain why', 'Give an example', 'Link to the next idea'],
-        scaffold: `MEDIUM SUPPORT.
-- Every step has (a) a THINKING QUESTION in italics that helps the student find their own content, and (b) ONLY the first 3–5 words of a sentence starter in a blockquote (>) followed by "…" so the student finishes the sentence.
-- Explain every writing term in one short plain line the first time it appears (e.g. "topic sentence = the sentence that tells the reader what this paragraph is about").
-- Each body paragraph = 4 steps: Make your point, Explain why, Give an example, Link to the next idea.
-- Add 3–4 useful words (with short meanings) and 2–3 connectors per paragraph.
-- Introduction = 3 small moves (set the scene, state your view, preview your ideas). Conclusion = 2–3 moves, no new ideas.
-- At most ONE short model sentence per section, only when the student could get stuck.`
+        struggle: 'ideas feel thin, sentences repeat the same pattern, and paragraphs do not connect',
+        modelRule: 'Model sentences: 10–18 words, one connector each, natural and a little varied (not all the same pattern).',
+        yourTurnRule: 'Your-turn line: only the first 3–5 words of a sentence starter followed by "…", so the student finishes it with their own content.',
+        hardRule: 'Mark at most 3 tricky spots (typically: a thesis that states a view, turning a vague example into a specific one, linking paragraphs). For each give a short explanation, a mini-rule, a weak vs strong version, and 2 extra model sentences.',
+        language: 'Guidance language: clear and friendly. Explain any writing term in a few plain words the first time it appears.'
       },
       C: {
         code: 'C1–C2',
-        bodyCount: '3–4',
-        length: '300–450 words in 5–6 paragraphs',
-        steps: ['Claim', 'Evidence', 'Analysis (so what?)', 'Counterpoint or nuance', 'Link'],
-        scaffold: `LIGHT SUPPORT, STRATEGIC GUIDANCE ONLY.
-- NO sentence frames and NO ready-made sentences. Give sharp strategic questions and rhetorical moves instead.
-- Each body paragraph = 5 moves: Claim, Evidence, Analysis ("so what?"), Counterpoint or nuance, Link.
-- For the thesis, push the student past a simple yes/no toward a narrower, more original angle, and show how to find one.
-- Per paragraph add ONE language challenge (e.g. concession, nominalisation, inversion, hedging), named with a fragment of at most 6 words, plus 3–4 sophisticated collocations (gloss only rare ones).
-- Conclusion: do NOT just summarise. Show how to widen the perspective or raise the stakes.`
+        bodyCount: '3',
+        sentences: 'about 16 sentences (3 intro + 3 body paragraphs × 3–4 + 2–3 conclusion), about 300–450 words',
+        steps: ['Claim', 'Evidence', 'Analysis (so what?)', 'Counterpoint or nuance'],
+        struggle: 'getting past the obvious points, finding an original angle, and analysing instead of just describing',
+        modelRule: 'Model sentences: 18–30 words, sophisticated structure and precise collocations, written like strong published prose.',
+        yourTurnRule: 'Your-turn line: a short rhetorical cue of at most 6 words (e.g. `Admittedly, … yet …`) that frames the move.',
+        hardRule: 'Mark at most 3 tricky spots (typically: a narrow original thesis, concession and rebuttal, the "so what?" analysis). For each explain the move in 2–3 lines, show a plain version vs a sharper version, and give 2 alternative model sentences.',
+        language: 'Guidance language: precise and respectful of the student\'s ability. Technical terms are fine.'
       }
     };
 
@@ -4795,62 +4784,90 @@ ${levelRules}
       const { lvl, tone, aud } = outlineKeys();
       const L = OUTLINE_LEVELS[lvl];
       const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
+      const vi = uiLang !== 'en';
 
       // Cache check — reuse if same topic/level/tone/audience/language
       const d = getDoc(currentId);
-      const cacheKey = `v2|${tp}|${lvl}|${tone}|${aud}|${lang}`;
+      const cacheKey = `v3|${tp}|${lvl}|${tone}|${aud}|${lang}`;
       if (d && d.outline && d.outlineKey === cacheKey) {
         document.getElementById('pCards').style.display = 'none';
         openPanel(t('panel-outline'), d.outline, null);
         return;
       }
 
+      const H = vi
+        ? { start: 'Trước khi bắt đầu', roadmap: 'Bản đồ bài viết', ideas: 'Chọn ý của bạn', intro: 'Mở bài', body: 'Thân bài', concl: 'Kết bài', check: 'Tự kiểm tra', model: 'Câu mẫu', turn: 'Bạn viết', hard: 'Chỗ này hay khó', done: 'Xong khi' }
+        : { start: 'Before you start', roadmap: 'Your roadmap', ideas: 'Pick your ideas', intro: 'Introduction', body: 'Body', concl: 'Conclusion', check: 'Final check', model: 'Model', turn: 'Your turn', hard: 'Tricky spot', done: 'Done when' };
+
       const r = await callAI(
-        `You are a warm, encouraging English writing coach. Build a STEP-BY-STEP WRITING ROADMAP that teaches the student HOW to find ideas and develop them into a complete essay. This is NOT a finished essay: the student must write the sentences themselves.
+        `You are a warm writing coach who truly understands this student. Build a WRITE-ALONG GUIDE: when the student finishes reading it, they can start writing immediately and finish a complete essay. The student should feel "this app understands me, I can do this, I want to write now".
 
 STUDENT PROFILE
 - Topic: "${tp}"
-- Level: ${L.code}
+- Level: ${L.code}. At this level students are often: ${L.struggle}.
 - Tone / style: ${toneSel.value}
 - Audience (the reader): ${audSel.value}
-- Guidance language: ${lang} (all explanations, questions, headings and hints). English is used ONLY for sentence frames, starters, vocabulary and connectors.
+- Guidance language: ${lang}. ALL explanations, questions, headings and hints are in ${lang}. English appears ONLY in model sentences, your-turn lines, vocabulary and connectors.
 
-THREE THINGS MUST VISIBLY SHAPE THE OUTLINE
-1. LEVEL → ${L.scaffold}
-2. TONE → ${OUTLINE_TONES[tone]}
-3. AUDIENCE → ${OUTLINE_AUDIENCES[aud]}
-Choose the main ideas, examples, vocabulary and connectors so they really fit this tone and this reader, and the topic "${tp}". Never produce generic ideas that could fit any topic.
+THREE THINGS MUST VISIBLY SHAPE THE GUIDE
+1. LEVEL: ${L.language} ${L.modelRule}
+2. TONE: ${OUTLINE_TONES[tone]}
+3. AUDIENCE: ${OUTLINE_AUDIENCES[aud]}
+Every idea and example must be specific to "${tp}", this tone and this reader. Nothing generic that could fit any topic.
 
-STRUCTURE (follow this order)
-## 🗺️ Roadmap
-Say in 1–2 lines what kind of writing this is and which direction you recommend. Then list the parts of the essay (Introduction, ${L.bodyCount} body paragraphs, Conclusion) with a one-line purpose each. Target length: ${L.length}.
+THE CORE IDEA: MODEL FIRST, THEN MAKE IT YOURS
+- Every step has a complete MODEL SENTENCE about "${tp}" so the student always sees what a good sentence looks like.
+- All model sentences, read in order from start to finish, must form ONE coherent sample essay (${L.sentences}). The student reads them to see the finish line, then replaces the details with their own life, opinions and examples.
+- After each model sentence comes a YOUR-TURN line the student can build on. ${L.yourTurnRule}
+- Models are for inspiration: tell the student once, warmly, to change the details so the text is truly theirs.
 
-## 💡 Find your ideas
-Give 2–3 thinking questions specific to "${tp}" that help the student discover their own content. Then name the ${L.bodyCount} main ideas you recommend (3–6 words each, specific to the topic) with one line on why each fits this tone and reader.
+STRUCTURE (follow exactly, use these exact heading texts)
 
-## 🚪 Introduction
-One line on its purpose, then the steps for this level.
+## 💌 ${H.start}
+3–4 sentences, speaking directly to the student ("${vi ? 'bạn' : 'you'}"), no generic praise:
+(1) name the exact feeling a student at this level has about THIS topic, so they feel understood;
+(2) one concrete reason this topic is easier or more interesting to write about than it looks;
+(3) the finish line: exactly how many sentences they will write and that it takes only a few minutes;
+(4) promise to go slower at the tricky spots (marked with 🆘).
 
-## ✍️ Body paragraph 1, 2, … (give each a short, specific, inviting title)
-For each: one line "Why this paragraph is here" (how it connects to the previous one and to the thesis), then these steps: ${L.steps.join(' → ')}. End each paragraph with "✅ Done when: …" (a small concrete finish line).
+## 🗺️ ${H.roadmap}
+One line: what kind of writing this is and the direction you recommend. Then one bullet per part (${H.intro}, ${L.bodyCount} body paragraphs, ${H.concl}) with its sentence count and one-line purpose. End with: read the model sentences once from top to bottom to see the finish line.
 
-## 🏁 Conclusion
-One line on its purpose, then the steps for this level.
+## 💡 ${H.ideas}
+Offer 3 ready-made body ideas for "${tp}" (3–6 words each, each with a one-line example of what the student might say). Tell them to choose ${L.bodyCount}; the model sentences below use your first ${L.bodyCount}, and if they pick another idea they only change the details.
 
-## ☑️ Final check
-3–4 short check items starting with "☐", tailored to this level and tone.
+## 🚪 ${H.intro}
+One line on its purpose. Then each small step in this format.
 
-End with ONE warm, encouraging sentence in ${lang}.
+## ✍️ ${H.body} 1, 2 …
+Give each paragraph a short, specific, inviting title next to its number. Then one line "why this paragraph is here" (how it supports the main point and connects to the previous one). Steps: ${L.steps.join(' → ')}. End each paragraph with "✅ ${H.done}: …" (a small, concrete finish line).
+
+## 🏁 ${H.concl}
+One line on its purpose. Then the steps in this format.
+
+## ☑️ ${H.check}
+3 concrete "☐" items tailored to this level and tone (not vague).
+Finish with ONE warm sentence that invites the student to write the very first sentence now.
+
+FORMAT FOR EVERY STEP (keep it short and consistent)
+① **step name** in ${lang}, one line on why this sentence matters
+> *${H.model}:* complete model sentence
+\`${H.turn}: starter for the student\`
+(For A1–A2 add the 2 word hints under it.)
+Use ①②③④ for steps. Do NOT use numbered lists.
+
+TRICKY SPOTS (the "app understands me" part)
+Do not give every step the same amount of help. Decide where students at ${L.code} genuinely get stuck on THIS topic and add a box ONLY there, headed "🆘 ${H.hard}". ${L.hardRule} Every other step stays short.
 
 FORMAT RULES
-- NO tables at all. Use only headings, bold, italics, blockquotes (>) and short bullet lists.
-- Speak directly to the student in a friendly coach voice, like a teacher talking with them. Avoid dry form-like labels.
-- Sentence frames and starters must be about "${tp}", natural English, and grammatical once the blanks are filled with the student's own experience.
-- Never write a complete paragraph for the student.`,
+- NO tables. Use only headings, bold, italics, blockquotes (>), inline code and short bullets.
+- Headings are plain "## emoji text" lines. Never wrap a heading in bold or add extra symbols.
+- Vocabulary and connectors: put 4–6 useful words with meanings and 3–4 connectors in one short section just before ${H.check}, only those used in the model sentences.
+- Stay compact: no repetition, no filler. Every line must help the student write.`,
         'btn-outline',
         false,
         false,
-        4000
+        6000
       );
       if (r) {
         if (d) { d.outline = r; d.outlineKey = cacheKey; saveDocs(); }

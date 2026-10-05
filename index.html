@@ -4763,61 +4763,83 @@ RULES:
       if (!text) return toast(t('no-text-short'));
       setPanelTitle('panel-suggest');
 
-      // Parse paragraphs — each newline = new idea
       const paras = text.split(/\n+/).filter(p => p.trim());
       const totalParas = paras.length;
       const currentPara = paras[totalParas - 1] || '';
       const prevParas = paras.slice(0, -1);
-      const sentencesInPara = (currentPara.match(/[.!?]+/g) || []).length;
 
-      const paraRole = totalParas === 1 ? 'opening paragraph'
-        : totalParas === 2 ? 'second paragraph (first body idea)'
-          : `paragraph ${totalParas} (body)`;
+      const sentences = currentPara.trim().match(/[^.!?]+[.!?]+/g) || [];
+      const sentencesInPara = sentences.length;
+      const lastSentence = sentences[sentences.length - 1]?.trim() || currentPara.trim();
 
       const prevSummary = prevParas.length
-        ? `Previous paragraphs already covered:\n${prevParas.map((p, i) => `- Paragraph ${i + 1}: "${p.trim().slice(0, 120)}${p.length > 120 ? '...' : ''}"`).join('\n')}`
+        ? `What has been written so far:\n${prevParas.map((p, i) => `- Para ${i + 1}: "${p.trim().slice(0, 200)}${p.trim().length > 200 ? '...' : ''}"`).join('\n')}`
         : '';
 
-      const wrapHint = sentencesInPara >= 3
-        ? 'The current paragraph already has several sentences. One suggestion should wrap up this paragraph; one should be a transition to a NEW idea for the next paragraph.'
-        : 'The current paragraph is still developing. Suggest sentences that add depth to the current idea.';
+      // Determine essay stage
+      const isIntro = totalParas === 1;
+      const isNewPara = currentPara.trim().length < 20;
+      const isParaLong = sentencesInPara >= 3;
+
+      // Dynamic 3 angles based on context
+      const angles = isIntro && sentencesInPara <= 1
+        ? [
+            'hook the reader with a surprising fact, question, or relatable situation about this topic',
+            'state the writer\'s main opinion or stance on this topic clearly',
+            'mention 2–3 aspects the essay will cover (a brief signpost sentence)',
+          ]
+        : isNewPara
+        ? [
+            'open with a clear topic sentence that introduces a NEW idea not covered in previous paragraphs',
+            'open with a contrasting idea that challenges something from the previous paragraph',
+            'open with a question or observation that leads into a new angle on the topic',
+          ]
+        : isParaLong
+        ? [
+            'wrap up this paragraph with a sentence that ties the ideas together',
+            'write a transition sentence that signals a new idea is coming next',
+            `push the last point further — the last sentence said: "${lastSentence}" — add a specific consequence or real-world example`,
+          ]
+        : [
+            `support the last sentence ("${lastSentence}") with a specific fact, statistic, or example`,
+            `explain WHY the last point matters — give a reason or consequence`,
+            `add a personal feeling, experience, or opinion that connects to the last sentence`,
+          ];
+
+      const levelRules = `STRICTLY match the student's level:
+- A1/A2: max 8–10 words, basic vocabulary, "and/but/so" connectors only
+- B1/B2: 12–18 words, varied vocab, "because/when/although/however" are fine
+- C1/C2: 15–25 words, rich vocabulary, complex structures welcome`;
 
       const r = await callAI(
-        `You are an English writing coach helping develop a logical, well-structured essay.
+        `You are an English writing coach helping a student write a well-structured essay.
 
 Topic: "${topic() || 'not specified'}"
 ${ctx()}
 Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 
-LANGUAGE RULE: Write the Vietnamese translation ("vi" field) in Vietnamese. Write all other labels and instructions in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
+LANGUAGE RULE: Write the "vi" field in natural Vietnamese. Write all other text in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
 
-Current paragraph (${paraRole}):
+${prevSummary ? prevSummary + '\n' : ''}Current paragraph (${sentencesInPara} sentence${sentencesInPara !== 1 ? 's' : ''} so far):
 "${currentPara.trim()}"
 
-${prevSummary}
+Generate exactly 3 next sentences, each with a DIFFERENT purpose:
+- Sentence 1: ${angles[0]}
+- Sentence 2: ${angles[1]}
+- Sentence 3: ${angles[2]}
 
-${wrapHint}
-
-Generate exactly 3 different next sentences for the CURRENT paragraph. Each must:
-1. Stay focused on the current paragraph's idea — do NOT introduce a completely unrelated topic
-2. Do NOT repeat or restate anything from previous paragraphs
-3. Offer 3 different angles:
-   - Sentence 1: add a specific detail, fact, or example that supports this paragraph's idea
-   - Sentence 2: add a personal feeling, reaction, or opinion about this idea
-   - Sentence 3: ${sentencesInPara >= 3 ? 'a concluding sentence for this paragraph OR a transition to signal the next idea' : 'push the idea further with a reason, contrast, or consequence'}
-4. STRICTLY match the student's level:
-   - A1/A2: max 8–10 words, basic vocabulary only, "and / but / so" connectors only
-   - B1/B2: 12–18 words, varied vocab, "because / when / after / although" are fine
-   - C1/C2: 15–25 words, rich vocabulary, complex structures welcome
-5. Sound natural and personal — NOT textbook-formal
-6. NO em dash (—). Use comma or "and/but" instead.
-7. Vietnamese translation: natural spoken Vietnamese with appropriate pronouns
+Rules for ALL sentences:
+1. Do NOT repeat or restate anything already written above
+2. ${levelRules}
+3. Sound natural — NOT textbook-formal
+4. NO em dash (—). Use comma or "and/but" instead.
+5. Vietnamese translation: natural spoken Vietnamese with appropriate pronouns
 
 Return ONLY a valid JSON array, no other text:
 [
-  {"en": "Detail or example sentence.", "vi": "Bản dịch tự nhiên."},
-  {"en": "Feeling or reaction sentence.", "vi": "Bản dịch tự nhiên."},
-  {"en": "${sentencesInPara >= 3 ? 'Concluding or transition sentence.' : 'Reason, contrast, or consequence sentence.'}", "vi": "Bản dịch tự nhiên."}
+  {"en": "Sentence 1.", "vi": "Bản dịch tự nhiên."},
+  {"en": "Sentence 2.", "vi": "Bản dịch tự nhiên."},
+  {"en": "Sentence 3.", "vi": "Bản dịch tự nhiên."}
 ]`,
         'btn-suggest'
       );

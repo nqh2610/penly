@@ -2013,6 +2013,10 @@
     .ol-check li { margin: .3rem 0 }
     .ol-check label { display: flex; gap: .5rem; align-items: flex-start; cursor: pointer }
     .ol-check input { margin-top: .25rem }
+    .ol-skel i { display: block; height: 12px; border-radius: 6px; margin: 9px 0; background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%); background-size: 200% 100%; animation: olsk 1.2s linear infinite }
+    .ol-skel i:nth-child(2) { width: 86% }
+    .ol-skel i:nth-child(3) { width: 62% }
+    @keyframes olsk { from { background-position: 200% 0 } to { background-position: -200% 0 } }
 
 
     /* ═══ SETTINGS DRAWER ═══ */
@@ -4432,7 +4436,7 @@ Gợi ý:
       return null;
     }
 
-    async function callAI(prompt, btnId, silent = false, noPanel = false, maxTokens = 2000, panelTitle = null) {
+    async function callAI(prompt, btnId, silent = false, noPanel = false, maxTokens = 2000, panelTitle = null, models = null) {
       const lk = getLicenseKey();
       if (!lk || !(await isValidKey(lk))) {
         if (!silent) setBusy(btnId, false, !noPanel);
@@ -4442,9 +4446,10 @@ Gợi ý:
       if (!silent) setBusy(btnId, true, !noPanel, panelTitle);
 
       const now = Date.now();
+      const chain = models && models.length ? models : MODEL_CHAIN;
 
       // check if all Groq models are on cooldown — skip straight to fallback
-      const allCooled = MODEL_CHAIN.every(m => _modelCooldown[m] && now < _modelCooldown[m]);
+      const allCooled = chain.every(m => _modelCooldown[m] && now < _modelCooldown[m]);
       if (allCooled) {
         const fb = await _callFallback(lk, prompt, maxTokens);
         if (fb) {
@@ -4457,8 +4462,8 @@ Gợi ý:
         return null;
       }
 
-      for (let i = 0; i < MODEL_CHAIN.length; i++) {
-        const model = MODEL_CHAIN[i];
+      for (let i = 0; i < chain.length; i++) {
+        const model = chain[i];
         if (_modelCooldown[model] && now < _modelCooldown[model]) continue;
 
         try {
@@ -4478,7 +4483,7 @@ Gợi ý:
             );
             _modelCooldown[model] = Date.now() + (isPermError ? 24 * 60 * 60 * 1000 : 2 * 60 * 1000);
             // check if there's a next non-cooled model
-            const hasNext = MODEL_CHAIN.slice(i + 1).some(m => !_modelCooldown[m] || Date.now() >= _modelCooldown[m]);
+            const hasNext = chain.slice(i + 1).some(m => !_modelCooldown[m] || Date.now() >= _modelCooldown[m]);
             if (hasNext) continue;
             // all Groq exhausted — try fallback silently
             const fb = await _callFallback(lk, prompt, maxTokens);
@@ -4506,15 +4511,15 @@ Gợi ý:
       }
 
       if (!silent) setBusy(btnId, false, !noPanel);
-      toast(uiLang === 'en' ? 'All models busy, please try again shortly.' : 'Tất cả model đang bận, vui lòng thử lại sau ít phút.', 'd');
+      if (!silent) toast(uiLang === 'en' ? 'All models busy, please try again shortly.' : 'Tất cả model đang bận, vui lòng thử lại sau ít phút.', 'd');
       return null;
     }
     function strip(s) { return s.replace(/```[\w]*\n?/g, '').replace(/```/g, '').trim(); }
 
     // ── PANEL ──
-    function openPanel(title, md, cards, keepCards = false, mdOpts = {}) {
+    function openPanel(title, md, cards, keepCards = false) {
       document.getElementById('panelTitle').textContent = title;
-      document.getElementById('pContent').innerHTML = md ? marked.parse(md, mdOpts) : '';
+      document.getElementById('pContent').innerHTML = md ? marked.parse(md) : '';
       const ce = document.getElementById('pCards');
       if (keepCards) {
         // caller already populated pCards — just ensure it's visible if it has content
@@ -4760,88 +4765,25 @@ ${levelRules}
     }
 
 
-    // ── OUTLINE PROFILES: level, tone and audience each shape the outline ──
+    // ── OUTLINE: plan first (best model), then every part in parallel (fast model), shown as each one arrives ──
     const OUTLINE_LEVELS = {
       A: {
         code: 'A1–A2',
-        time: 'about 10–15 minutes',
-        bodyCount: '2',
-        sentences: '8 sentences in total (1 intro + 2 body paragraphs × 3 + 1 conclusion), about 70–100 words',
         struggle: 'afraid of not knowing enough words or grammar, and frozen by a blank page',
-        topicRule: 'ALWAYS write about the student\'s OWN life. A general topic such as "family" means "my family"; "hobby" means "my hobby". Every menu option must be something the student can answer from their own memory with everyday words (people, things they do, how they feel).',
-        modelRule: 'English: sentences of 5–9 words, simple present only, the 1000 most common words. Guidance text: the simplest everyday words, very short sentences, NO grammar jargon. Describe each part of the essay by what the student will TALK ABOUT (e.g. "Giới thiệu một người trong nhà"), never by essay terms.',
-        builderRule: 'ONE builder per part: a single inline-code line with 1–3 short sentences and lettered slots [A] [B] [C] (at most 3). Under it, ONE line per slot: bold letter, a short question in the guidance language, then 3–5 options as meaning – *English*, separated by " · ". Put every word the student needs INSIDE the options; do NOT add a separate word bank.',
-        extraRule: 'No extra phrase line at this level.',
-        tipRule: 'In the WHOLE guide at most 2 tips in total (most parts have none), only where beginners really slip (e.g. verb after "like to", he/she + verb-s, "is" after It). Each tip: 1–2 lines with one right and one wrong example.',
-        sample: `### 🌸 Đoạn 1: Mùa bạn yêu nhất
-Nghĩ đến lúc bạn thấy vui nhất trong năm. Lúc đó trời thế nào, bạn đang làm gì? Chỉ cần chọn 3 mảnh ghép là có ngay 3 câu.
-
-🧩 **Ghép thành câu**
-\`My favourite season is [A]. It is [B]. I like to [C] in this season.\`
-
-**A.** Mùa nào? mùa xuân – *spring* · mùa hè – *summer* · mùa thu – *autumn* · mùa đông – *winter* · ✏️ của riêng bạn
-**B.** Trời thế nào? ấm áp – *warm* · mát mẻ – *cool* · nóng – *hot* · lạnh – *cold* · ✏️ của riêng bạn
-**C.** Bạn thích làm gì? đi dạo – *walk outside* · chơi với bạn – *play with friends* · ngủ nướng – *sleep in* · uống trà nóng – *drink hot tea* · ✏️ của riêng bạn
-
-> My favourite season is **spring**. It is **warm**. I like to **walk outside** in this season.
-
-💬 Mẹo nhỏ: sau **like to** ta dùng động từ nguyên mẫu: *like to walk*, đừng viết *like to walking*.
-
-Xong ba câu này là bạn đã có đoạn đầu rồi. Sang đoạn 2 thôi!`
+        topicRule: 'ALWAYS write about the student\'s OWN life. A general topic such as "family" means "my family"; "hobby" means "my hobby". Every option must be something the student can answer from their own memory with everyday words (people, things they do, how they feel).',
+        modelRule: 'English: sentences of 5–9 words, simple present only, the 1000 most common words. Guidance text: the simplest everyday words, very short sentences, NO grammar jargon. Describe each part by what the student will TALK ABOUT (e.g. "Giới thiệu một người trong nhà"), never by essay terms.'
       },
       B: {
         code: 'B1–B2',
-        time: 'about 25–35 minutes',
-        bodyCount: '3',
-        sentences: 'about 17 sentences (3 intro + 3 body paragraphs × 4 + 2–3 conclusion), about 200–280 words',
         struggle: 'ideas feel thin, sentences repeat the same pattern, and paragraphs do not connect',
         topicRule: 'If the topic is a general noun or an open question, choose the angle that matches the tone (personal story, opinion, argument) and keep a personal anchor the student can supply from their own experience.',
-        modelRule: 'English: sentences of 10–18 words, natural and varied, with a connector where it fits. Guidance text: clear and friendly; explain any writing term in a few plain words.',
-        builderRule: 'ONE builder per part: a single inline-code line with 2–4 sentences and lettered slots [A] [B] [C] (at most 3). Under it, ONE line per slot: bold letter, a short question in the guidance language, then 3–4 options as meaning – *English phrase*, separated by " · ".',
-        extraRule: 'ONLY in body paragraphs (not intro or conclusion) add one line "🧰 **{extra}:**" with exactly 3 genuinely useful collocations or connectors that are NOT in the options and NOT trivial, each as meaning – *English*.',
-        tipRule: 'In the WHOLE guide at most 3 tips in total (most parts have none), only at real sticking points (stating a clear view, turning a vague example into a specific one, linking paragraphs). Each tip: 2–4 lines, with a weak and a stronger version.',
-        sample: `### 🍂 Đoạn 2: Vì sao mùa thu làm bạn thấy bình yên
-Đây là đoạn bạn "giải thích trái tim". Một chi tiết cụ thể (một mùi, một âm thanh, một buổi chiều) thuyết phục hơn mười tính từ.
-
-🧩 **Ghép thành câu**
-\`The main reason I love autumn is that [A]. For example, [B]. This is why [C].\`
-
-**A.** Lý do chính của bạn? mọi thứ chậm lại – *everything seems to slow down* · có thời gian suy nghĩ – *I finally have time to think* · không khí dễ chịu – *the air feels fresh* · ✏️ của riêng bạn
-**B.** Một chi tiết cụ thể? đường về nhà thơm mùi hạt dẻ – *the streets smell like roasted chestnuts on my way home* · lá đổi màu trà – *the leaves turn the colour of tea* · ✏️ của riêng bạn
-**C.** Điều đó nghĩa là gì với bạn? mùa thu như nút tạm dừng – *autumn feels like a pause button for me* · mùa thu cho tôi thở – *autumn gives me room to breathe* · ✏️ của riêng bạn
-
-> The main reason I love autumn is that **everything seems to slow down**. For example, **the streets smell like roasted chestnuts on my way home**. This is why **autumn feels like a pause button for me**.
-
-🧰 **Cụm từ nên có thêm:** thư thả – *at a relaxed pace* · lấy lại năng lượng – *recharge* · thật sự – *genuinely*
-
-💬 Mẹo nhỏ: tránh nói chung chung kiểu *It is beautiful.* Thử *The leaves turn the colour of tea.* Một hình ảnh luôn thắng một tính từ.
-
-Xong đoạn này, sang đoạn nói về mặt khó của mùa thu nhé.`
+        modelRule: 'English: sentences of 10–18 words, natural and varied, with a connector where it fits. Guidance text: clear and friendly; explain any writing term in a few plain words.'
       },
       C: {
         code: 'C1–C2',
-        time: 'about 40–60 minutes',
-        bodyCount: '3',
-        sentences: 'about 16 sentences (3 intro + 3 body paragraphs × 3–4 + 2–3 conclusion), about 300–450 words',
         struggle: 'getting past the obvious points, finding an original angle, and analysing instead of just describing',
         topicRule: 'Push beyond the obvious: offer genuinely distinct angles, including at least one less common one, and keep a personal anchor or concrete case the student can supply.',
-        modelRule: 'English: sentences of 18–30 words, sophisticated structure and precise collocations, like strong published prose. Guidance text: precise and respectful of the student\'s ability; technical terms are fine.',
-        builderRule: 'Instead of slots, per part offer 3–4 complete MOVES to choose from (1–2 polished sentences each, in a bullet list), each introduced by a short description of the angle in the guidance language. Name the rhetorical move at work (e.g. concession and rebuttal) in a few words.',
-        extraRule: 'ONLY in body paragraphs add one line "🧰 **{extra}:**" with exactly 3–4 precise collocations or discourse markers NOT already used in the moves; gloss only the rare ones.',
-        tipRule: 'In the WHOLE guide at most 3 tips in total (most parts have none), only at real sticking points (a narrow original thesis, concession and rebuttal, the "so what?" analysis). Each tip: 2–4 lines, plain version vs sharper version.',
-        sample: `### 🍃 Đoạn 2: Điều người ta thường bỏ sót
-Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía bên kia, rồi cho thấy vì sao bạn vẫn đứng vững. Cách này làm lập luận đáng tin hơn nhiều.
-
-🧩 **Chọn nước đi** (nhượng bộ rồi phản biện): chọn một lời phê bình để đáp lại
-- *Họ cho rằng đó là chiều chuộng bản thân:* Admittedly, critics may call it indulgent. Yet this objection overlooks what it protects: the quiet that makes reflection possible.
-- *Họ cho rằng thiếu thực tế:* To some extent, it is impractical. That said, practicality is a poor measure of what keeps people steady.
-- *Họ cho rằng lãng phí thời gian:* It is easy to dismiss it as wasted time. Yet the hours it takes are precisely what the rest of the week depends on.
-
-🧰 **Cụm từ nên có thêm:** to some extent · that said (tuy vậy) · is a poor measure of · what it protects
-
-💬 Mẹo nhỏ: đừng bác bỏ họ bằng một câu mỉa mai. Nói *họ đúng ở đâu* trước, rồi mới chỉ ra *họ chưa nhìn thấy gì*.
-
-Đọc lại và hỏi "Vậy thì sao?" Câu trả lời chính là câu tiếp theo của bạn.`
+        modelRule: 'English: sentences of 18–30 words, sophisticated structure and precise collocations, like strong published prose. Guidance text: precise and respectful of the student\'s ability; technical terms are fine.'
       }
     };
 
@@ -4872,78 +4814,74 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
       return { lvl, tone, aud };
     }
 
-    // A blockquote must be followed by a blank line, otherwise markdown pulls the next line into it
-    function tidyOutlineMd(md) {
-      const lines = md.split('\n');
-      const out = [];
-      for (let i = 0; i < lines.length; i++) {
-        out.push(lines[i]);
-        const next = lines[i + 1];
-        if (/^\s*>/.test(lines[i]) && next !== undefined && next.trim() !== '' && !/^\s*>/.test(next)) out.push('');
-      }
-      return out.join('\n');
-    }
-    // Counts "meaning – *English*" options whose two sides are identical (an untranslated gloss)
-    function glossStats(md) {
-      const re = /([^·\n*–]+?)\s+–\s+\*([^*\n]+)\*/g;
-      const norm = x => x.toLowerCase().replace(/[^\p{L}]/gu, '');
-      let total = 0, same = 0, m;
-      while ((m = re.exec(md))) {
-        total++;
-        if (norm(m[1]) === norm(m[2])) same++;
-      }
-      return { total, same };
-    }
-
-    // ══ STRUCTURED OUTLINE: the AI returns data, the app validates it and builds the screen ══
     const OUTLINE_PLAN = {
-      A: { parts: ['intro', 'body', 'body', 'concl'], sentences: { intro: 1, body: 3, concl: 1 }, maxFixed: { intro: 5, body: 10, concl: 5 }, tips: 2, minutes: '10–15', maxTokens: 3800 },
-      B: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: { intro: 3, body: 4, concl: 2 }, maxFixed: { intro: 10, body: 16, concl: 8 }, tips: 3, minutes: '25–35', maxTokens: 5200 },
-      C: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: {}, maxFixed: {}, tips: 3, minutes: '40–60', maxTokens: 4800 }
+      A: { parts: ['intro', 'body', 'body', 'concl'], sentences: { intro: 1, body: 3, concl: 1 }, maxFixed: { intro: 5, body: 10, concl: 5 }, tips: 2, minutes: '10–15', partTokens: 1100 },
+      B: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: { intro: 3, body: 4, concl: 2 }, maxFixed: { intro: 10, body: 16, concl: 8 }, tips: 3, minutes: '25–35', partTokens: 1500 },
+      C: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: {}, maxFixed: {}, tips: 3, minutes: '40–60', partTokens: 1500 }
     };
+    const OUTLINE_PLAN_TOKENS = 1600;
+    // Parts are small and mostly mechanical: a fast model with a large per-minute allowance lets them run in parallel
+    const OUTLINE_FAST_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
+    const outlineModels = () => [OUTLINE_FAST_MODEL, ...(typeof MODEL_CHAIN !== 'undefined' ? MODEL_CHAIN : []).filter(m => m !== OUTLINE_FAST_MODEL)];
 
     const OUTLINE_TXT = {
       vi: {
         start: 'Trước khi bắt đầu', roadmap: 'Bản đồ bài viết', intro: 'Mở bài', body: 'Thân bài', concl: 'Kết bài', check: 'Tự kiểm tra',
-        build: 'Ghép thành câu', moves: 'Chọn nước đi', extra: 'Cụm từ nên có thêm', tip: 'Mẹo nhỏ', own: 'của riêng bạn',
+        moves: 'Chọn nước đi', extra: 'Cụm từ nên có thêm', tip: 'Mẹo nhỏ',
         countLine: (n, m) => `Bạn sẽ viết **${n} câu** trong khoảng **${m} phút**.`,
+        timeLine: m => `Thời gian viết: khoảng **${m} phút**.`,
         optNote: 'Các lựa chọn chỉ là gợi ý. Nếu chuyện thật của bạn khác, cứ giữ khung câu và điền chi tiết của riêng bạn.',
         vocabNote: 'Cần thêm từ về chủ đề này? Bấm nút “Từ vựng”.',
         readAll: 'Các ví dụ dưới đây, đọc từ trên xuống, tạo thành một bài hoàn chỉnh.',
         checkDefault: ['Mỗi câu mình viết có thật sự nói về chuyện của mình không?', 'Mình đã thay các gợi ý bằng chi tiết thật của mình chưa?', 'Đọc to cả bài một lần: có chỗ nào đọc vấp không?'],
         closingDefault: 'Giờ hãy viết câu đầu tiên nhé, bạn làm được!',
         fail: 'Chưa lấy được dàn ý. Máy chủ AI đang quá tải hoặc tạm hết lượt. Bạn đợi 1–2 phút rồi thử lại nhé.',
-        retry: 'Thử lại'
+        retry: 'Thử lại', writing: 'Đang viết phần này…', partFail: 'Chưa tạo được phần này.',
+        preview: 'Câu của bạn', insert: 'Chèn vào bài', ownHint: '✏️ Muốn nói điều khác? Cứ giữ khung câu và gõ chuyện của riêng bạn vào bài.'
       },
       en: {
         start: 'Before you start', roadmap: 'Your roadmap', intro: 'Introduction', body: 'Body', concl: 'Conclusion', check: 'Final check',
-        build: 'Build your sentences', moves: 'Choose your move', extra: 'More phrases to use', tip: 'Tip', own: 'your own idea',
+        moves: 'Choose your move', extra: 'More phrases to use', tip: 'Tip',
         countLine: (n, m) => `You will write **${n} sentences** in about **${m} minutes**.`,
+        timeLine: m => `Writing time: about **${m} minutes**.`,
         optNote: 'The options are only suggestions. If your real story is different, keep the sentence frame and fill it with your own details.',
         vocabNote: 'Need more words about this topic? Press the “Vocabulary” button.',
         readAll: 'The examples below, read from top to bottom, make one complete sample.',
         checkDefault: ['Is every sentence really about my own story?', 'Did I replace the suggestions with my own real details?', 'Read the whole text aloud once: does anything sound awkward?'],
         closingDefault: 'Now write your first sentence. You can do this!',
         fail: 'Could not get the outline. The AI service is busy or temporarily out of quota. Please wait 1–2 minutes and try again.',
-        retry: 'Try again'
+        retry: 'Try again', writing: 'Writing this part…', partFail: 'This part could not be created.',
+        preview: 'Your sentences', insert: 'Insert into text', ownHint: '✏️ Want to say something else? Keep the frame and type your own story into the text.'
       }
     };
 
+    // One part per level, no title/purpose (those come from the plan)
     const OUTLINE_JSON_SAMPLE = {
-      A: `{"type":"body","title":"Mùa bạn yêu nhất","purpose":"Nói về mùa bạn thích và điều bạn làm","talk":"Nghĩ đến lúc bạn vui nhất trong năm. Lúc đó trời thế nào, bạn đang làm gì? Chỉ cần chọn 3 mảnh ghép là có ngay 3 câu.","pattern":"My favourite season is {A}. It is {B}. I like to {C} in this season.","slots":[{"id":"A","ask":"Mùa nào?","options":[{"gloss":"mùa xuân","en":"spring"},{"gloss":"mùa hè","en":"summer"},{"gloss":"mùa thu","en":"autumn"}]},{"id":"B","ask":"Trời thế nào?","options":[{"gloss":"ấm áp","en":"warm"},{"gloss":"mát mẻ","en":"cool"},{"gloss":"nóng","en":"hot"}]},{"id":"C","ask":"Bạn thích làm gì?","options":[{"gloss":"đi dạo","en":"walk outside"},{"gloss":"chơi với bạn","en":"play with friends"},{"gloss":"uống trà nóng","en":"drink hot tea"}]}],"extra":[],"tip":"Sau like to ta dùng động từ nguyên mẫu: like to walk, đừng viết like to walking."}`,
-      B: `{"type":"body","title":"Vì sao mùa thu làm bạn thấy bình yên","purpose":"Giải thích lý do bạn yêu mùa thu bằng một chi tiết cụ thể","talk":"Đây là đoạn bạn giải thích trái tim. Một chi tiết cụ thể (một mùi, một âm thanh, một buổi chiều) thuyết phục hơn mười tính từ.","pattern":"The main reason I love autumn is that {A}. For example, {B}. This is why {C}.","slots":[{"id":"A","ask":"Lý do chính của bạn?","options":[{"gloss":"mọi thứ chậm lại","en":"everything seems to slow down"},{"gloss":"có thời gian suy nghĩ","en":"I finally have time to think"},{"gloss":"không khí dễ chịu","en":"the air feels fresh"}]},{"id":"B","ask":"Một chi tiết cụ thể?","options":[{"gloss":"đường về nhà thơm mùi hạt dẻ","en":"the streets smell like roasted chestnuts on my way home"},{"gloss":"lá đổi màu trà","en":"the leaves turn the colour of tea"}]},{"id":"C","ask":"Điều đó nghĩa là gì với bạn?","options":[{"gloss":"mùa thu như nút tạm dừng","en":"autumn feels like a pause button for me"},{"gloss":"mùa thu cho tôi thở","en":"autumn gives me room to breathe"}]}],"extra":[{"gloss":"thư thả","en":"at a relaxed pace"},{"gloss":"lấy lại năng lượng","en":"recharge"},{"gloss":"thật sự","en":"genuinely"}],"tip":""}`,
-      C: `{"type":"body","title":"Điều người ta thường bỏ sót","purpose":"Thừa nhận phần đúng của phía bên kia rồi phản biện","move":"nhượng bộ rồi phản biện","talk":"Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía bên kia, rồi cho thấy vì sao bạn vẫn đứng vững.","moves":[{"angle":"Họ cho rằng đó là chiều chuộng bản thân","text":"Admittedly, critics may call it indulgent. Yet this objection overlooks what it protects: the quiet that makes reflection possible."},{"angle":"Họ cho rằng thiếu thực tế","text":"To some extent, it is impractical. That said, practicality is a poor measure of what keeps people steady."},{"angle":"Họ cho rằng lãng phí thời gian","text":"It is easy to dismiss it as wasted time. Yet the hours it takes are precisely what the rest of the week depends on."}],"extra":[{"gloss":"","en":"to some extent"},{"gloss":"tuy vậy","en":"that said"},{"gloss":"","en":"is a poor measure of"}],"tip":"Nói họ đúng ở đâu trước, rồi mới chỉ ra họ chưa nhìn thấy gì."}`
+      A: `{"talk":"Nghĩ đến lúc bạn vui nhất trong năm. Lúc đó trời thế nào, bạn đang làm gì? Chỉ cần chọn 3 mảnh ghép là có ngay 3 câu.","pattern":"My favourite season is {A}. It is {B}. I like to {C} in this season.","slots":[{"id":"A","ask":"Mùa nào?","options":[{"gloss":"mùa xuân","en":"spring"},{"gloss":"mùa hè","en":"summer"},{"gloss":"mùa thu","en":"autumn"}]},{"id":"B","ask":"Trời thế nào?","options":[{"gloss":"ấm áp","en":"warm"},{"gloss":"mát mẻ","en":"cool"},{"gloss":"nóng","en":"hot"}]},{"id":"C","ask":"Bạn thích làm gì?","options":[{"gloss":"đi dạo","en":"walk outside"},{"gloss":"chơi với bạn","en":"play with friends"},{"gloss":"uống trà nóng","en":"drink hot tea"}]}],"extra":[],"tip":"Sau like to ta dùng động từ nguyên mẫu: like to walk, đừng viết like to walking."}`,
+      B: `{"talk":"Đây là đoạn bạn giải thích trái tim. Một chi tiết cụ thể (một mùi, một âm thanh, một buổi chiều) thuyết phục hơn mười tính từ.","pattern":"The main reason I love autumn is that {A}. For example, {B}. This is why {C}.","slots":[{"id":"A","ask":"Lý do chính của bạn?","options":[{"gloss":"mọi thứ chậm lại","en":"everything seems to slow down"},{"gloss":"có thời gian suy nghĩ","en":"I finally have time to think"},{"gloss":"không khí dễ chịu","en":"the air feels fresh"}]},{"id":"B","ask":"Một chi tiết cụ thể?","options":[{"gloss":"đường về nhà thơm mùi hạt dẻ","en":"the streets smell like roasted chestnuts on my way home"},{"gloss":"lá đổi màu trà","en":"the leaves turn the colour of tea"}]},{"id":"C","ask":"Điều đó nghĩa là gì với bạn?","options":[{"gloss":"mùa thu như nút tạm dừng","en":"autumn feels like a pause button for me"},{"gloss":"mùa thu cho tôi thở","en":"autumn gives me room to breathe"}]}],"extra":[{"gloss":"thư thả","en":"at a relaxed pace"},{"gloss":"lấy lại năng lượng","en":"recharge"},{"gloss":"thật sự","en":"genuinely"}],"tip":""}`,
+      C: `{"talk":"Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía bên kia, rồi cho thấy vì sao bạn vẫn đứng vững.","move":"nhượng bộ rồi phản biện","moves":[{"angle":"Họ cho rằng đó là chiều chuộng bản thân","text":"Admittedly, critics may call it indulgent. Yet this objection overlooks what it protects: the quiet that makes reflection possible."},{"angle":"Họ cho rằng thiếu thực tế","text":"To some extent, it is impractical. That said, practicality is a poor measure of what keeps people steady."},{"angle":"Họ cho rằng lãng phí thời gian","text":"It is easy to dismiss it as wasted time. Yet the hours it takes are precisely what the rest of the week depends on."}],"extra":[{"gloss":"","en":"to some extent"},{"gloss":"tuy vậy","en":"that said"},{"gloss":"","en":"is a poor measure of"}],"tip":"Nói họ đúng ở đâu trước, rồi mới chỉ ra họ chưa nhìn thấy gì."}`
     };
 
+    const OL_PREFIX = '@@ol1:';
+    const OL_S = '\u0001', OL_E = '\u0002';
+    let _olState = null;
+    let _olRun = 0;
     const _vnChars = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
     const _normTxt = x => String(x || '').toLowerCase().replace(/[^\p{L}]/gu, '');
     const _countSentences = x => String(x || '').split(/[.!?]+(?:\s|$)/).filter(z => z.trim()).length;
-    const _capSentences = x => x.replace(/(^|[.!?]\s+)(\**)([a-z])/g, (m, a, b, c) => a + b + c.toUpperCase());
-    const _fillPattern = (pattern, slots, bold) => pattern.replace(/\{([A-C])\}/g, (m, id) => {
-      const s = slots.find(z => z.id === id);
-      const en = s && s.options[0] ? s.options[0].en : '…';
-      return bold ? `**${en}**` : en;
-    });
+    const _esc = x => String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const _mdBold = x => x.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    const _capMarked = x => x.replace(/(^|[.!?]\s+)([\u0001]*)([a-z])/g, (m, a, b, c) => a + b + c.toUpperCase());
+
+    function olFill(p, picks) {
+      return _capMarked(p.pattern.replace(/\{([A-C])\}/g, (m, id) => {
+        const s = p.slots.find(z => z.id === id);
+        const o = s && (s.options[picks[id] || 0] || s.options[0]);
+        return OL_S + (o ? o.en : '…') + OL_E;
+      }));
+    }
+    const olPlain = (p, picks) => olFill(p, picks).replace(/[\u0001\u0002]/g, '');
+    const olPreviewHtml = (p, picks) => _esc(olFill(p, picks)).replace(/\u0001/g, '<mark>').replace(/\u0002/g, '</mark>');
 
     function parseJsonLoose(txt) {
       const t = strip(String(txt || ''));
@@ -4979,7 +4917,7 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
       return p;
     }
 
-    // Only structural problems are reported: every report costs one more AI call, so style rules live in the prompt only
+    // Only structural problems are reported: a report costs one more AI call, so style rules live in the prompt only
     function validateOutlinePart(p, type, lvl) {
       const bad = [];
       if (!p || typeof p !== 'object') return ['the part is not a JSON object'];
@@ -4999,14 +4937,15 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
       return bad;
     }
 
+    // ── prompts ──
     function outlineStudentBlock(c) {
-      const { tp, lvl, tone, aud, L, lang } = c;
+      const { tp, tone, aud, L, lang } = c;
       return `STUDENT
 - Topic: "${tp}"
 - Level: ${L.code}. Students at this level are often: ${L.struggle}.
 - Tone / style: ${toneSel.value}
 - Audience (the reader): ${audSel.value}
-- Guidance language: ${lang}. Fields kind, opening, title, purpose, talk, ask, gloss, move, angle, tip, checklist and closing are in ${lang}. English appears only in pattern, en, and moves text.
+- Guidance language: ${lang}. Fields kind, opening, title, purpose, talk, ask, gloss, move, angle, tip, checklist and closing are in ${lang}. English appears only in pattern, en, beat, storyline and moves text.
 
 CONTENT DIRECTION
 ${L.topicRule}
@@ -5016,139 +4955,140 @@ Audience: ${OUTLINE_AUDIENCES[aud]}
 Every idea, word and example must be specific to "${tp}". Never assume facts about the student's life (a brother, a pet, a trip): offer them as options.`;
     }
 
-    function outlineSlotRules(c) {
+    function outlineSlotRules(c, type) {
       const { lvl, L, lang } = c;
       const plan = OUTLINE_PLAN[lvl];
       if (lvl === 'C') {
         return `MOVES (this level has no slots)
-- Each part has "move" (the rhetorical move at work, in a few words) and "moves": 3 or 4 DIFFERENT complete choices, each {"angle": the line of argument described in ${lang}, "text": 1–2 polished English sentences of 18–30 words}.
-- Do not write "pattern" or "slots".
-- "extra": body parts only, 3–4 precise collocations or discourse markers NOT used in the moves, as {"gloss","en"} (gloss may be "" for common ones). Empty list for intro and conclusion.`;
+- "move": the rhetorical move at work, in a few words. "moves": 3 or 4 DIFFERENT complete choices, each {"angle": the line of argument described in ${lang}, "text": 1–2 polished English sentences of 18–30 words}.
+- Do not write "pattern" or "slots".`;
       }
       return `SLOT RULES
-- "pattern": English with slots written {A} {B} {C} (1 to 3 slots). Sentences per part: intro ${plan.sentences.intro}, body ${plan.sentences.body}, conclusion ${plan.sentences.concl}.
-- Fixed text outside slots: grammar words only (a, the, in, at, my, we, I, is, to, and, because…), at most ${plan.maxFixed.intro} words in an intro, ${plan.maxFixed.body} in a body part, ${plan.maxFixed.concl} in a conclusion. EVERY content word (noun, verb, adjective, place, time) must be inside a slot.
-- A slot is ONE complete unit. NEVER put a verb in one slot and its object in another: use a full predicate in one slot ("cooks dinner", "plays soccer"). If a subject slot exists, all its options are singular (mother, father, brother), so every verb option agrees.
+- "pattern": English with slots written {A} {B} {C} (1 to 3 slots), about ${plan.sentences[type]} sentence(s).
+- Fixed text outside slots: grammar words only (a, the, in, at, my, we, I, is, to, and, because…), at most ${plan.maxFixed[type]} words. EVERY content word (noun, verb, adjective, place, time) must be inside a slot.
+- A slot is ONE complete unit. NEVER put a verb in one slot and its object in another: use a full predicate in one slot ("cooks dinner", "plays soccer"). If a subject slot exists, all its options are singular (mother, father, brother), so every verb option agrees. The same slot may appear twice in the pattern.
+- Options are SHORT fragments (at most ${lvl === 'A' ? 5 : 12} words), never whole sentences.
 - All options of a slot have the same grammatical form, and slots never depend on each other: EVERY combination must be correct and sensible. Mentally put EVERY option into the pattern and read it aloud.
-- Options are SHORT fragments (at most ${lvl === 'A' ? 5 : 12} words), never whole sentences: the pattern holds the sentence skeleton and the slots hold only the parts that change.
 - 3 or 4 options per slot as {"gloss","en"}. "gloss" is a REAL translation in ${lang} (WRONG: gloss "small" with en "small"; RIGHT: gloss ${lang === 'Vietnamese' ? '"nhỏ"' : '"not big"'} with en "small"). "en" is English only, in the exact form the pattern needs, and words must suit ${L.code}.
-- All sentences of one part share ONE time frame (present habits, or past simple for a story).
-- "extra": ${lvl === 'B' ? 'body parts only: exactly 3 useful collocations or connectors NOT in the options, as {"gloss","en"}. Empty list for intro and conclusion.' : 'always an empty list.'}`;
+- All sentences of the part share ONE time frame (present habits, or past simple for a story).`;
     }
 
-    function buildOutlineJsonPrompt(c) {
-      const { lvl, L } = c;
-      const plan = OUTLINE_PLAN[lvl];
-      const list = plan.parts.map((t, i) => `${i + 1}. ${t}`).join(', ');
-      return `You are a warm writing coach. Return ONLY one JSON object (no markdown, no comments, no text around it) containing a write-along guide for this student. The app turns it into the final screen, so follow the schema exactly.
+    function outlinePartList(lvl, parts) {
+      const types = OUTLINE_PLAN[lvl].parts;
+      return parts.map((p, i) => `${i + 1}. ${types[i]}${p.title ? ` – "${p.title}"` : ''}${p.beat ? ` – sample says: ${p.beat}` : ''}`).join('\n');
+    }
+
+    function buildOutlinePlanPrompt(c) {
+      const { lvl } = c;
+      const types = OUTLINE_PLAN[lvl].parts;
+      return `You are a warm writing coach. Return ONLY one JSON object (no markdown, no text around it): the PLAN of a write-along guide for this student.
 
 ${outlineStudentBlock(c)}
 
-PARTS, in exactly this order (${plan.parts.length} parts): ${list}  (intro = introduction, body = body paragraph, concl = conclusion)
+The guide has ${types.length} parts in exactly this order: ${types.map((t, i) => `${i + 1}. ${t}`).join(', ')}  (intro = introduction, body = body paragraph, concl = conclusion).
 
 SCHEMA
-{"kind": "...", "opening": "...", "parts": [ {part}, … ], "checklist": ["...","...","..."], "closing": "..."}
-Each part has: "type" (intro|body|concl), "title" (body parts only, "" otherwise), "purpose", "talk", ${lvl === 'C' ? '"move", "moves"' : '"pattern", "slots"'}, "extra", "tip".
-Example of ONE body part (different topic, shows shape and voice only; do NOT copy its content):
-${OUTLINE_JSON_SAMPLE[lvl]}
+{"kind":"...","opening":"...","storyline":"...","parts":[{"title":"...","purpose":"...","beat":"..."}, … ${types.length} items],"checklist":["...","...","..."],"closing":"..."}
 
-FIELD RULES
+RULES
 - "kind": one plain line on what kind of writing this is${lvl === 'A' ? ' (never essay terms such as narrative, overview or thesis)' : ''}.
 - "opening": 3 sentences speaking to the student: name the exact feeling a student like them has about THIS topic and give one concrete reason this topic is easier or more interesting than it looks. No numbers, no generic praise.
-- "purpose": what the student will talk about in this part, in plain words.
-- "title": a short inviting title naming the KIND of moment, not fixed facts.
-- "talk": 2–3 human lines: what this part is for, and one concrete thing to imagine so ideas come easily. It must describe exactly what the example built from the FIRST options does. Vary how you open each part.
-- "tip": "" for most parts. At most ${plan.tips} non-empty tips in the whole guide, only for a mistake students at ${L.code} really make with THESE patterns.
+- "storyline": ONE English sentence describing the thread of the sample text (who or what it is about, then what happens or what they do, then how the student feels), written as the student would.
+- parts[i].title: a short inviting title naming the KIND of moment, not fixed facts (body parts only, "" for intro and concl).
+- parts[i].purpose: what the student will talk about in this part, in plain words.
+- parts[i].beat: what the sample (the first option of everything) says in this part, in English, at most 12 words. Together the beats tell the storyline.
 - "checklist": 3 questions the student asks about THEIR OWN text. Never mention counts, slots, letters or rules.
-- "closing": one warm sentence inviting the student to write the first sentence now.
-- The first options of all parts, read in order, form ONE coherent sample (a small story or description with a thread: who or what it is about, then what happens or what they do, then how the student feels).
-
-${outlineSlotRules(c)}`;
+- "closing": one warm sentence inviting the student to write the first sentence now.`;
     }
 
-    function buildOutlineRepairPrompt(c, part, type, problems) {
-      return `You are fixing ONE part of a writing guide. Return ONLY the corrected JSON object of this part (same fields, no text around it).
+    function buildOutlinePartPrompt(c, data, i) {
+      const { lvl, L, lang } = c;
+      const plan = OUTLINE_PLAN[lvl], type = plan.parts[i], part = data.parts[i];
+      const fields = lvl === 'C' ? 'talk, move, moves, extra, tip' : 'talk, pattern, slots, extra, tip';
+      const extra = lvl === 'A' ? 'always []' : type !== 'body' ? '[]' : lvl === 'B' ? 'exactly 3 useful collocations or connectors NOT in the options, as {"gloss","en"}' : '3 or 4 precise collocations or discourse markers NOT used in the moves, as {"gloss","en"} (gloss may be "" for common ones)';
+      return `You are a warm writing coach writing ONE part of a write-along guide. Return ONLY one JSON object (no markdown, no text around it) with exactly these fields: ${fields}.
 
 ${outlineStudentBlock(c)}
 
-This part has type "${type}". Problems found by the app:
-${problems.map(x => '- ' + x).join('\n')}
+THE WHOLE GUIDE (so all parts fit together)
+Storyline of the sample: ${data.storyline || 'a coherent small story or description'}
+${outlinePartList(lvl, data.parts)}
 
-${outlineSlotRules(c)}
+YOU WRITE PART ${i + 1} of ${plan.parts.length}: ${type}${part.title ? ` – "${part.title}"` : ''}${part.purpose ? ` – ${part.purpose}` : ''}.
+${part.beat ? `The FIRST option of each slot (or the first move) must say: ${part.beat}.` : ''}
 
-Part to fix:
-${JSON.stringify(part)}`;
+FIELD RULES
+- "talk": 2–3 human lines in ${lang}: what this part is for and one concrete thing to imagine so ideas come easily. It must describe exactly what the example built from the FIRST options does.
+- "tip": "" unless students at ${L.code} really make a mistake with THESE patterns; then one short sentence.
+- "extra": ${extra}.
+
+${outlineSlotRules(c, type)}
+
+Example of ONE part (different topic, shows shape only; do NOT copy its content):
+${OUTLINE_JSON_SAMPLE[lvl]}`;
     }
 
-    const OL_PREFIX = '@@ol1:';
-    const OL_S = '\u0001', OL_E = '\u0002';
-    let _olState = null;
-    const OUTLINE_UI_TXT = {
-      vi: { preview: 'Câu của bạn', insert: 'Chèn vào bài', ownHint: '✏️ Muốn nói điều khác? Cứ giữ khung câu và gõ chuyện của riêng bạn vào bài.' },
-      en: { preview: 'Your sentences', insert: 'Insert into text', ownHint: '✏️ Want to say something else? Keep the frame and type your own story into the text.' }
+    // ── rendering ──
+    const olIcon = (lvl, i) => {
+      const types = OUTLINE_PLAN[lvl].parts;
+      if (types[i] === 'intro') return '🚪';
+      if (types[i] === 'concl') return '🏁';
+      return ['🌱', '🌿', '🍃', '🌟'][types.slice(0, i).filter(x => x === 'body').length % 4];
     };
-    const _esc = x => String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const _mdBold = x => x.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-    const _capMarked = x => x.replace(/(^|[.!?]\s+)([\u0001]*)([a-z])/g, (m, a, b, c) => a + b + c.toUpperCase());
+    const olName = (X, lvl, p, i) => {
+      const type = OUTLINE_PLAN[lvl].parts[i];
+      return type === 'intro' ? X.intro : type === 'concl' ? X.concl : (String(p.title || '').trim() || X.body);
+    };
+    const olStatus = p => p.status || (p.talk ? 'ready' : 'pending');
 
-    function olFill(p, picks) {
-      return _capMarked(p.pattern.replace(/\{([A-C])\}/g, (m, id) => {
-        const s = p.slots.find(z => z.id === id);
-        const o = s && (s.options[picks[id] || 0] || s.options[0]);
-        return OL_S + (o ? o.en : '…') + OL_E;
-      }));
+    function olPartBody(state, i) {
+      const { lvl, vi, data } = state, p = data.parts[i];
+      const X = OUTLINE_TXT[vi ? 'vi' : 'en'], type = OUTLINE_PLAN[lvl].parts[i];
+      const st = olStatus(p);
+      if (st === 'pending') return `<div class="ol-skel"><i></i><i></i><i></i></div><p class="ol-note">${_esc(X.writing)}</p>`;
+      if (st === 'failed') return `<p class="ol-note">${_esc(X.partFail)}</p><button type="button" class="ol-ins ol-retry" data-i="${i}">${_esc(X.retry)}</button>`;
+      let h = `<p class="ol-talk">${_esc(p.talk)}</p>`;
+      if (lvl === 'C') {
+        h += `<div class="ol-q">🧩 ${_esc(X.moves)}${p.move ? ` <small>(${_esc(p.move)})</small>` : ''}</div>`;
+        p.moves.forEach(m => {
+          h += `<div class="ol-move">${m.angle ? `<span class="ol-gl">${_esc(m.angle)}</span>` : ''}<span class="ol-en ol-move-t">${_esc(m.text)}</span><button type="button" class="ol-ins ol-ins-s">${_esc(X.insert)}</button></div>`;
+        });
+      } else {
+        p.slots.forEach(s => {
+          h += `<div class="ol-slot" data-id="${_esc(s.id)}"><div class="ol-q"><i>${_esc(s.id)}</i>${_esc(s.ask)}</div><div class="ol-opts">`;
+          s.options.forEach((o, k) => {
+            h += `<button type="button" class="ol-opt${k === 0 ? ' on' : ''}" data-k="${k}"><span class="ol-en">${_esc(o.en)}</span><span class="ol-gl">${_esc(o.gloss)}</span></button>`;
+          });
+          h += '</div></div>';
+        });
+        h += `<div class="ol-prev"><div class="ol-prev-l">${_esc(X.preview)}</div><div class="ol-prev-t">${olPreviewHtml(p, {})}</div><button type="button" class="ol-ins">${_esc(X.insert)}</button></div>`;
+        h += `<p class="ol-own">${_esc(X.ownHint)}</p>`;
+      }
+      if (type === 'body' && Array.isArray(p.extra) && p.extra.length) {
+        h += `<div class="ol-extra"><b>🧰 ${_esc(X.extra)}</b><div>${p.extra.map(o => `<span class="ol-chip">${_esc(o.en)}${o.gloss ? ` <small>${_esc(o.gloss)}</small>` : ''}</span>`).join('')}</div></div>`;
+      }
+      if (p.tip) h += `<div class="ol-tip">💬 <b>${_esc(X.tip)}:</b> ${_esc(p.tip)}</div>`;
+      return h;
     }
-    const olPreviewHtml = (p, picks) => _esc(olFill(p, picks)).replace(/\u0001/g, '<mark>').replace(/\u0002/g, '</mark>');
 
-    function renderOutlineHtml(data, lvl, vi) {
-      const X = OUTLINE_TXT[vi ? 'vi' : 'en'], U = OUTLINE_UI_TXT[vi ? 'vi' : 'en'], plan = OUTLINE_PLAN[lvl];
-      const emoji = ['🌱', '🌿', '🍃', '🌟'];
-      let tips = 0, total = 0, bodyN = 0;
-      data.parts.forEach(p => {
-        total += lvl === 'C' ? _countSentences(p.moves[0].text) : _countSentences(olFill(p, {}).replace(/[\u0001\u0002]/g, ''));
-      });
+    function olMetaHtml(state) {
+      const { lvl, vi, data } = state, X = OUTLINE_TXT[vi ? 'vi' : 'en'], plan = OUTLINE_PLAN[lvl];
+      if (!data.parts.every(p => olStatus(p) === 'ready')) return _mdBold(_esc(X.timeLine(plan.minutes)));
+      const total = data.parts.reduce((n, p) => n + (lvl === 'C' ? _countSentences(p.moves[0].text) : _countSentences(olPlain(p, {}))), 0);
+      return _mdBold(_esc(X.countLine(total, plan.minutes)));
+    }
 
-      const nameOf = (p, i) => {
-        const type = plan.parts[i];
-        return type === 'intro' ? X.intro : type === 'concl' ? X.concl : (String(p.title || '').trim() || X.body);
-      };
-
+    function renderOutlineHtml(state) {
+      const { lvl, vi, data } = state, X = OUTLINE_TXT[vi ? 'vi' : 'en'];
       let h = '<div class="ol">';
       h += `<h2>💌 ${_esc(X.start)}</h2><p class="ol-lead">${_esc(data.opening)}</p>`;
-      h += `<p class="ol-meta">${_mdBold(_esc(X.countLine(total, plan.minutes)))}</p>`;
-      h += `<p class="ol-note">${_esc(X.optNote)} ${_esc(X.vocabNote)}</p>`;
+      h += `<p class="ol-meta">${olMetaHtml(state)}</p><p class="ol-note">${_esc(X.optNote)} ${_esc(X.vocabNote)}</p>`;
       h += `<h2>🗺️ ${_esc(X.roadmap)}</h2><p>${_esc(data.kind)}</p><ol class="ol-road">`;
-      data.parts.forEach((p, i) => { h += `<li><b>${_esc(nameOf(p, i))}</b>${p.purpose ? `<span>${_esc(p.purpose)}</span>` : ''}</li>`; });
+      data.parts.forEach((p, i) => { h += `<li><b>${_esc(olName(X, lvl, p, i))}</b>${p.purpose ? `<span>${_esc(p.purpose)}</span>` : ''}</li>`; });
       h += `</ol><p class="ol-note">${_esc(X.readAll)}</p>`;
-
       data.parts.forEach((p, i) => {
-        const type = plan.parts[i];
-        const icon = type === 'intro' ? '🚪' : type === 'concl' ? '🏁' : emoji[bodyN++ % emoji.length];
-        h += `<article class="ol-part" data-i="${i}"><div class="ol-part-h"><span class="ol-num">${i + 1}</span><h3>${icon} ${_esc(nameOf(p, i))}</h3></div>`;
-        h += `<p class="ol-talk">${_esc(p.talk)}</p>`;
-        if (lvl === 'C') {
-          h += `<div class="ol-q">🧩 ${_esc(X.moves)}${p.move ? ` <small>(${_esc(p.move)})</small>` : ''}</div>`;
-          p.moves.forEach(m => {
-            h += `<div class="ol-move">${m.angle ? `<span class="ol-gl">${_esc(m.angle)}</span>` : ''}<span class="ol-en ol-move-t">${_esc(m.text)}</span><button type="button" class="ol-ins ol-ins-s">${_esc(U.insert)}</button></div>`;
-          });
-        } else {
-          p.slots.forEach(s => {
-            h += `<div class="ol-slot" data-id="${_esc(s.id)}"><div class="ol-q"><i>${_esc(s.id)}</i>${_esc(s.ask)}</div><div class="ol-opts">`;
-            s.options.forEach((o, k) => {
-              h += `<button type="button" class="ol-opt${k === 0 ? ' on' : ''}" data-k="${k}"><span class="ol-en">${_esc(o.en)}</span><span class="ol-gl">${_esc(o.gloss)}</span></button>`;
-            });
-            h += '</div></div>';
-          });
-          h += `<div class="ol-prev"><div class="ol-prev-l">${_esc(U.preview)}</div><div class="ol-prev-t">${olPreviewHtml(p, {})}</div><button type="button" class="ol-ins">${_esc(U.insert)}</button></div>`;
-          h += `<p class="ol-own">${_esc(U.ownHint)}</p>`;
-        }
-        if (type === 'body' && p.extra.length) {
-          h += `<div class="ol-extra"><b>🧰 ${_esc(X.extra)}</b><div>${p.extra.map(o => `<span class="ol-chip">${_esc(o.en)}${o.gloss ? ` <small>${_esc(o.gloss)}</small>` : ''}</span>`).join('')}</div></div>`;
-        }
-        if (p.tip && tips < plan.tips) { tips++; h += `<div class="ol-tip">💬 <b>${_esc(X.tip)}:</b> ${_esc(p.tip)}</div>`; }
-        h += '</article>';
+        h += `<article class="ol-part" data-i="${i}"><div class="ol-part-h"><span class="ol-num">${i + 1}</span><h3>${olIcon(lvl, i)} ${_esc(olName(X, lvl, p, i))}</h3></div><div class="ol-part-body">${olPartBody(state, i)}</div></article>`;
       });
-
       let items = (Array.isArray(data.checklist) ? data.checklist : []).map(x => String(x).trim()).filter(x => x.length >= 8 && x.length <= 160 && !/[\d\[\]{}]/.test(x));
       if (items.length < 3) items = X.checkDefault;
       h += `<h2>☑️ ${_esc(X.check)}</h2><ul class="ol-check">${items.slice(0, 3).map(x => `<li><label><input type="checkbox"> <span>${_esc(x)}</span></label></li>`).join('')}</ul>`;
@@ -5157,6 +5097,39 @@ ${JSON.stringify(part)}`;
       return h;
     }
 
+    function olUpdatePart(state, i) {
+      if (_olState !== state) return;
+      const root = document.getElementById('pContent');
+      const body = root && root.querySelector(`.ol-part[data-i="${i}"] .ol-part-body`);
+      if (body) body.innerHTML = olPartBody(state, i);
+      const meta = root && root.querySelector('.ol-meta');
+      if (meta) meta.innerHTML = olMetaHtml(state);
+    }
+
+    function showOutlineState(state) {
+      _olState = state;
+      document.getElementById('pCards').style.display = 'none';
+      openPanel(t('panel-outline'), '', null);
+      document.getElementById('pContent').innerHTML = renderOutlineHtml(state);
+    }
+
+    function showOutline(stored) {
+      let obj = null;
+      try { obj = JSON.parse(String(stored).slice(OL_PREFIX.length)); } catch { obj = null; }
+      if (obj && obj.data) showOutlineState({ lvl: obj.lvl, vi: obj.vi, data: obj.data });
+    }
+
+    function showOutlineError(vi) {
+      const gate = document.getElementById('licenseGate');
+      if (gate && !gate.classList.contains('hidden')) return;
+      const X = OUTLINE_TXT[vi ? 'vi' : 'en'];
+      _olState = null;
+      document.getElementById('pCards').style.display = 'none';
+      openPanel(t('panel-outline'), '', null);
+      document.getElementById('pContent').innerHTML = `<div class="ol"><p class="ol-lead">${_esc(X.fail)}</p><button type="button" class="ol-ins" onclick="callOutline()">${_esc(X.retry)}</button></div>`;
+    }
+
+    // ── interaction ──
     function olReadPicks(part) {
       const picks = {};
       part.querySelectorAll('.ol-slot').forEach(s => {
@@ -5173,6 +5146,8 @@ ${JSON.stringify(part)}`;
     }
     function onOutlineClick(e) {
       if (!_olState || !e.target || !e.target.closest) return;
+      const retry = e.target.closest('.ol-retry');
+      if (retry) { retryOutlinePart(+retry.dataset.i); return; }
       const opt = e.target.closest('.ol-opt');
       const part = e.target.closest('.ol-part');
       if (opt && part) {
@@ -5190,68 +5165,53 @@ ${JSON.stringify(part)}`;
     const _olPanel = document.getElementById('pContent');
     if (_olPanel && _olPanel.addEventListener) _olPanel.addEventListener('click', onOutlineClick);
 
-    function showOutlineError(vi) {
-      const gate = document.getElementById('licenseGate');
-      if (gate && !gate.classList.contains('hidden')) return;
-      const X = OUTLINE_TXT[vi ? 'vi' : 'en'];
-      document.getElementById('pCards').style.display = 'none';
-      openPanel(t('panel-outline'), '', null);
-      document.getElementById('pContent').innerHTML = `<div class="ol"><p class="ol-lead">${_esc(X.fail)}</p><button type="button" class="ol-ins" onclick="callOutline()">${_esc(X.retry)}</button></div>`;
+    // ── orchestration ──
+    // Writes one part: one call, and one more call only if the answer is structurally unusable
+    async function fillOutlinePart(state, i, run) {
+      const { c, lvl, vi, data } = state;
+      const plan = OUTLINE_PLAN[lvl], type = plan.parts[i], part = data.parts[i];
+      const base = buildOutlinePartPrompt(c, data, i);
+      const attempt = async prompt => {
+        const raw = await callAI(prompt, 'btn-outline', true, true, plan.partTokens, null, outlineModels());
+        let o = raw && parseJsonLoose(raw);
+        if (o && o.part) o = o.part;
+        if (!o || typeof o !== 'object') return { problems: ['the answer was not a valid JSON object'] };
+        sanitizeOutlinePart(o, vi, lvl);
+        const problems = validateOutlinePart(o, type, lvl);
+        return problems.length ? { problems } : { ok: o };
+      };
+      let r = await attempt(base);
+      if (!r.ok && run === _olRun) r = await attempt(base + '\n\nYOUR PREVIOUS ANSWER WAS REJECTED. Answer again and fix these problems:\n' + r.problems.map(x => '- ' + x).join('\n'));
+      if (run !== _olRun) return;
+      if (r.ok) {
+        ['talk', 'pattern', 'slots', 'move', 'moves', 'extra', 'tip'].forEach(k => { if (r.ok[k] !== undefined) part[k] = r.ok[k]; });
+        if (data.parts.filter((q, k) => k !== i && olStatus(q) === 'ready' && q.tip).length >= plan.tips) part.tip = '';
+        part.status = 'ready';
+      } else {
+        part.status = 'failed';
+      }
+      olUpdatePart(state, i);
     }
 
-    function showOutline(stored) {
-      document.getElementById('pCards').style.display = 'none';
-      if (typeof stored === 'string' && stored.startsWith(OL_PREFIX)) {
-        let obj = null;
-        try { obj = JSON.parse(stored.slice(OL_PREFIX.length)); } catch { obj = null; }
-        if (obj && obj.data) {
-          _olState = obj;
-          openPanel(t('panel-outline'), '', null);
-          document.getElementById('pContent').innerHTML = renderOutlineHtml(obj.data, obj.lvl, obj.vi);
-          return;
-        }
+    function olFinalize(state) {
+      const { lvl, vi, data, d, cacheKey } = state;
+      if (data.parts.every(p => olStatus(p) === 'ready') && d) {
+        d.outline = OL_PREFIX + JSON.stringify({ lvl, vi, data });
+        d.outlineKey = cacheKey;
+        saveDocs();
       }
-      _olState = null;
-      openPanel(t('panel-outline'), tidyOutlineMd(stored), null, false, { breaks: true });
     }
 
-    // Returns the validated data on success, null if the AI call itself failed, false if the structured result is unusable.
-    // Worst case: 1 main call + 1 parallel repair round (max 2 parts, to stay under the provider's per-minute limit).
-    async function buildStructuredOutline(c, vi) {
-      const plan = OUTLINE_PLAN[c.lvl];
-      const ask = (p, tokens) => callAI(p, 'btn-outline', false, false, tokens);
-      const t0 = Date.now();
-      const raw = await ask(buildOutlineJsonPrompt(c), plan.maxTokens);
-      if (!raw) return null;
-      const tMain = Date.now() - t0;
-      const data = parseJsonLoose(raw);
-      if (!data || !Array.isArray(data.parts) || data.parts.length !== plan.parts.length || !data.kind || !data.opening) {
-        console.info(`[outline] unusable JSON after ${tMain} ms`);
-        return false;
-      }
-      const failing = [];
-      data.parts.forEach((p, i) => {
-        if (p && typeof p === 'object') sanitizeOutlinePart(p, vi, c.lvl);
-        const problems = validateOutlinePart(p, plan.parts[i], c.lvl);
-        if (problems.length) failing.push([i, problems]);
-      });
-      if (failing.length) {
-        const batch = failing.slice(0, 2);
-        const replies = await Promise.all(batch.map(([i, problems]) => ask(buildOutlineRepairPrompt(c, data.parts[i], plan.parts[i], problems), 2000)));
-        batch.forEach(([i], k) => {
-          let fixed = replies[k] && parseJsonLoose(replies[k]);
-          if (fixed && fixed.part) fixed = fixed.part;
-          if (!fixed || typeof fixed !== 'object') return;
-          sanitizeOutlinePart(fixed, vi, c.lvl);
-          if (!validateOutlinePart(fixed, plan.parts[i], c.lvl).length) data.parts[i] = fixed;
-        });
-        if (failing.some(([i]) => validateOutlinePart(data.parts[i], plan.parts[i], c.lvl).length)) {
-          console.info(`[outline] repair failed after ${Date.now() - t0} ms`);
-          return false;
-        }
-      }
-      console.info(`[outline] ready in ${Date.now() - t0} ms (main ${tMain} ms, repaired ${failing.length} part(s))`);
-      return data;
+    async function retryOutlinePart(i) {
+      const st = _olState;
+      if (!st || !st.c) return;
+      const run = _olRun;
+      st.data.parts[i].status = 'pending';
+      olUpdatePart(st, i);
+      setBusy('btn-outline', true, false);
+      await fillOutlinePart(st, i, run);
+      setBusy('btn-outline', false, false);
+      if (run === _olRun) olFinalize(st);
     }
 
     async function callOutline() {
@@ -5262,117 +5222,41 @@ ${JSON.stringify(part)}`;
       const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
       const vi = uiLang !== 'en';
 
-      // Cache check — reuse if same topic/level/tone/audience/language
+      // Cache check: reuse if same topic/level/tone/audience/language
       const d = getDoc(currentId);
-      const cacheKey = `v10|${tp}|${lvl}|${tone}|${aud}|${lang}`;
-      if (d && d.outline && d.outlineKey === cacheKey) {
+      const cacheKey = `v11|${tp}|${lvl}|${tone}|${aud}|${lang}`;
+      if (d && d.outline && d.outlineKey === cacheKey && String(d.outline).startsWith(OL_PREFIX)) {
         showOutline(d.outline);
         return;
       }
 
-      const data = await buildStructuredOutline({ tp, lvl, tone, aud, L, lang }, vi);
-      if (data === null) return showOutlineError(vi);
-      if (data === false) return callOutlineLegacy(true);
-      const stored = OL_PREFIX + JSON.stringify({ lvl, vi, data });
-      if (d) { d.outline = stored; d.outlineKey = cacheKey; saveDocs(); }
-      showOutline(stored);
-    }
+      const run = ++_olRun;
+      const c = { tp, lvl, tone, aud, L, lang };
+      const plan = OUTLINE_PLAN[lvl];
+      const t0 = Date.now();
 
-    // Fallback: one long markdown prompt, used only when the structured result is unusable
-    async function callOutlineLegacy(skipRetry) {
-      const tp = topic(); if (!tp) return toast(t('no-topic'));
-      setPanelTitle('panel-outline');
-      const { lvl, tone, aud } = outlineKeys();
-      const L = OUTLINE_LEVELS[lvl];
-      const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
-      const vi = uiLang !== 'en';
+      // Stage 1: the plan, written by the best available model. Opens the panel with the usual progress state.
+      const raw = await callAI(buildOutlinePlanPrompt(c), 'btn-outline', false, false, OUTLINE_PLAN_TOKENS);
+      if (run !== _olRun) return;
+      const pl = raw && parseJsonLoose(raw);
+      if (!pl || !Array.isArray(pl.parts) || pl.parts.length !== plan.parts.length || !pl.kind || !pl.opening) return showOutlineError(vi);
+      const tPlan = Date.now() - t0;
 
-      // Cache check — reuse if same topic/level/tone/audience/language
-      const d = getDoc(currentId);
-      const cacheKey = `v8|${tp}|${lvl}|${tone}|${aud}|${lang}`;
-      if (d && d.outline && d.outlineKey === cacheKey) {
-        showOutline(d.outline);
-        return;
-      }
+      const data = {
+        kind: String(pl.kind), opening: String(pl.opening), storyline: String(pl.storyline || ''),
+        checklist: pl.checklist, closing: pl.closing,
+        parts: pl.parts.map(p => ({ title: String((p && p.title) || ''), purpose: String((p && p.purpose) || ''), beat: String((p && p.beat) || ''), status: 'pending' }))
+      };
+      const state = { lvl, vi, data, c, d, cacheKey };
+      showOutlineState(state);
 
-      const H = vi
-        ? { start: 'Trước khi bắt đầu', roadmap: 'Bản đồ bài viết', intro: 'Mở bài', body: 'Thân bài', concl: 'Kết bài', check: 'Tự kiểm tra', build: 'Ghép thành câu', extra: 'Cụm từ nên có thêm', vocabBtn: 'Từ vựng', own: 'của riêng bạn' }
-        : { start: 'Before you start', roadmap: 'Your roadmap', intro: 'Introduction', body: 'Body', concl: 'Conclusion', check: 'Final check', build: 'Build your sentences', extra: 'More phrases to use', vocabBtn: 'Vocabulary', own: 'your own idea' };
-
-      const prompt = `You are a warm writing coach sitting beside this student, talking like a real person, not filling in a form. Your guide must remove the three things that stop students from writing: (1) not knowing WHAT to say, (2) not having the ENGLISH WORDS for it, (3) not knowing HOW to build the sentence. After reading it, the student can write a complete essay without a dictionary or a teacher, and feels "this app understands me".
-
-STUDENT
-- Topic: "${tp}"
-- Level: ${L.code}. Students at this level are often: ${L.struggle}.
-- Tone / style: ${toneSel.value}
-- Audience (the reader): ${audSel.value}
-- Guidance language: ${lang}. All talking, questions, glosses and headings are in ${lang}. English appears only as the language the student will write in.
-
-CONTENT DIRECTION
-${L.topicRule}
-Level: ${L.modelRule}
-Tone: ${OUTLINE_TONES[tone]}
-Audience: ${OUTLINE_AUDIENCES[aud]}
-Every idea, word and example must be specific to "${tp}". Nothing generic that could fit any topic.
-The parts must form one small story or description with a clear thread (who or what it is about, then what happens or what they do, then how the student feels), not a list of unrelated facts.
-Never assume facts about the student's life (a brother, a pet, a yard, a trip). Turn such details into a slot with several options, or keep the sentence neutral ("my family", "we"). Name parts by the KIND of moment, not by fixed facts (for example "A morning moment", not "The funny morning in the kitchen").
-
-HOW EACH PART IS GUIDED (${H.intro}, each body paragraph, ${H.concl}). ONE block per PART, never one per sentence.
-1. A short, human talk of 2–3 lines: what this part is for, and one concrete thing to imagine or remember so ideas come easily. Vary how you open each part. This talk is mandatory and must describe exactly what the finished example below does.
-2. 🧩 **${H.build}**: ${L.builderRule}
-3. Then the finished example in a blockquote (>) with the parts the student picks shown in **bold**, followed by a BLANK LINE.
-4. ${L.extraRule.replace('{extra}', H.extra)}
-5. Where students genuinely get stuck, a tip starting with "💬". ${L.tipRule} A tip must target a mistake students at ${L.code} really make with THESE patterns (for example the verb ending after "my mother" versus "my parents"), never a rule they would rarely break. Skip it everywhere else.
-6. One short, encouraging line pointing to what comes next.
-
-RULES FOR OPTIONS (very important)
-- Every slot is exactly ONE kind of unit (a noun phrase, OR a verb phrase in ONE stated tense, OR a full clause), and ALL its options are that same kind and form. Use the same tense in all verb slots of a story (past simple), never a participle or a mix.
-- FIXED TEXT in a pattern may contain ONLY grammar words (a, an, the, in, on, at, of, to, and, is, am, are, do, does, can, my, we, I, because, then, and similar). EVERY content word (noun, verb, adjective, adverb, place, time) must come from a slot. So never write fixed phrases such as "at the game", "laughs loudly" or "happened" next to a slot.
-- All sentences of one paragraph share ONE time frame (for example habits in the present simple, or past simple for a story). Never mix "one morning", "every day" and "today" in the same paragraph.
-- Options of one slot must be INDEPENDENT of every other slot: any combination must read as a correct, sensible text. Never tie an option to another slot (for example a game in slot A and a matching action in slot B).
-- Before you finish, mentally put EVERY option into its pattern and read it aloud. If one sounds wrong, rewrite the option or the pattern. Fixed words in the pattern must be natural, common English at this level (no odd words).
-- EVERY option is written as "meaning in ${lang} – *English*", and the part BEFORE the dash MUST be a real translation in ${lang}. NEVER put the same word on both sides (WRONG: small – *small*; RIGHT: ${vi ? "nhỏ – *small*, mẹ – *mother*" : "not big – *small*"}). This applies to every option, including the first.
-- English words in options must be words a student at ${L.code} really knows or can learn at once. No abstract or rare words (for example not "togetherness").
-- End EVERY slot line with the exact text " · ✏️ ${H.own}" so the student can use their own real idea instead.
-- The finished examples of the whole guide, read in order, form ONE coherent sample essay (${L.sentences}). The number of sentences you promise in "${H.start}" must equal the number of sentences in those examples.
-
-STYLE SAMPLE (shows voice and shape only; it is about a different topic. Do NOT copy its content)
-${L.sample}
-
-STRUCTURE (use exactly these heading texts as "## emoji text")
-## 💌 ${H.start}
-3–4 sentences speaking to the student: name the exact feeling a student like them has about THIS topic; give one concrete reason this topic is easier or more interesting than it looks; say exactly how many sentences they will write and a realistic time (${L.time}); say that the options are only suggestions: if their real story is different they keep the sentence frame and fill it with their own details; say that if they need more words about the topic they can press the "${H.vocabBtn}" button. No generic praise.
-## 🗺️ ${H.roadmap}
-One line on what kind of writing this is and the direction you recommend (plain words only; at A1–A2 never use essay terms such as narrative, overview or thesis), then a short list of the parts (${H.intro}, ${L.bodyCount} body paragraphs, ${H.concl}), each with a concrete title and what the student will talk about. Say that the finished examples read from top to bottom make a complete sample essay.
-## 🚪 ${H.intro}
-## ✍️ ${H.body}
-Use "### emoji short inviting title" for each body paragraph, in the style of the sample.
-## 🏁 ${H.concl}
-## ☑️ ${H.check}
-3 "☐" items written as questions the student asks about THEIR OWN text (for example whether every sentence is really about their own topic, or whether they included a real detail). Never mention how many sentences or words, never mention slots or letters such as [A], never mention rules from this prompt, never forbid "I". Finish with one warm sentence inviting the student to write the first sentence now.
-
-FORMAT RULES
-- NO tables, NO step numbers, NO labels such as "Câu 1", "Step 1", "Sentence 1" or "Claim/Reason/Evidence".
-- Headings are plain "## emoji text" lines; never wrap a heading in bold.
-- Be compact: no filler, no repetition. Every line must help the student write.`;
-
-      const ask = p => callAI(p, 'btn-outline', false, false, 6000);
-      let r = await ask(prompt);
-      // Models sometimes copy the English phrase to both sides of the dash; retry once with a precise correction
-      if (r && vi && !skipRetry) {
-        const g = glossStats(r);
-        if (g.total >= 3 && g.same / g.total > 0.25) {
-          const r2 = await ask(prompt + '\n\nCORRECTION: in your previous answer many options had English on BOTH sides of the dash (for example "small – *small*"). The part BEFORE the dash MUST be a Vietnamese translation (for example "nhỏ – *small*", "mẹ – *mother*", "nấu ăn – *cook dinner*"). Write the whole guide again and obey every other rule.');
-          if (r2) {
-            const g2 = glossStats(r2);
-            if (g2.total === 0 || g2.same / g2.total < g.same / g.total) r = r2;
-          }
-        }
-      }
-      if (r) {
-        if (d) { d.outline = r; d.outlineKey = cacheKey; saveDocs(); }
-        showOutline(r);
-      }
+      // Stage 2: every part at once; each card fills in as soon as its own answer arrives
+      setBusy('btn-outline', true, false);
+      await Promise.all(data.parts.map((_, i) => fillOutlinePart(state, i, run)));
+      setBusy('btn-outline', false, false);
+      if (run !== _olRun) return;
+      olFinalize(state);
+      console.info(`[outline] plan ${tPlan} ms, all parts ${Date.now() - t0} ms, failed ${data.parts.filter(p => p.status === 'failed').length}`);
     }
 
     async function callGrammar() {

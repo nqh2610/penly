@@ -1968,6 +1968,53 @@
       margin: 0.875rem 0
     }
 
+    /* ── Outline guide (interactive builder) ── */
+    .ol { font-size: .86rem; color: var(--text2); line-height: 1.55 }
+    .ol h2 { font-size: .96rem; margin: 1.1rem 0 .4rem }
+    .ol-lead { color: var(--text); font-weight: 500; margin: .2rem 0 .5rem }
+    .ol-meta { margin: 0 0 .35rem; color: var(--text) }
+    .ol-note { font-size: .78rem; color: var(--muted); margin: 0 0 .5rem }
+    .ol-road { list-style: none; padding: 0; margin: .4rem 0 .5rem; counter-reset: olr }
+    .ol-road li { counter-increment: olr; display: flex; flex-direction: column; padding: .4rem .6rem .4rem 2rem; margin-bottom: .3rem; border-radius: 9px; background: var(--bg); position: relative }
+    .ol-road li::before { content: counter(olr); position: absolute; left: .55rem; top: .45rem; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: .68rem; font-weight: 700; display: flex; align-items: center; justify-content: center }
+    .ol-road li b { color: var(--text); font-size: .84rem }
+    .ol-road li span { font-size: .76rem; color: var(--muted) }
+    .ol-part { border: 1px solid var(--border); border-radius: 13px; padding: .85rem .9rem; margin: .9rem 0; background: var(--surface) }
+    .ol-part-h { display: flex; align-items: center; gap: .55rem; margin-bottom: .4rem }
+    .ol-part-h h3 { margin: 0; font-size: .97rem }
+    .ol-num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none }
+    .ol-talk { color: var(--text2); line-height: 1.65; margin: .2rem 0 .8rem }
+    .ol-slot { margin: .8rem 0 }
+    .ol-q { font-size: .8rem; font-weight: 700; color: var(--text); margin-bottom: .4rem; display: flex; align-items: center; gap: .45rem }
+    .ol-q i { font-style: normal; width: 20px; height: 20px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-size: .72rem; display: flex; align-items: center; justify-content: center; flex: none }
+    .ol-q small { font-weight: 500; color: var(--muted) }
+    .ol-opts { display: grid; gap: .35rem }
+    .ol-opt, .ol-move { text-align: left; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); border-radius: 10px; padding: .45rem .7rem; font: inherit; display: flex; flex-direction: column; gap: 1px }
+    .ol-opt { cursor: pointer; transition: border-color .12s, background .12s }
+    .ol-opt:hover { border-color: var(--accent) }
+    .ol-opt.on { border-color: var(--accent); background: var(--accent-soft) }
+    .ol-en { font-weight: 600; font-size: .9rem; color: var(--text); font-style: normal }
+    .ol-gl { font-size: .75rem; color: var(--muted); font-style: normal }
+    .ol-move { margin-bottom: .4rem; gap: 3px }
+    .ol-prev { margin-top: .9rem; border-radius: 10px; background: var(--accent-soft); border-left: 3px solid var(--accent); padding: .6rem .75rem }
+    .ol-prev-l { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); margin-bottom: 2px }
+    .ol-prev-t { font-size: .94rem; line-height: 1.65; color: var(--text); font-weight: 500 }
+    .ol-prev-t mark { background: transparent; color: var(--accent); font-weight: 700; border-bottom: 2px solid var(--accent) }
+    .ol-ins { margin-top: .5rem; border: none; background: var(--accent); color: #fff; border-radius: 8px; padding: .38rem .8rem; font-size: .76rem; font-weight: 600; cursor: pointer }
+    .ol-ins:hover { background: var(--accent-h) }
+    .ol-ins-s { align-self: flex-start }
+    .ol-own { font-size: .75rem; color: var(--muted); margin: .55rem 0 0 }
+    .ol-extra { margin-top: .8rem; font-size: .78rem }
+    .ol-chip { display: inline-block; border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; margin: 3px 4px 0 0; background: var(--bg); color: var(--text); font-weight: 600 }
+    .ol-chip small { color: var(--muted); font-weight: 400 }
+    .ol-tip { margin-top: .8rem; padding: .5rem .7rem; border-radius: 9px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: .8rem }
+    [data-theme="dark"] .ol-tip { background: #2a2410; border-color: #4a3f12; color: #fcd34d }
+    .ol-check { list-style: none; padding: 0; margin: .3rem 0 .6rem }
+    .ol-check li { margin: .3rem 0 }
+    .ol-check label { display: flex; gap: .5rem; align-items: flex-start; cursor: pointer }
+    .ol-check input { margin-top: .25rem }
+
+
     /* ═══ SETTINGS DRAWER ═══ */
     .settings-drawer {
       position: absolute;
@@ -4847,10 +4894,6 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
       }
       return { total, same };
     }
-    function showOutline(md) {
-      document.getElementById('pCards').style.display = 'none';
-      openPanel(t('panel-outline'), tidyOutlineMd(md), null, false, { breaks: true });
-    }
 
     // ══ STRUCTURED OUTLINE: the AI returns data, the app validates it and builds the screen ══
     const OUTLINE_PLAN = {
@@ -4922,7 +4965,7 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
       if (Array.isArray(p.slots)) p.slots = p.slots.map(s => ({ id: String((s && s.id) || '').toUpperCase(), ask: String((s && s.ask) || '').trim(), options: clean(s && s.options) }));
       if (Array.isArray(p.moves)) p.moves = p.moves.filter(m => m && typeof m.text === 'string' && m.text.trim() && !_vnChars.test(m.text)).map(m => ({ angle: String(m.angle || '').trim(), text: m.text.trim() }));
       p.extra = clean(p.extra).slice(0, 4);
-      p.tip = typeof p.tip === 'string' ? p.tip.trim() : '';
+      p.tip = typeof p.tip === 'string' && !/[{}\[\]]|slot|placeholder/i.test(p.tip) ? p.tip.trim() : '';
       return p;
     }
 
@@ -5034,60 +5077,133 @@ Part to fix:
 ${JSON.stringify(part)}`;
     }
 
-    function renderOutlineMd(data, lvl, vi) {
-      const X = OUTLINE_TXT[vi ? 'vi' : 'en'];
-      const plan = OUTLINE_PLAN[lvl];
+    const OL_PREFIX = '@@ol1:';
+    const OL_S = '\u0001', OL_E = '\u0002';
+    let _olState = null;
+    const OUTLINE_UI_TXT = {
+      vi: { preview: 'Câu của bạn', insert: 'Chèn vào bài', ownHint: '✏️ Muốn nói điều khác? Cứ giữ khung câu và gõ chuyện của riêng bạn vào bài.' },
+      en: { preview: 'Your sentences', insert: 'Insert into text', ownHint: '✏️ Want to say something else? Keep the frame and type your own story into the text.' }
+    };
+    const _esc = x => String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const _mdBold = x => x.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    const _capMarked = x => x.replace(/(^|[.!?]\s+)([\u0001]*)([a-z])/g, (m, a, b, c) => a + b + c.toUpperCase());
+
+    function olFill(p, picks) {
+      return _capMarked(p.pattern.replace(/\{([A-C])\}/g, (m, id) => {
+        const s = p.slots.find(z => z.id === id);
+        const o = s && (s.options[picks[id] || 0] || s.options[0]);
+        return OL_S + (o ? o.en : '…') + OL_E;
+      }));
+    }
+    const olPreviewHtml = (p, picks) => _esc(olFill(p, picks)).replace(/\u0001/g, '<mark>').replace(/\u0002/g, '</mark>');
+
+    function renderOutlineHtml(data, lvl, vi) {
+      const X = OUTLINE_TXT[vi ? 'vi' : 'en'], U = OUTLINE_UI_TXT[vi ? 'vi' : 'en'], plan = OUTLINE_PLAN[lvl];
       const emoji = ['🌱', '🌿', '🍃', '🌟'];
       let tips = 0, total = 0, bodyN = 0;
-      const optLine = o => (o.gloss ? `${o.gloss} – *${o.en}*` : `*${o.en}*`);
+      data.parts.forEach(p => {
+        total += lvl === 'C' ? _countSentences(p.moves[0].text) : _countSentences(olFill(p, {}).replace(/[\u0001\u0002]/g, ''));
+      });
 
-      const blocks = data.parts.map((p, i) => {
+      const nameOf = (p, i) => {
         const type = plan.parts[i];
-        const out = [String(p.talk).trim(), ''];
+        return type === 'intro' ? X.intro : type === 'concl' ? X.concl : String(p.title).trim();
+      };
+
+      let h = '<div class="ol">';
+      h += `<h2>💌 ${_esc(X.start)}</h2><p class="ol-lead">${_esc(data.opening)}</p>`;
+      h += `<p class="ol-meta">${_mdBold(_esc(X.countLine(total, plan.minutes)))}</p>`;
+      h += `<p class="ol-note">${_esc(X.optNote)} ${_esc(X.vocabNote)}</p>`;
+      h += `<h2>🗺️ ${_esc(X.roadmap)}</h2><p>${_esc(data.kind)}</p><ol class="ol-road">`;
+      data.parts.forEach((p, i) => { h += `<li><b>${_esc(nameOf(p, i))}</b><span>${_esc(p.purpose)}</span></li>`; });
+      h += `</ol><p class="ol-note">${_esc(X.readAll)}</p>`;
+
+      data.parts.forEach((p, i) => {
+        const type = plan.parts[i];
+        const icon = type === 'intro' ? '🚪' : type === 'concl' ? '🏁' : emoji[bodyN++ % emoji.length];
+        h += `<article class="ol-part" data-i="${i}"><div class="ol-part-h"><span class="ol-num">${i + 1}</span><h3>${icon} ${_esc(nameOf(p, i))}</h3></div>`;
+        h += `<p class="ol-talk">${_esc(p.talk)}</p>`;
         if (lvl === 'C') {
-          out.push(`🧩 **${X.moves}**${p.move ? ` (${String(p.move).trim()})` : ''}`);
-          p.moves.forEach(m => out.push(`- ${m.angle ? `*${m.angle}:* ` : ''}${m.text}`));
-          out.push('');
-          total += _countSentences(p.moves[0].text);
+          h += `<div class="ol-q">🧩 ${_esc(X.moves)}${p.move ? ` <small>(${_esc(p.move)})</small>` : ''}</div>`;
+          p.moves.forEach(m => {
+            h += `<div class="ol-move">${m.angle ? `<span class="ol-gl">${_esc(m.angle)}</span>` : ''}<span class="ol-en ol-move-t">${_esc(m.text)}</span><button type="button" class="ol-ins ol-ins-s">${_esc(U.insert)}</button></div>`;
+          });
         } else {
-          total += _countSentences(_fillPattern(p.pattern, p.slots, false));
-          out.push(`🧩 **${X.build}**`, '`' + p.pattern.replace(/\{([A-C])\}/g, '[$1]') + '`', '');
-          p.slots.forEach(s => out.push(`**${s.id}.** ${s.ask} ${s.options.map(o => `${o.gloss} – *${o.en}*`).join(' · ')} · ✏️ ${X.own}`));
-          out.push('', '> ' + _capSentences(_fillPattern(p.pattern, p.slots, true)), '');
+          p.slots.forEach(s => {
+            h += `<div class="ol-slot" data-id="${_esc(s.id)}"><div class="ol-q"><i>${_esc(s.id)}</i>${_esc(s.ask)}</div><div class="ol-opts">`;
+            s.options.forEach((o, k) => {
+              h += `<button type="button" class="ol-opt${k === 0 ? ' on' : ''}" data-k="${k}"><span class="ol-en">${_esc(o.en)}</span><span class="ol-gl">${_esc(o.gloss)}</span></button>`;
+            });
+            h += '</div></div>';
+          });
+          h += `<div class="ol-prev"><div class="ol-prev-l">${_esc(U.preview)}</div><div class="ol-prev-t">${olPreviewHtml(p, {})}</div><button type="button" class="ol-ins">${_esc(U.insert)}</button></div>`;
+          h += `<p class="ol-own">${_esc(U.ownHint)}</p>`;
         }
-        if (type === 'body' && p.extra.length) out.push(`🧰 **${X.extra}:** ${p.extra.map(optLine).join(' · ')}`, '');
-        if (p.tip && tips < plan.tips) { tips++; out.push(`💬 ${X.tip}: ${p.tip}`, ''); }
-        return out.join('\n');
+        if (type === 'body' && p.extra.length) {
+          h += `<div class="ol-extra"><b>🧰 ${_esc(X.extra)}</b><div>${p.extra.map(o => `<span class="ol-chip">${_esc(o.en)}${o.gloss ? ` <small>${_esc(o.gloss)}</small>` : ''}</span>`).join('')}</div></div>`;
+        }
+        if (p.tip && tips < plan.tips) { tips++; h += `<div class="ol-tip">💬 <b>${_esc(X.tip)}:</b> ${_esc(p.tip)}</div>`; }
+        h += '</article>';
       });
 
-      const md = [];
-      md.push(`## 💌 ${X.start}`, String(data.opening).trim(), X.countLine(total, plan.minutes), X.optNote, X.vocabNote, '');
-      md.push(`## 🗺️ ${X.roadmap}`, String(data.kind).trim(), '');
-      data.parts.forEach((p, i) => {
-        const type = plan.parts[i];
-        const name = type === 'intro' ? X.intro : type === 'concl' ? X.concl : String(p.title).trim();
-        md.push(`- **${name}** – ${String(p.purpose).trim()}`);
-      });
-      md.push('', X.readAll, '');
-      data.parts.forEach((p, i) => {
-        const type = plan.parts[i];
-        if (type === 'intro') md.push(`## 🚪 ${X.intro}`);
-        else if (type === 'concl') md.push(`## 🏁 ${X.concl}`);
-        else {
-          if (bodyN === 0) md.push(`## ✍️ ${X.body}`, '');
-          md.push(`### ${emoji[bodyN++ % emoji.length]} ${String(p.title).trim()}`);
-        }
-        md.push(blocks[i]);
-      });
       let items = (Array.isArray(data.checklist) ? data.checklist : []).map(x => String(x).trim()).filter(x => x.length >= 8 && x.length <= 160 && !/[\d\[\]{}]/.test(x));
       if (items.length < 3) items = X.checkDefault;
-      md.push(`## ☑️ ${X.check}`, ...items.slice(0, 3).map(x => `☐ ${x}`), '');
+      h += `<h2>☑️ ${_esc(X.check)}</h2><ul class="ol-check">${items.slice(0, 3).map(x => `<li><label><input type="checkbox"> <span>${_esc(x)}</span></label></li>`).join('')}</ul>`;
       const closing = String(data.closing || '').trim();
-      md.push(closing.length >= 8 && closing.length <= 200 ? closing : X.closingDefault);
-      return md.join('\n');
+      h += `<p class="ol-lead">${_esc(closing.length >= 8 && closing.length <= 200 ? closing : X.closingDefault)}</p></div>`;
+      return h;
     }
 
-    // Returns markdown on success, null if the AI call itself failed, false if the structured result is unusable
+    function olReadPicks(part) {
+      const picks = {};
+      part.querySelectorAll('.ol-slot').forEach(s => {
+        const on = s.querySelector('.ol-opt.on');
+        picks[s.dataset.id] = on ? +on.dataset.k : 0;
+      });
+      return picks;
+    }
+    function insertOutlineText(txt) {
+      const l = editor.innerText.trimEnd();
+      insertAt((!l ? '' : /[.!?]$/.test(l) ? ' ' : '. ') + txt);
+      editor.dispatchEvent(new Event('input'));
+      toast(t('toast-inserted'), 's');
+    }
+    function onOutlineClick(e) {
+      if (!_olState || !e.target || !e.target.closest) return;
+      const opt = e.target.closest('.ol-opt');
+      const part = e.target.closest('.ol-part');
+      if (opt && part) {
+        opt.parentNode.querySelectorAll('.ol-opt').forEach(b => b.classList.remove('on'));
+        opt.classList.add('on');
+        part.querySelector('.ol-prev-t').innerHTML = olPreviewHtml(_olState.data.parts[+part.dataset.i], olReadPicks(part));
+        return;
+      }
+      const ins = e.target.closest('.ol-ins');
+      if (ins) {
+        const src = ins.closest('.ol-move') ? ins.closest('.ol-move').querySelector('.ol-move-t') : ins.parentNode.querySelector('.ol-prev-t');
+        if (src) insertOutlineText(src.textContent.trim());
+      }
+    }
+    const _olPanel = document.getElementById('pContent');
+    if (_olPanel && _olPanel.addEventListener) _olPanel.addEventListener('click', onOutlineClick);
+
+    function showOutline(stored) {
+      document.getElementById('pCards').style.display = 'none';
+      if (typeof stored === 'string' && stored.startsWith(OL_PREFIX)) {
+        let obj = null;
+        try { obj = JSON.parse(stored.slice(OL_PREFIX.length)); } catch { obj = null; }
+        if (obj && obj.data) {
+          _olState = obj;
+          openPanel(t('panel-outline'), '', null);
+          document.getElementById('pContent').innerHTML = renderOutlineHtml(obj.data, obj.lvl, obj.vi);
+          return;
+        }
+      }
+      _olState = null;
+      openPanel(t('panel-outline'), tidyOutlineMd(stored), null, false, { breaks: true });
+    }
+
+    // Returns the validated data on success, null if the AI call itself failed, false if the structured result is unusable
     async function buildStructuredOutline(c, vi) {
       const plan = OUTLINE_PLAN[c.lvl];
       const ask = (p, tokens) => callAI(p, 'btn-outline', false, false, tokens);
@@ -5111,7 +5227,7 @@ ${JSON.stringify(part)}`;
         if (validateOutlinePart(fixed, plan.parts[i], c.lvl).length) return false;
         data.parts[i] = fixed;
       }
-      return renderOutlineMd(data, c.lvl, vi);
+      return data;
     }
 
     async function callOutline() {
@@ -5124,17 +5240,18 @@ ${JSON.stringify(part)}`;
 
       // Cache check — reuse if same topic/level/tone/audience/language
       const d = getDoc(currentId);
-      const cacheKey = `v9|${tp}|${lvl}|${tone}|${aud}|${lang}`;
+      const cacheKey = `v10|${tp}|${lvl}|${tone}|${aud}|${lang}`;
       if (d && d.outline && d.outlineKey === cacheKey) {
         showOutline(d.outline);
         return;
       }
 
-      const md = await buildStructuredOutline({ tp, lvl, tone, aud, L, lang }, vi);
-      if (md === null) return;
-      if (md === false) return callOutlineLegacy();
-      if (d) { d.outline = md; d.outlineKey = cacheKey; saveDocs(); }
-      showOutline(md);
+      const data = await buildStructuredOutline({ tp, lvl, tone, aud, L, lang }, vi);
+      if (data === null) return;
+      if (data === false) return callOutlineLegacy();
+      const stored = OL_PREFIX + JSON.stringify({ lvl, vi, data });
+      if (d) { d.outline = stored; d.outlineKey = cacheKey; saveDocs(); }
+      showOutline(stored);
     }
 
     // Fallback: one long markdown prompt, used only when the structured result is unusable

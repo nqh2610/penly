@@ -4897,9 +4897,9 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
 
     // ══ STRUCTURED OUTLINE: the AI returns data, the app validates it and builds the screen ══
     const OUTLINE_PLAN = {
-      A: { parts: ['intro', 'body', 'body', 'concl'], sentences: { intro: 1, body: 3, concl: 1 }, maxFixed: { intro: 5, body: 10, concl: 5 }, tips: 2, minutes: '10–15' },
-      B: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: { intro: 3, body: 4, concl: 2 }, maxFixed: { intro: 10, body: 16, concl: 8 }, tips: 3, minutes: '25–35' },
-      C: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: {}, maxFixed: {}, tips: 3, minutes: '40–60' }
+      A: { parts: ['intro', 'body', 'body', 'concl'], sentences: { intro: 1, body: 3, concl: 1 }, maxFixed: { intro: 5, body: 10, concl: 5 }, tips: 2, minutes: '10–15', maxTokens: 3800 },
+      B: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: { intro: 3, body: 4, concl: 2 }, maxFixed: { intro: 10, body: 16, concl: 8 }, tips: 3, minutes: '25–35', maxTokens: 5200 },
+      C: { parts: ['intro', 'body', 'body', 'body', 'concl'], sentences: {}, maxFixed: {}, tips: 3, minutes: '40–60', maxTokens: 4800 }
     };
 
     const OUTLINE_TXT = {
@@ -4911,7 +4911,9 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
         vocabNote: 'Cần thêm từ về chủ đề này? Bấm nút “Từ vựng”.',
         readAll: 'Các ví dụ dưới đây, đọc từ trên xuống, tạo thành một bài hoàn chỉnh.',
         checkDefault: ['Mỗi câu mình viết có thật sự nói về chuyện của mình không?', 'Mình đã thay các gợi ý bằng chi tiết thật của mình chưa?', 'Đọc to cả bài một lần: có chỗ nào đọc vấp không?'],
-        closingDefault: 'Giờ hãy viết câu đầu tiên nhé, bạn làm được!'
+        closingDefault: 'Giờ hãy viết câu đầu tiên nhé, bạn làm được!',
+        fail: 'Chưa lấy được dàn ý. Máy chủ AI đang quá tải hoặc tạm hết lượt. Bạn đợi 1–2 phút rồi thử lại nhé.',
+        retry: 'Thử lại'
       },
       en: {
         start: 'Before you start', roadmap: 'Your roadmap', intro: 'Introduction', body: 'Body', concl: 'Conclusion', check: 'Final check',
@@ -4921,7 +4923,9 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
         vocabNote: 'Need more words about this topic? Press the “Vocabulary” button.',
         readAll: 'The examples below, read from top to bottom, make one complete sample.',
         checkDefault: ['Is every sentence really about my own story?', 'Did I replace the suggestions with my own real details?', 'Read the whole text aloud once: does anything sound awkward?'],
-        closingDefault: 'Now write your first sentence. You can do this!'
+        closingDefault: 'Now write your first sentence. You can do this!',
+        fail: 'Could not get the outline. The AI service is busy or temporarily out of quota. Please wait 1–2 minutes and try again.',
+        retry: 'Try again'
       }
     };
 
@@ -4951,7 +4955,8 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
     // Drops unusable options (no real translation, Vietnamese inside English, duplicates) instead of rejecting the whole part
     function sanitizeOutlinePart(p, vi, lvl) {
       const needGloss = lvl !== 'C';
-      const ok = o => o && typeof o.en === 'string' && o.en.trim() && !_vnChars.test(o.en)
+      const maxWords = { A: 6, B: 14 }[lvl] || 99;
+      const ok = o => o && typeof o.en === 'string' && o.en.trim() && !_vnChars.test(o.en) && o.en.trim().split(/\s+/).length <= maxWords
         && (!needGloss || (typeof o.gloss === 'string' && o.gloss.trim() && !(vi && _normTxt(o.gloss) === _normTxt(o.en))));
       const clean = arr => {
         const seen = new Set();
@@ -4986,7 +4991,7 @@ Bạn đã nêu quan điểm. Giờ hãy thừa nhận phần đúng của phía
         if (ids.slice().sort().join() !== slots.map(s => s.id).sort().join()) bad.push('slot ids must match the placeholders in "pattern" exactly');
         slots.forEach(s => {
           if (!s.ask) bad.push(`slot ${s.id} has no "ask" question`);
-          if (s.options.length < 3) bad.push(`slot ${s.id} needs at least 3 valid options (English "en" only, and "gloss" a real translation in the guidance language, never the same word as "en")`);
+          if (s.options.length < 3) bad.push(`slot ${s.id} needs at least 3 valid options (short English fragment in "en", not a whole sentence, and "gloss" a real translation in the guidance language, never the same word as "en")`);
         });
         const fixed = pattern.replace(/\{[A-C]\}/g, ' ').split(/\s+/).filter(w => /\p{L}/u.test(w)).length;
         const maxFixed = plan.maxFixed[type];
@@ -5028,6 +5033,7 @@ Every idea, word and example must be specific to "${tp}". Never assume facts abo
 - Fixed text outside slots: grammar words only (a, the, in, at, my, we, I, is, to, and, because…), at most ${plan.maxFixed.intro} words in an intro, ${plan.maxFixed.body} in a body part, ${plan.maxFixed.concl} in a conclusion. EVERY content word (noun, verb, adjective, place, time) must be inside a slot.
 - A slot is ONE complete unit. NEVER put a verb in one slot and its object in another: use a full predicate in one slot ("cooks dinner", "plays soccer"). If a subject slot exists, all its options are singular (mother, father, brother), so every verb option agrees.
 - All options of a slot have the same grammatical form, and slots never depend on each other: EVERY combination must be correct and sensible. Mentally put EVERY option into the pattern and read it aloud.
+- Options are SHORT fragments (at most ${lvl === 'A' ? 5 : 12} words), never whole sentences: the pattern holds the sentence skeleton and the slots hold only the parts that change.
 - 3 or 4 options per slot as {"gloss","en"}. "gloss" is a REAL translation in ${lang} (WRONG: gloss "small" with en "small"; RIGHT: gloss ${lang === 'Vietnamese' ? '"nhỏ"' : '"not big"'} with en "small"). "en" is English only, in the exact form the pattern needs, and words must suit ${L.code}.
 - All sentences of one part share ONE time frame (present habits, or past simple for a story).
 - "extra": ${lvl === 'B' ? 'body parts only: exactly 3 useful collocations or connectors NOT in the options, as {"gloss","en"}. Empty list for intro and conclusion.' : 'always an empty list.'}`;
@@ -5187,6 +5193,15 @@ ${JSON.stringify(part)}`;
     const _olPanel = document.getElementById('pContent');
     if (_olPanel && _olPanel.addEventListener) _olPanel.addEventListener('click', onOutlineClick);
 
+    function showOutlineError(vi) {
+      const gate = document.getElementById('licenseGate');
+      if (gate && !gate.classList.contains('hidden')) return;
+      const X = OUTLINE_TXT[vi ? 'vi' : 'en'];
+      document.getElementById('pCards').style.display = 'none';
+      openPanel(t('panel-outline'), '', null);
+      document.getElementById('pContent').innerHTML = `<div class="ol"><p class="ol-lead">${_esc(X.fail)}</p><button type="button" class="ol-ins" onclick="callOutline()">${_esc(X.retry)}</button></div>`;
+    }
+
     function showOutline(stored) {
       document.getElementById('pCards').style.display = 'none';
       if (typeof stored === 'string' && stored.startsWith(OL_PREFIX)) {
@@ -5207,7 +5222,7 @@ ${JSON.stringify(part)}`;
     async function buildStructuredOutline(c, vi) {
       const plan = OUTLINE_PLAN[c.lvl];
       const ask = (p, tokens) => callAI(p, 'btn-outline', false, false, tokens);
-      const raw = await ask(buildOutlineJsonPrompt(c), 6000);
+      const raw = await ask(buildOutlineJsonPrompt(c), plan.maxTokens);
       if (!raw) return null;
       const data = parseJsonLoose(raw);
       if (!data || !Array.isArray(data.parts) || data.parts.length !== plan.parts.length || !data.kind || !data.opening) return false;
@@ -5247,7 +5262,7 @@ ${JSON.stringify(part)}`;
       }
 
       const data = await buildStructuredOutline({ tp, lvl, tone, aud, L, lang }, vi);
-      if (data === null) return;
+      if (data === null) return showOutlineError(vi);
       if (data === false) return callOutlineLegacy();
       const stored = OL_PREFIX + JSON.stringify({ lvl, vi, data });
       if (d) { d.outline = stored; d.outlineKey = cacheKey; saveDocs(); }

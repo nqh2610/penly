@@ -1502,41 +1502,22 @@
       font-size: .75rem;
     }
 
-    .ac-toggle-state {
-      font-size: .65rem;
-      font-weight: 700;
-      letter-spacing: .04em;
-      padding: 1px 4px;
-      border-radius: 4px;
-      background: var(--border);
-      color: var(--muted);
-      transition: .15s;
-    }
-
-    .ac-toggle-btn:hover:not(.on) {
-      border-color: var(--muted);
-      color: var(--text);
-    }
-
-    .ac-toggle-btn.on:hover {
+    .ac-toggle-btn:hover {
       border-color: var(--accent);
       color: var(--accent);
     }
 
-    .ac-toggle-btn.on {
-      background: var(--accent-soft);
-      color: var(--accent);
-      border-color: var(--accent);
+    .ac-toggle-btn.loading {
+      opacity: .6;
+      pointer-events: none;
+      cursor: default;
     }
 
-    .ac-toggle-btn.on .ac-toggle-state {
-      background: var(--accent);
-      color: #fff;
+    .ac-toggle-btn.loading i {
+      animation: spin .7s linear infinite;
     }
 
-    .ac-toggle-btn.off {
-      opacity: 1;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .model-chip {
       display: inline-flex;
@@ -3282,10 +3263,9 @@ Gợi ý:
             </span>
             <span id="modelChip" class="model-chip" style="display:none"></span>
             <div class="sb-r" id="wc">0 từ</div>
-            <button id="acToggleBtn" class="ac-toggle-btn" onclick="setACEnabled(!acEnabled)" title="Gợi ý tự động khi gõ">
+            <button id="acToggleBtn" class="ac-toggle-btn" onclick="triggerAC()" title="Gợi ý câu tiếp theo (AI)">
               <i class="bi bi-magic" id="acToggleIcon"></i>
               <span id="acToggleLabel">AI</span>
-              <span id="acToggleState" class="ac-toggle-state">OFF</span>
             </button>
           </div>
 
@@ -3473,17 +3453,6 @@ Gợi ý:
               </div>
             </div>
 
-            <!-- AUTOCOMPLETE TOGGLE -->
-            <div class="sd-row" style="border-top:1px solid var(--border);padding-top:1.25rem;margin-top:0.25rem">
-              <div class="sd-label" id="lbl-sd-ac">Gợi ý AI khi gõ (Autocomplete)</div>
-              <div class="sd-chips" style="margin-top:0.5rem">
-                <button class="chip on" id="acOn" onclick="setACEnabled(true)"><i
-                    class="bi bi-lightning-charge-fill"></i> <span id="lbl-ac-on">Bật</span></button>
-                <button class="chip" id="acOff" onclick="setACEnabled(false)"><i class="bi bi-slash-circle"></i> <span
-                    id="lbl-ac-off">Tắt</span></button>
-              </div>
-              <p style="font-size:.75rem;color:var(--muted);margin-top:0.4rem;line-height:1.5" id="lbl-ac-desc"></p>
-            </div>
 
             <!-- PWA INSTALL -->
             <div class="sd-row" id="sdPwaRow"
@@ -3563,7 +3532,7 @@ Gợi ý:
     <span class="ac-bar-label">✦ Gợi ý AI</span>
     <span class="ac-bar-text" id="acBarText"></span>
     <div class="ac-bar-actions">
-      <button class="ac-bar-btn" onclick="acceptACBar()"><i class="bi bi-check-lg"></i> Chèn (Tab)</button>
+      <button class="ac-bar-btn" id="acBarInsertBtn" onclick="acceptACBar()"><i class="bi bi-check-lg"></i> Chèn</button>
       <button class="ac-bar-dismiss" onclick="hideAC()"><i class="bi bi-x"></i></button>
     </div>
   </div>
@@ -3658,21 +3627,13 @@ Gợi ý:
 
     // ── STATE ──
     let docs = [], currentId = null;
-    let saveTimer, acTimer, pendingAC = "", acSeq = 0;
+    let saveTimer, pendingAC = "", acSeq = 0;
     let improveOriginalText = null; // bản gốc trước khi nâng cấp lần đầu
     let savedRange = null;
-    let acEnabled = localStorage.getItem('penly_ac_enabled') === 'true';
 
-    function setACEnabled(on) {
-      acEnabled = on;
-      localStorage.setItem('penly_ac_enabled', on ? 'true' : 'false');
-      document.getElementById('acOn').classList.toggle('on', on);
-      document.getElementById('acOff').classList.toggle('on', !on);
-      const btn = document.getElementById('acToggleBtn');
-      const state = document.getElementById('acToggleState');
-      if (btn) { btn.classList.toggle('on', on); btn.classList.toggle('off', !on); btn.title = on ? 'Tắt gợi ý tự động' : 'Bật gợi ý tự động khi gõ'; }
-      if (state) state.textContent = on ? 'ON' : 'OFF';
-      if (!on) { clearTimeout(acTimer); hideAC(); }
+    function triggerAC() {
+      const txt = editor.innerText.trim();
+      if (txt.length > 3) { acSeq++; doAC(txt); }
     }
 
     // ── ELEMENTS ──
@@ -4150,13 +4111,9 @@ Gợi ý:
       saveIcon.style.color = '#f59e0b';
       saveStatus.textContent = t('saving');
       saveTimer = setTimeout(() => saveDoc(), 700);
-      // hide AC only if user typed something new (invalidates old suggestion)
+      // hide AC when user types new content
       if (pendingAC) hideAC();
-      clearTimeout(acTimer);
       acSeq++; // invalidate any in-flight AC request
-      const txt = editor.innerText.trim();
-      // trigger AC after 2s pause
-      if (acEnabled && txt.length > 3) acTimer = setTimeout(() => doAC(txt), 2000);
     });
 
     editor.addEventListener('paste', e => {
@@ -4166,17 +4123,22 @@ Gợi ý:
     });
 
     editor.addEventListener('keydown', e => {
-      if (e.key === 'Tab' && pendingAC) {
+      if (e.key === 'Tab') {
         e.preventDefault();
-        const txt = editor.innerText.trimEnd();
-        const endsWithPunct = /[.!?]$/.test(txt);
-        const acAlreadyStartsSpace = /^\s/.test(pendingAC);
-        // new sentence after punctuation → add space separator
-        // mid-sentence completion → no space (append directly)
-        const prefix = endsWithPunct && !acAlreadyStartsSpace ? ' ' : '';
-        insertAt(prefix + pendingAC);
-        hideAC();
-        editor.dispatchEvent(new Event('input'));
+        if (pendingAC) {
+          // accept existing suggestion
+          const txt = editor.innerText.trimEnd();
+          const endsWithPunct = /[.!?]$/.test(txt);
+          const acAlreadyStartsSpace = /^\s/.test(pendingAC);
+          const prefix = endsWithPunct && !acAlreadyStartsSpace ? ' ' : '';
+          insertAt(prefix + pendingAC);
+          hideAC();
+          editor.dispatchEvent(new Event('input'));
+        } else {
+          // no suggestion yet — trigger immediately
+          const txt = editor.innerText.trim();
+          if (txt.length > 3) { acSeq++; doAC(txt); }
+        }
       }
     });
 
@@ -4256,7 +4218,7 @@ Gợi ý:
     function syncACBar() {
       const bar = document.getElementById('acBar');
       const isMobile = window.innerWidth <= 640;
-      if (pendingAC && isMobile) {
+      if (isMobile && pendingAC) {
         document.getElementById('acBarText').textContent = pendingAC;
         bar.classList.add('show');
         document.body.classList.add('has-ac');
@@ -4552,69 +4514,101 @@ Gợi ý:
     // ── AUTOCOMPLETE ──
     async function doAC(txt) {
       const seq = acSeq;
+      const btn = document.getElementById('acToggleBtn');
+      if (btn) btn.classList.add('loading');
       const tp = topic();
-      const wordCount = txt.trim().split(/\s+/).filter(Boolean).length;
-      const endsWithPunct = /[.!?]$/.test(txt.trim());
 
-      // Parse paragraphs — each newline = new idea
+      // Parse paragraphs
       const paras = txt.split(/\n+/).filter(p => p.trim());
       const totalParas = paras.length;
       const currentPara = paras[totalParas - 1] || '';
       const prevParas = paras.slice(0, -1);
-      const sentencesInPara = (currentPara.match(/[.!?]+/g) || []).length;
 
-      // Paragraph role
-      const paraRole = totalParas === 1 ? 'opening paragraph (introduce the topic)'
-        : totalParas === 2 ? 'second paragraph (first body idea)'
-          : sentencesInPara >= 3 ? `paragraph ${totalParas} — already ${sentencesInPara} sentences, consider wrapping up this idea or transitioning to the next`
-            : `paragraph ${totalParas} (body — develop this idea further)`;
+      const currentParaWords = currentPara.trim().split(/\s+/).filter(Boolean).length;
+      const endsWithPunct = /[.!?]$/.test(txt.trim());
 
+      // Extract last sentence from current paragraph for tight context
+      const sentences = currentPara.trim().match(/[^.!?]+[.!?]+/g) || [];
+      const lastSentence = sentences[sentences.length - 1]?.trim() || currentPara.trim();
+      const sentencesInPara = sentences.length;
+
+      // Detect essay structure position
+      const essayStage = totalParas === 1 ? 'introduction'
+        : totalParas >= 2 && currentPara.trim().length < 30 ? 'new paragraph start'
+          : 'body development';
+
+      // Previous paragraphs: enough for AI to understand argument direction
       const prevSummary = prevParas.length
-        ? `Previous paragraphs already covered:\n${prevParas.map((p, i) => `- Paragraph ${i + 1}: "${p.trim().slice(0, 120)}${p.length > 120 ? '...' : ''}"`).join('\n')}`
+        ? `What has been written so far:\n${prevParas.map((p, i) => `- Para ${i + 1}: "${p.trim().slice(0, 200)}${p.trim().length > 200 ? '...' : ''}"`).join('\n')}`
         : '';
 
-      const prompt = wordCount < 5
-        ? `You are an English writing assistant.
+      // Determine what role the next sentence should play based on last sentence
+      const sentenceRole = sentencesInPara === 0
+        ? 'open this paragraph with a clear topic sentence'
+        : sentencesInPara === 1
+          ? 'support the topic sentence with a reason, detail, or example'
+          : sentencesInPara >= 3
+            ? 'either wrap up this paragraph\'s idea with a concluding thought, or write a short transition to signal the next idea'
+            : 'continue developing the idea — add evidence, an example, or explain the reason further';
+
+      const levelRules = `- For A1/A2: max 10 words, simple subject-verb-object structure only
+- For B1/B2: 12–18 words, connectors like because/however/although are fine
+- For C1/C2: varied sentence structures, precise vocabulary, complex ideas welcome`;
+
+      const prompt = currentParaWords < 4 && essayStage !== 'new paragraph start'
+        // Very short text — just get started
+        ? `You are an English writing coach helping a student practise writing.
 Topic: "${tp || 'general'}"
 ${ctx()}
-What they wrote: "${txt.trim()}"
-Task: Suggest ONE natural continuation sentence.
-Rules:
-- Match the Level exactly
-- NO em dash (—), NO quotes, NO explanation — output the text only`
-
-        : endsWithPunct
-          ? `You are an English writing assistant helping develop ideas paragraph by paragraph.
-Topic: "${tp || 'general'}"
-${ctx()}
-
-Current paragraph (${paraRole}):
-"${currentPara.trim()}"
-
+The student has just started: "${currentPara.trim()}"
 ${prevSummary}
-
-Task: Write ONE next sentence that continues the CURRENT paragraph's idea logically.
-Rules:
-- Stay focused on the current paragraph's idea — do NOT jump to a new topic
-- Do NOT repeat anything from previous paragraphs
-- ${sentencesInPara >= 3 ? 'This paragraph is getting long — suggest a concluding sentence for it, OR a short transition sentence to signal a new idea is coming next.' : 'Add a supporting detail, reason, example, or feeling that develops the current idea.'}
-- Match EXACTLY the vocabulary level and sentence length of the existing text
-- For A1/A2: max 10 words, basic vocabulary only
-- For B1/B2: 12–18 words, connectors like because/when/although are fine
-- For C1/C2: complex structures welcome
+Task: Suggest ONE natural next sentence to help them continue.
+${levelRules}
+- Do NOT repeat ideas already covered above
 - NO em dash (—), NO quotes, NO explanation — output the sentence only`
 
-          : `You are an English writing assistant.
+        : essayStage === 'new paragraph start'
+        // User pressed Enter — starting a new paragraph
+        ? `You are an English writing coach helping a student practise writing.
 Topic: "${tp || 'general'}"
 ${ctx()}
-Current paragraph: "...${currentPara.trim().split(/\s+/).slice(-12).join(' ')}"
-Task: Complete this unfinished sentence naturally.
-Rules:
-- Add only the missing words to finish the sentence
-- Match vocabulary and complexity of the existing text
-- NO em dash (—), NO quotes, NO explanation — output the completion words only`;
+${prevSummary}
+The student is starting a NEW paragraph.
+Task: Suggest ONE strong topic sentence that introduces a NEW idea not yet covered above.
+${levelRules}
+- The sentence must be clearly different from previous paragraphs
+- NO em dash (—), NO quotes, NO explanation — output the sentence only`
+
+        : !endsWithPunct
+        // Mid-sentence — complete the current sentence
+        ? `You are an English writing coach helping a student practise writing.
+Topic: "${tp || 'general'}"
+${ctx()}
+Current paragraph so far: "${currentPara.trim()}"
+The student stopped mid-sentence. The unfinished part: "...${currentPara.trim().split(/\s+/).slice(-10).join(' ')}"
+Task: Complete this unfinished sentence naturally — add only the missing ending words.
+- Match the sentence's meaning and vocabulary exactly
+- Do NOT start a new sentence
+- NO em dash (—), NO quotes, NO explanation — output only the completion words`
+
+        // End of sentence — suggest what comes next based on role
+        : `You are an English writing coach helping a student practise writing.
+Topic: "${tp || 'general'}"
+${ctx()}
+${prevSummary ? prevSummary + '\n' : ''}Current paragraph (sentence ${sentencesInPara} of this paragraph):
+"${currentPara.trim()}"
+
+The last sentence was: "${lastSentence}"
+Task: Write ONE next sentence. Its role: ${sentenceRole}.
+${levelRules}
+- Stay focused on THIS paragraph's idea — do not introduce an unrelated new topic
+- Do NOT repeat or rephrase what was already said
+- The sentence must feel like a natural continuation a real writer would write
+- NO em dash (—), NO quotes, NO explanation — output the sentence only`;
 
       const r = await callAI(prompt, null, true);
+      const btn2 = document.getElementById('acToggleBtn');
+      if (btn2) btn2.classList.remove('loading');
       if (seq !== acSeq) return;
       if (r) {
         // take only the first line in case AI returns multiple lines
@@ -5487,12 +5481,7 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       const d = document.getElementById('settingsDrawer');
       const open = d.classList.toggle('open');
       document.getElementById('btnSettings').classList.toggle('active', open);
-      if (open) { sdRefreshKey(); sdRefreshAC(); }
-    }
-
-    function sdRefreshAC() {
-      document.getElementById('acOn').classList.toggle('on', acEnabled);
-      document.getElementById('acOff').classList.toggle('on', !acEnabled);
+      if (open) { sdRefreshKey(); }
     }
 
     function sdRefreshKey() {
@@ -5609,8 +5598,6 @@ ${srcParas.map((p, i) => `${i+1}. ${p}`).join('\n')}`,
       setLang(localStorage.getItem('ui_lang') || 'vi');
 
       // init AC toggle button state
-      setACEnabled(acEnabled);
-
       // File System Access API
       initFSA();
       // Sidebar resize

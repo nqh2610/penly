@@ -4404,6 +4404,15 @@ Gợi ý:
     }
     // per-model cooldown: if rate limited, skip that model for 2 minutes
     const _modelCooldown = {}; // model -> timestamp until which it's blocked
+    let _fallbackFailAt = 0; // when the fallback service last failed to answer
+
+    // Non-null only when every main model is resting AND the fallback was just seen failing: asking again is pointless
+    function aiOutageInfo() {
+      const now = Date.now();
+      const until = MODEL_CHAIN.map(m => _modelCooldown[m] || 0);
+      if (!until.every(u => u > now) || !_fallbackFailAt || now - _fallbackFailAt > 120000) return null;
+      return { minutes: Math.max(1, Math.ceil((Math.min(...until) - now) / 60000)) };
+    }
 
     function _pickModel() {
       const now = Date.now();
@@ -4431,8 +4440,12 @@ Gợi ý:
           body: JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: maxTokens })
         });
         const cfData = await cfRes.json();
-        if (cfData.content) return cfData;
-      } catch (_) { }
+        if (cfData.content) { _fallbackFailAt = 0; return cfData; }
+        console.info(`[ai] fallback failed (${cfRes.status}): ${String(cfData.error || '').slice(0, 300)}`);
+      } catch (e) {
+        console.info(`[ai] fallback unreachable: ${e.message}`);
+      }
+      _fallbackFailAt = Date.now();
       return null;
     }
 
@@ -4482,8 +4495,10 @@ Gợi ý:
               d.error.toLowerCase().includes("do not have access")
             );
             const isDaily = d.error && /per day|\bTPD\b|\bRPD\b/i.test(d.error);
-            _modelCooldown[model] = Date.now() + (isPermError ? 24 * 60 * 60 * 1000 : isDaily ? 30 * 60 * 1000 : 2 * 60 * 1000);
-            console.info(`[ai] ${model} unavailable${isDaily ? ' (daily quota)' : ''}: ${String(d.error || '').slice(0, 200)}`);
+            const w = String(d.error || '').match(/try again in\s*(?:(\d+)h)?\s*(?:(\d+)m(?!s))?\s*(?:([\d.]+)s)?/i);
+            const advised = w ? (((+w[1] || 0) * 60 + (+w[2] || 0)) * 60 + (+w[3] || 0)) * 1000 + 5000 : 0;
+            _modelCooldown[model] = Date.now() + (isPermError ? 24 * 60 * 60 * 1000 : Math.min(24 * 60 * 60 * 1000, Math.max(advised, isDaily ? 30 * 60 * 1000 : 2 * 60 * 1000)));
+            console.info(`[ai] ${model} unavailable${isDaily ? ' (daily quota)' : ''}: ${String(d.error || '').slice(0, 400)}`);
             // check if there's a next non-cooled model
             const hasNext = chain.slice(i + 1).some(m => !_modelCooldown[m] || Date.now() >= _modelCooldown[m]);
             if (hasNext) continue;
@@ -4838,6 +4853,7 @@ ${levelRules}
         checkDefault: ['Mỗi câu mình viết có thật sự nói về chuyện của mình không?', 'Mình đã thay các gợi ý bằng chi tiết thật của mình chưa?', 'Đọc to cả bài một lần: có chỗ nào đọc vấp không?'],
         closingDefault: 'Giờ hãy viết câu đầu tiên nhé, bạn làm được!',
         fail: 'Chưa lấy được dàn ý. Máy chủ AI đang quá tải hoặc tạm hết lượt. Bạn đợi 1–2 phút rồi thử lại nhé.',
+        quota: m => `Hạn mức AI đã dùng hết nên chưa tạo được dàn ý. Bạn thử lại sau khoảng ${m >= 90 ? Math.round(m / 60) + ' giờ' : m + ' phút'} nhé (các chức năng khác cũng dùng chung hạn mức này).`,
         retry: 'Thử lại', writing: 'Đang viết phần này…', writingSlow: 'AI chính đang bận nên hơi chậm, bạn đợi một chút nhé…', partFail: 'Chưa tạo được phần này.',
         preview: 'Câu của bạn', insert: 'Chèn vào bài', ownHint: '✏️ Muốn nói điều khác? Cứ giữ khung câu và gõ chuyện của riêng bạn vào bài.'
       },
@@ -4852,6 +4868,7 @@ ${levelRules}
         checkDefault: ['Is every sentence really about my own story?', 'Did I replace the suggestions with my own real details?', 'Read the whole text aloud once: does anything sound awkward?'],
         closingDefault: 'Now write your first sentence. You can do this!',
         fail: 'Could not get the outline. The AI service is busy or temporarily out of quota. Please wait 1–2 minutes and try again.',
+        quota: m => `The AI quota has run out, so the outline could not be created. Please try again in about ${m >= 90 ? Math.round(m / 60) + ' hours' : m + ' minutes'} (other features share this quota).`,
         retry: 'Try again', writing: 'Writing this part…', writingSlow: 'The main AI is busy, so this takes a little longer…', partFail: 'This part could not be created.',
         preview: 'Your sentences', insert: 'Insert into text', ownHint: '✏️ Want to say something else? Keep the frame and type your own story into the text.'
       }
@@ -5147,14 +5164,14 @@ ${OUTLINE_JSON_SAMPLE[lvl]}`;
       if (obj && obj.data) showOutlineState({ lvl: obj.lvl, vi: obj.vi, data: obj.data });
     }
 
-    function showOutlineError(vi) {
+    function showOutlineError(vi, outage) {
       const gate = document.getElementById('licenseGate');
       if (gate && !gate.classList.contains('hidden')) return;
       const X = OUTLINE_TXT[vi ? 'vi' : 'en'];
       _olState = null;
       document.getElementById('pCards').style.display = 'none';
       openPanel(t('panel-outline'), '', null);
-      document.getElementById('pContent').innerHTML = `<div class="ol"><p class="ol-lead">${_esc(X.fail)}</p><button type="button" class="ol-ins" onclick="callOutline()">${_esc(X.retry)}</button></div>`;
+      document.getElementById('pContent').innerHTML = `<div class="ol"><p class="ol-lead">${_esc(outage ? X.quota(outage.minutes) : X.fail)}</p><button type="button" class="ol-ins" onclick="callOutline()">${_esc(X.retry)}</button></div>`;
     }
 
     // ── interaction ──
@@ -5278,6 +5295,9 @@ ${OUTLINE_JSON_SAMPLE[lvl]}`;
         return;
       }
 
+      const outageNow = typeof aiOutageInfo === 'function' ? aiOutageInfo() : null;
+      if (outageNow) return showOutlineError(vi, outageNow);
+
       const run = ++_olRun;
       const c = { tp, lvl, tone, aud, L, lang };
       const plan = OUTLINE_PLAN[lvl];
@@ -5287,7 +5307,7 @@ ${OUTLINE_JSON_SAMPLE[lvl]}`;
       const raw = await callAI(buildOutlinePlanPrompt(c), 'btn-outline', false, false, OUTLINE_PLAN_TOKENS);
       if (run !== _olRun) return;
       const pl = raw && parseJsonLoose(raw);
-      if (!pl || !Array.isArray(pl.parts) || pl.parts.length !== plan.parts.length || !pl.kind || !pl.opening) return showOutlineError(vi);
+      if (!pl || !Array.isArray(pl.parts) || pl.parts.length !== plan.parts.length || !pl.kind || !pl.opening) return showOutlineError(vi, typeof aiOutageInfo === 'function' ? aiOutageInfo() : null);
       const tPlan = Date.now() - t0;
 
       const data = {

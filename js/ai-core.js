@@ -13,8 +13,9 @@
       'meta-llama/llama-4-scout-17b-16e-instruct': { text: '⚡ Cấp 3', cls: 'tier-3', title: 'Đang dùng AI cấp 3 do cấp trên bận' },
       'qwen/qwen3-8b': { text: '⚡ Cấp 4', cls: 'tier-4', title: 'Đang dùng AI cấp 4 do cấp trên bận' },
       'llama-3.1-8b-instant': { text: '⚡ Cấp 5', cls: 'tier-4', title: 'Đang dùng AI cấp 5 do cấp trên bận' },
-      '__or__': { text: '🌐 Dự phòng 1', cls: 'tier-4', title: 'Đang dùng OpenRouter (Groq bận, miễn phí)' },
-      '__cf__': { text: '☁ Dự phòng 2', cls: 'tier-4', title: 'Đang dùng Cloudflare AI (tất cả model chính bận)' },
+      '__or__': { text: '🌐 Dự phòng 2', cls: 'tier-4', title: 'Đang dùng OpenRouter (miễn phí)' },
+      '__gemini__': { text: '✨ Gemini', cls: 'tier-3', title: 'Đang dùng Gemini (Groq bận)' },
+      '__cf__': { text: '☁ Dự phòng 3', cls: 'tier-4', title: 'Đang dùng Cloudflare AI (tất cả model chính bận)' },
     };
 
     function setModelChip(model) {
@@ -91,7 +92,7 @@
         const fb = await _callFallback(lk, prompt, maxTokens);
         if (fb) {
           if (!silent) setBusy(btnId, false, !noPanel);
-          setModelChip(fb.or_model ? '__or__' : '__cf__');
+          setModelChip(fb.gemini_model ? '__gemini__' : fb.or_model ? '__or__' : '__cf__');
           return fb.content;
         }
         if (!silent) setBusy(btnId, false, !noPanel);
@@ -130,7 +131,7 @@
             const fb = await _callFallback(lk, prompt, maxTokens);
             if (fb) {
               if (!silent) setBusy(btnId, false, !noPanel);
-              setModelChip(fb.or_model ? '__or__' : '__cf__');
+              setModelChip(fb.gemini_model ? '__gemini__' : fb.or_model ? '__or__' : '__cf__');
               return fb.content;
             }
             if (!silent) setBusy(btnId, false, !noPanel);

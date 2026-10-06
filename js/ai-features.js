@@ -1,4 +1,4 @@
-    // 3. HÀM THỰC THI CHÍNH (THAY THẾ callOutline CŨ)
+    // 3. HÀM THỰC THI CHÍNH
     async function callOutline() {
       const tp = topic(); if (!tp) return toast(t('no-topic'));
       setPanelTitle('panel-outline');
@@ -7,34 +7,85 @@
       const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
       const vi = uiLang !== 'en';
 
+      // Smart cache key: normalize topic deeply (stop words removed, sorted)
+      const normTp = olNormTopic(tp);
+      const cacheKey = `v14|${normTp}|${lvl}|${tone}|${aud}|${lang}`;
+
+      // 1. Check doc cache
       const d = getDoc(currentId);
-      const normTp = tp.toLowerCase().trim().replace(/\s+/g, ' ');
-      const cacheKey = `v13|${normTp}|${lvl}|${tone}|${aud}|${lang}`;
       if (d && d.outline && d.outlineKey === cacheKey && String(d.outline).startsWith(OL_PREFIX)) {
         showOutline(d.outline); return;
       }
+      // 2. Check localStorage cross-session cache
+      const lsCached = olLsGet(cacheKey);
+      if (lsCached && String(lsCached).startsWith(OL_PREFIX)) {
+        showOutline(lsCached);
+        if (d) { d.outline = lsCached; d.outlineKey = cacheKey; saveDocs(); }
+        return;
+      }
+
+      // Cancel any in-flight outline request
+      if (_olAbort) { _olAbort.abort(); _olAbort = null; }
 
       const run = ++_olRun;
       const c = { tp, lvl, tone, aud, L, lang };
+      const plan = OUTLINE_PLAN[lvl];
+      const bodyIndices = plan.parts.map((t, i) => t === 'body' ? i : -1).filter(i => i >= 0);
+      const introIdx = plan.parts.indexOf('intro');
+      const conclIdx = plan.parts.indexOf('concl');
 
+      // Show skeleton with static intro/concl already filled
+      const skeletonParts = plan.parts.map((type, i) => {
+        if (type === 'intro') return olStaticIntro(c, plan);
+        if (type === 'concl') return olStaticConcl(c, plan);
+        return { status: 'pending' };
+      });
       showOutlineState({
         lvl, vi, c, d, cacheKey,
         data: {
           kind: vi ? 'Đang tạo dàn ý...' : 'Creating outline...',
-          opening: vi ? 'AI đang thiết kế dàn ý siêu tốc...' : 'Generating outline...',
-          checklist: [], parts: Array.from({ length: OUTLINE_PLAN[lvl].parts.length }, () => ({ status: 'pending' }))
+          opening: vi ? 'AI đang viết phần thân bài...' : 'AI is writing the body paragraphs...',
+          checklist: [], closing: '',
+          parts: skeletonParts
         }
       });
 
       setBusy('btn-outline', true, false);
-      const raw = await callAI(buildUnifiedOutlinePrompt(c), 'btn-outline', false, false, 1800);
-      setBusy('btn-outline', false, false);
 
-      if (run !== _olRun) return;
-      if (!raw) return showOutlineError(vi);
+      // Call 1: Plan — small call to get KIND/OPENING/STORYLINE/CHECK/CLOSING + body titles
+      const planPrompt = buildOutlinePlanOnlyPrompt(c);
+      const planRaw = await callAI(planPrompt, 'btn-outline', true, true, 450);
+      if (run !== _olRun) { setBusy('btn-outline', false, false); return; }
 
-      const state = { lvl, vi, data: parseUnifiedOutline(raw, c), c, d, cacheKey };
+      const parsedPlan = planRaw ? (parseOutlinePlan(planRaw, plan.parts.length) || null) : null;
+      const planData = parsedPlan || {
+        kind: vi ? 'Bài viết cá nhân' : 'Personal Writing',
+        opening: vi ? 'Cùng lập dàn ý nhé!' : "Let's build your outline!",
+        storyline: '', checklist: [], closing: vi ? 'Viết câu đầu tiên nào!' : 'Start writing!',
+        parts: plan.parts.map(() => ({ title: '', purpose: '', beat: '' }))
+      };
+
+      // Build full state — intro/concl static, body pending
+      const fullParts = plan.parts.map((type, i) => {
+        if (type === 'intro') { const p = olStaticIntro(c, plan); p.purpose = planData.parts[i]?.purpose || ''; p.title = planData.parts[i]?.title || p.title; return p; }
+        if (type === 'concl') { const p = olStaticConcl(c, plan); p.purpose = planData.parts[i]?.purpose || ''; p.title = planData.parts[i]?.title || p.title; return p; }
+        return { status: 'pending', title: planData.parts[i]?.title || '', purpose: planData.parts[i]?.purpose || '', beat: planData.parts[i]?.beat || '' };
+      });
+
+      const state = { lvl, vi, c, d, cacheKey, data: { ...planData, parts: fullParts } };
       showOutlineState(state);
+
+      // Call 2: Body parts in parallel (~300 tokens each)
+      await Promise.all(bodyIndices.map(async i => {
+        if (run !== _olRun) return;
+        const r = await tryOutlinePart(state, i);
+        if (run !== _olRun) return;
+        setOutlinePart(state, i, r);
+      }));
+
+      setBusy('btn-outline', false, false);
+      if (run !== _olRun) return;
+
       olFinalize(state);
     }
 

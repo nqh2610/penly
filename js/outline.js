@@ -125,6 +125,90 @@ TIP: Nói họ đúng ở đâu trước, rồi mới chỉ ra họ chưa nhìn 
     const OL_S = '\u0001', OL_E = '\u0002';
     let _olState = null;
     let _olRun = 0;
+    let _olAbort = null; // AbortController for cancelling in-flight outline calls
+
+    // ── localStorage cache (cross-session, TTL 7 days) ──
+    const OL_LS_PREFIX = 'penly_ol_';
+    const OL_LS_TTL = 7 * 24 * 60 * 60 * 1000;
+    function olLsGet(key) {
+      try {
+        const raw = localStorage.getItem(OL_LS_PREFIX + key);
+        if (!raw) return null;
+        const { ts, val } = JSON.parse(raw);
+        if (Date.now() - ts > OL_LS_TTL) { localStorage.removeItem(OL_LS_PREFIX + key); return null; }
+        return val;
+      } catch { return null; }
+    }
+    function olLsSet(key, val) {
+      try { localStorage.setItem(OL_LS_PREFIX + key, JSON.stringify({ ts: Date.now(), val })); } catch {}
+    }
+
+    // ── smart topic normalization for cache key ──
+    // Strips punctuation, lowercases, removes common stop words, sorts tokens
+    const _OL_STOPS = new Set('a an the my your our his her its this that these those i we you he she they it of in on at to for with about'.split(' '));
+    function olNormTopic(tp) {
+      const tokens = String(tp).toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').trim().split(/\s+/).filter(w => w && !_OL_STOPS.has(w));
+      return tokens.sort().join(' ') || String(tp).toLowerCase().trim();
+    }
+
+    // ── static intro/concl templates (no AI needed) ──
+    function olStaticIntro(c, plan) {
+      const { tp, lvl, lang } = c;
+      const vi = lang !== 'English';
+      if (lvl === 'C') {
+        return {
+          talk: vi ? 'Mở bài nêu quan điểm rõ ràng và giới thiệu hướng lập luận.' : 'State your position clearly and introduce your line of argument.',
+          move: vi ? 'Nêu luận điểm' : 'State thesis',
+          moves: [
+            { angle: vi ? 'Câu hỏi tu từ' : 'Rhetorical question', text: `Many people take ${tp} for granted. But is that assumption really justified?` },
+            { angle: vi ? 'Tuyên bố trực tiếp' : 'Direct claim', text: `${tp} is one of the most significant issues facing us today, and it deserves careful examination.` },
+            { angle: vi ? 'Sự đối lập' : 'Contrast', text: `While some view ${tp} as straightforward, a closer look reveals a far more complex picture.` }
+          ],
+          extra: [], tip: '', status: 'ready', title: vi ? 'Mở bài' : 'Introduction'
+        };
+      }
+      const pat = lvl === 'A'
+        ? `I want to talk about {A}. It is very {B}.`
+        : `In this essay, I will discuss {A}. I think it is {B} because of many reasons.`;
+      return {
+        talk: vi ? `Mở bài giới thiệu chủ đề "${tp}". Chọn cụm từ phù hợp để hoàn thành câu.` : `Introduce the topic "${tp}". Pick the phrase that fits you best.`,
+        pattern: pat,
+        slots: [
+          { id: 'A', ask: vi ? 'Chủ đề là gì?' : 'What is the topic?', options: [{ gloss: tp, en: tp }, { gloss: vi ? `chủ đề ${tp}` : `the topic of ${tp}`, en: `the topic of ${tp}` }] },
+          { id: 'B', ask: vi ? 'Bạn thấy thế nào?' : 'How do you see it?', options: lvl === 'A' ? [{ gloss: vi ? 'thú vị' : 'interesting', en: 'interesting' }, { gloss: vi ? 'quan trọng' : 'important', en: 'important' }] : [{ gloss: vi ? 'quan trọng' : 'important', en: 'important' }, { gloss: vi ? 'thú vị' : 'fascinating', en: 'fascinating' }] }
+        ],
+        extra: [], tip: '', status: 'ready', title: vi ? 'Mở bài' : 'Introduction'
+      };
+    }
+
+    function olStaticConcl(c, plan) {
+      const { tp, lvl, lang } = c;
+      const vi = lang !== 'English';
+      if (lvl === 'C') {
+        return {
+          talk: vi ? 'Kết bài tóm tắt lập luận và để lại ấn tượng cuối.' : 'Summarise your argument and leave a lasting impression.',
+          move: vi ? 'Tóm kết' : 'Synthesis',
+          moves: [
+            { angle: vi ? 'Tóm tắt + mở rộng' : 'Summary + broadening', text: `In conclusion, ${tp} matters not only because of what it is, but because of what it reveals about our priorities.` },
+            { angle: vi ? 'Lời kêu gọi' : 'Call to reflection', text: `Ultimately, how we approach ${tp} says a great deal about the kind of society we want to build.` },
+            { angle: vi ? 'Vòng tròn' : 'Circular close', text: `Just as the opening question suggested, ${tp} is not a settled matter — it is an invitation to think more carefully.` }
+          ],
+          extra: [], tip: '', status: 'ready', title: vi ? 'Kết bài' : 'Conclusion'
+        };
+      }
+      const pat = lvl === 'A'
+        ? `In conclusion, {A} is very important to me. I hope you like {B} too.`
+        : `In conclusion, I believe {A} is very significant. Learning about {B} has taught me a lot.`;
+      return {
+        talk: vi ? 'Kết bài tóm tắt và nêu cảm nghĩ cuối.' : 'Wrap up and share your final thought.',
+        pattern: pat,
+        slots: [
+          { id: 'A', ask: vi ? 'Chủ đề?' : 'The topic?', options: [{ gloss: tp, en: tp }, { gloss: vi ? `chủ đề này` : 'this topic', en: 'this topic' }] },
+          { id: 'B', ask: vi ? 'Điều bạn học được?' : 'What you learned?', options: [{ gloss: vi ? 'điều này' : 'this', en: 'this' }, { gloss: vi ? 'chủ đề đó' : 'it', en: 'it' }] }
+        ],
+        extra: [], tip: '', status: 'ready', title: vi ? 'Kết bài' : 'Conclusion'
+      };
+    }
     const _vnChars = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
     const _normTxt = x => String(x || '').toLowerCase().replace(/[^\p{L}]/gu, '');
     const _countSentences = x => String(x || '').split(/[.!?]+(?:\s|$)/).filter(z => z.trim()).length;
@@ -357,6 +441,37 @@ RULES
 - PART n BEAT: what the sample (the first option of everything) says in this part, in English, at most 12 words. Together the beats tell the storyline.
 - CHECK: 3 questions the user asks about THEIR OWN text. Never mention counts, slots, letters or rules.
 - CLOSING: one warm sentence inviting the user to write the first sentence now.`;
+    }
+
+    // Lightweight plan-only prompt: just KIND/OPENING/STORYLINE/CHECK/CLOSING + body titles/purposes
+    // ~450 tokens max — much cheaper than full unified prompt
+    function buildOutlinePlanOnlyPrompt(c) {
+      const { lvl, lang, L } = c;
+      const types = OUTLINE_PLAN[lvl].parts;
+      const bodyLines = types.map((t, i) => t === 'body'
+        ? `PART ${i + 1} TITLE: <short title in ${lang}>\nPART ${i + 1} PURPOSE: <1 sentence in ${lang}>\nPART ${i + 1} BEAT: <12 words English>`
+        : `PART ${i + 1} TITLE: none\nPART ${i + 1} PURPOSE: <1 sentence in ${lang}>\nPART ${i + 1} BEAT: none`
+      ).join('\n');
+      return `You are a writing coach. Write a short PLAN for a write-along guide. Plain text, one item per line, exactly these keys. No markdown, no JSON.
+
+${outlineuserBlock(c)}
+
+ANSWER FORMAT
+KIND: <type of writing in ${lang}>
+OPENING: <2 warm sentences in ${lang} for this topic>
+STORYLINE: <1 English sentence: who, what happens, how they feel>
+${bodyLines}
+CHECK: <question 1>
+CHECK: <question 2>
+CLOSING: <1 warm sentence in ${lang}>
+
+RULES
+- KIND: plain words, no essay jargon${lvl === 'A' ? ', no terms like narrative/thesis' : ''}.
+- OPENING: 2 sentences only. Name the exact feeling about THIS topic and one reason it is easier than it looks.
+- PART n TITLE: body parts only, short and inviting in ${lang}. Write "none" for intro/concl.
+- PART n PURPOSE: what the user talks about in that part, plain words in ${lang}.
+- PART n BEAT: the first-option sample sentence in English, at most 12 words. Together the beats tell the storyline.
+- CHECK: questions about the user's OWN text, no counts or rules.`;
     }
 
     function outlinePartList(lvl, parts) {
@@ -604,20 +719,19 @@ ${OUTLINE_SAMPLE[lvl]}`;
       olUpdatePart(state, i);
     }
 
-    // Used by a card's "try again" button: up to two calls, for that part only
+    // Used by a card's "try again" button: one call only, no auto-retry
     async function fillOutlinePart(state, i, run) {
-      let r = await tryOutlinePart(state, i);
-      if (!r.ok && run === _olRun) r = await tryOutlinePart(state, i, outlineRetryNote(r.problems));
+      const r = await tryOutlinePart(state, i);
       if (run !== _olRun) return;
       setOutlinePart(state, i, r);
     }
 
     function olFinalize(state) {
       const { lvl, vi, data, d, cacheKey, c } = state;
-      if (data.parts.every(p => olStatus(p) === 'ready') && d) {
-        d.outline = OL_PREFIX + JSON.stringify({ lvl, vi, data, c }); // Lưu thêm c
-        d.outlineKey = cacheKey;
-        saveDocs();
+      if (data.parts.every(p => olStatus(p) === 'ready')) {
+        const stored = OL_PREFIX + JSON.stringify({ lvl, vi, data, c });
+        olLsSet(cacheKey, stored);
+        if (d) { d.outline = stored; d.outlineKey = cacheKey; saveDocs(); }
       }
     }
 

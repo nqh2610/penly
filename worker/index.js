@@ -277,6 +277,19 @@ export default {
       return handleAdmin(request, env, url);
     }
 
+    // ── /validate — check if a Penly key exists and is active ──
+    if (url.pathname === "/validate" && request.method === "GET") {
+      const key = url.searchParams.get("key");
+      if (!key || !/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(key.trim().toUpperCase())) {
+        return json({ valid: false, reason: "invalid_format" });
+      }
+      const hash = await sha256(key.trim().toUpperCase());
+      const entry = await env.PENLY_KEYS.get(hash, "json");
+      if (!entry) return json({ valid: false, reason: "not_found" });
+      if (!entry.active) return json({ valid: false, reason: "disabled" });
+      return json({ valid: true });
+    }
+
     // ── /cf-ai — fallback endpoint (Gemini → OpenRouter → Cloudflare AI) ──
     if (url.pathname === "/cf-ai" && request.method === "POST") {
       let body;

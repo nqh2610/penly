@@ -4,10 +4,23 @@
 
     // ── LICENSE SYSTEM ──
     const LK_STORE = 'penly_lk';
+    const _lkCache = {}; // key -> { ok, ts }
+    const LK_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
     async function isValidKey(raw) {
       const key = raw.trim().toUpperCase();
-      return /^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(key);
+      if (!/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(key)) return false;
+      const cached = _lkCache[key];
+      if (cached && Date.now() - cached.ts < LK_CACHE_TTL) return cached.ok;
+      try {
+        const res = await fetch(WORKER_URL + '/validate?key=' + encodeURIComponent(key));
+        const data = await res.json();
+        _lkCache[key] = { ok: !!data.valid, ts: Date.now() };
+        return !!data.valid;
+      } catch {
+        // network error — fall back to format-only check so app still works offline
+        return true;
+      }
     }
 
     function getLicenseKey() { return localStorage.getItem(LK_STORE) || ''; }

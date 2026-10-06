@@ -208,6 +208,9 @@ tr:hover td{background:#f8fafc}
           <div class="field"><label>Groq API Key</label>
             <input id="newGroqKey" type="text" placeholder="gsk_...">
           </div>
+          <div class="field"><label>Gemini API Key <span style="color:var(--muted);font-weight:400">(tùy chọn)</span></label>
+            <input id="newGeminiKey" type="text" placeholder="AIza...">
+          </div>
           <button class="btn btn-primary" id="btnCreate" onclick="createKey()" style="flex-shrink:0">Tạo key</button>
         </div>
         <div class="new-key-box" id="newKeyBox">
@@ -249,6 +252,7 @@ tr:hover td{background:#f8fafc}
               <th class="col-key">Penly Key</th>
               <th class="col-date">Ngày tạo</th>
               <th class="col-status">Trạng thái</th>
+              <th style="white-space:nowrap">Gemini</th>
               <th class="col-actions">Thao tác</th>
             </tr>
           </thead>
@@ -279,7 +283,13 @@ tr:hover td{background:#f8fafc}
       <div class="field"><label>Groq API Key</label>
         <div class="input-reveal">
           <input id="editGroqKey" type="password" placeholder="gsk_...">
-          <button id="revealBtn" onclick="toggleReveal()" title="Hiện/ẩn key">👁</button>
+          <button id="revealBtn" onclick="toggleReveal('editGroqKey','revealBtn')" title="Hiện/ẩn key">👁</button>
+        </div>
+      </div>
+      <div class="field"><label>Gemini API Key <span style="color:var(--muted);font-weight:400">(tùy chọn — để trống nếu không dùng)</span></label>
+        <div class="input-reveal">
+          <input id="editGeminiKey" type="password" placeholder="AIza...">
+          <button id="revealBtn2" onclick="toggleReveal('editGeminiKey','revealBtn2')" title="Hiện/ẩn key">👁</button>
         </div>
       </div>
       <div class="field"><label>Penly Key (không thể sửa)</label>
@@ -387,7 +397,7 @@ function renderPage() {
 
   const tbody = document.getElementById('keyBody');
   if (!slice.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Không có key nào.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Không có key nào.</td></tr>';
   } else {
     tbody.innerHTML = slice.map((k, i) => {
       const num = start + i + 1;
@@ -396,12 +406,16 @@ function renderPage() {
         ? '<span class="badge badge-on">✓ Hoạt động</span>'
         : '<span class="badge badge-off">✕ Tắt</span>';
       const pk = k.penlyKey || '(ẩn)';
+      const gemBadge = k.geminiKey
+        ? '<span class="badge badge-on">✓</span>'
+        : '<span class="badge" style="background:var(--bg);color:var(--muted2)">—</span>';
       return `<tr>
         <td class="col-num">${num}</td>
         <td class="col-name">${k.name || '—'}</td>
         <td class="col-key"><span class="key-mono" onclick="copyText('${pk}')" title="Click để copy">${pk}</span></td>
         <td class="col-date">${date}</td>
         <td class="col-status">${badge}</td>
+        <td style="text-align:center">${gemBadge}</td>
         <td class="col-actions"><div class="actions">
           <button class="btn btn-sm btn-ghost" onclick="openEdit('${k.hash}')">Sửa</button>
           <button class="btn btn-sm ${k.active ? 'btn-warn' : 'btn-success'}" onclick="toggleKey('${k.hash}',${k.active})">${k.active ? 'Tắt' : 'Bật'}</button>
@@ -443,13 +457,14 @@ function goPage(p) {
 async function createKey() {
   const name = document.getElementById('newName').value.trim();
   const groqKey = document.getElementById('newGroqKey').value.trim();
+  const geminiKey = document.getElementById('newGeminiKey').value.trim();
   if (!name || !groqKey) { toast('Vui lòng nhập đủ tên và Groq key'); return; }
   const btn = document.getElementById('btnCreate');
   btn.disabled = true; btn.textContent = 'Đang tạo...';
   const res = await fetch(WORKER + '/admin/keys', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
-    body: JSON.stringify({ name, groqKey }),
+    body: JSON.stringify({ name, groqKey, geminiKey }),
   });
   const data = await res.json();
   btn.disabled = false; btn.textContent = 'Tạo key';
@@ -459,6 +474,7 @@ async function createKey() {
     box.classList.add('show');
     document.getElementById('newName').value = '';
     document.getElementById('newGroqKey').value = '';
+    document.getElementById('newGeminiKey').value = '';
     toast('Tạo key thành công!');
     loadKeys();
   } else {
@@ -496,6 +512,9 @@ function openEdit(hash) {
   document.getElementById('editGroqKey').value = k.groqKey || '';
   document.getElementById('editGroqKey').type = 'password';
   document.getElementById('revealBtn').textContent = '👁';
+  document.getElementById('editGeminiKey').value = k.geminiKey || '';
+  document.getElementById('editGeminiKey').type = 'password';
+  document.getElementById('revealBtn2').textContent = '👁';
   document.getElementById('editPenlyKey').value = k.penlyKey || '(ẩn)';
   document.getElementById('editModal').classList.add('open');
   document.getElementById('editName').focus();
@@ -506,9 +525,9 @@ function closeEdit() {
   editHash = '';
 }
 
-function toggleReveal() {
-  const inp = document.getElementById('editGroqKey');
-  const btn = document.getElementById('revealBtn');
+function toggleReveal(inputId, btnId) {
+  const inp = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
   if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
   else { inp.type = 'password'; btn.textContent = '👁'; }
 }
@@ -516,13 +535,14 @@ function toggleReveal() {
 async function saveEdit() {
   const name = document.getElementById('editName').value.trim();
   const groqKey = document.getElementById('editGroqKey').value.trim();
+  const geminiKey = document.getElementById('editGeminiKey').value.trim();
   if (!name || !groqKey) { toast('Vui lòng nhập đủ tên và Groq key'); return; }
   const btn = document.getElementById('btnSave');
   btn.disabled = true; btn.textContent = 'Đang lưu...';
   const res = await fetch(WORKER + '/admin/keys/' + editHash, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
-    body: JSON.stringify({ name, groqKey }),
+    body: JSON.stringify({ name, groqKey, geminiKey }),
   });
   btn.disabled = false; btn.textContent = 'Lưu thay đổi';
   const data = await res.json();

@@ -20,8 +20,10 @@
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const GEMINI_URL = (model, key) =>
+const GEMINI_URL_KEY = (model, key) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+const GEMINI_URL_BEARER = (model) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 const ALLOWED_MODELS = new Set([
   "openai/gpt-oss-120b",
@@ -152,11 +154,17 @@ async function handleAdmin(request, env, url) {
 async function callGemini(geminiKey, prompt, temperature, max_tokens) {
   if (!geminiKey || geminiKey.length < 20) return null;
 
+  // New-format keys (AQ...) use Bearer auth; legacy keys (AIza...) use ?key= param
+  const usesBearer = !geminiKey.startsWith('AIza');
+
   for (const model of GEMINI_MODELS) {
     try {
-      const res = await fetch(GEMINI_URL(model, geminiKey), {
+      const url = usesBearer ? GEMINI_URL_BEARER(model) : GEMINI_URL_KEY(model, geminiKey);
+      const headers = { "Content-Type": "application/json" };
+      if (usesBearer) headers["Authorization"] = `Bearer ${geminiKey}`;
+      const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -169,9 +177,7 @@ async function callGemini(geminiKey, prompt, temperature, max_tokens) {
       // Quota/rate errors — try next model
       if (res.status === 429 || res.status === 503 || data.error) {
         const errCode = data.error?.code;
-        // 429 = quota, 503 = overloaded — try next model
         if (errCode === 429 || errCode === 503 || res.status === 429 || res.status === 503) continue;
-        // Other errors — stop trying Gemini
         console.info(`[gemini] ${model} error ${errCode}: ${data.error?.message?.slice(0, 100)}`);
         return null;
       }
@@ -359,8 +365,10 @@ export default {
 
       const data = await groqRes.json();
 
-      if (data.choices?.[0]?.message?.content) {
-        return json({ content: data.choices[0].message.content });
+      const msg = data.choices?.[0]?.message;
+      const content = msg?.content || msg?.reasoning;
+      if (content) {
+        return json({ content });
       }
 
       const errMsg = data.error?.message || "Unknown error from AI";

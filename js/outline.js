@@ -655,19 +655,8 @@ ${OUTLINE_SAMPLE[lvl]}`;
       if (!_olState || !e.target || !e.target.closest) return;
       const retry = e.target.closest('.ol-retry');
       if (retry) { retryOutlinePart(+retry.dataset.i); return; }
-      const opt = e.target.closest('.ol-opt');
-      const part = e.target.closest('.ol-part');
-      if (opt && part) {
-        opt.parentNode.querySelectorAll('.ol-opt').forEach(b => b.classList.remove('on'));
-        opt.classList.add('on');
-        part.querySelector('.ol-prev-t').innerHTML = olPreviewHtml(_olState.data.parts[+part.dataset.i], olReadPicks(part));
-        return;
-      }
       const ins = e.target.closest('.ol-ins');
-      if (ins) {
-        const src = ins.closest('.ol-move') ? ins.closest('.ol-move').querySelector('.ol-move-t') : ins.parentNode.querySelector('.ol-prev-t');
-        if (src) insertOutlineText(src.textContent.trim());
-      }
+      if (ins && ins.dataset.en) insertOutlineText(ins.dataset.en);
     }
     const _olPanel = document.getElementById('pContent');
     if (_olPanel && _olPanel.addEventListener) _olPanel.addEventListener('click', onOutlineClick);
@@ -727,8 +716,8 @@ ${OUTLINE_SAMPLE[lvl]}`;
     }
 
     function olFinalize(state) {
-      const { lvl, vi, data, d, cacheKey, c } = state;
-      if (data.parts.every(p => olStatus(p) === 'ready')) {
+      const { vi, data, d, cacheKey, c, lvl } = state;
+      if (data.parts.every(p => p.status === 'ready')) {
         const stored = OL_PREFIX + JSON.stringify({ lvl, vi, data, c });
         olLsSet(cacheKey, stored);
         if (d) { d.outline = stored; d.outlineKey = cacheKey; saveDocs(); }
@@ -739,80 +728,117 @@ ${OUTLINE_SAMPLE[lvl]}`;
       const st = _olState;
       if (!st || !st.c) return;
       const run = _olRun;
-      const type = OUTLINE_PLAN[st.lvl].parts[i];
-      // Static parts don't need AI — just re-apply the template
-      if (type === 'intro' || type === 'concl') {
-        const p = type === 'intro' ? olStaticIntro(st.c, OUTLINE_PLAN[st.lvl]) : olStaticConcl(st.c, OUTLINE_PLAN[st.lvl]);
-        Object.assign(st.data.parts[i], p);
-        olUpdatePart(st, i);
-        olFinalize(st);
-        return;
-      }
       st.data.parts[i].status = 'pending';
       olUpdatePart(st, i);
       setBusy('btn-outline', true, false);
-      await fillOutlinePart(st, i, run);
+      const raw = await callAI(buildSimpleOutlinePrompt(st.c), 'btn-outline', true, true, 800);
       setBusy('btn-outline', false, false);
-      if (run === _olRun) olFinalize(st);
+      if (run !== _olRun) return;
+      if (!raw) { st.data.parts[i].status = 'failed'; olUpdatePart(st, i); return; }
+      const fresh = parseSimpleOutline(raw, st.c);
+      if (fresh.parts[i]) { Object.assign(st.data.parts[i], fresh.parts[i]); olUpdatePart(st, i); }
+      olFinalize(st);
     }
 
-    // 1. HÀM TẠO PROMPT GỘP MỚI
-    function buildUnifiedOutlinePrompt(c) {
-      const { tp, lvl, lang, L } = c;
-      const types = OUTLINE_PLAN[lvl].parts;
-      const partFmt = lvl === 'C'
-        ? `TITLE: <tên đoạn>\nPURPOSE: <1 câu ý chính bằng ${lang}>\nTALK: <1 câu hướng dẫn ngắn bằng ${lang}>\nMOVE: <tên biện pháp>\nOPTION: <mô tả> => <1-2 câu tiếng Anh>\nOPTION: <mô tả> => <1-2 câu tiếng Anh>\nOPTION: <mô tả> => <1-2 câu tiếng Anh>`
-        : `TITLE: <tên đoạn>\nPURPOSE: <1 câu ý chính bằng ${lang}>\nTALK: <1 câu hướng dẫn ngắn bằng ${lang}>\nPATTERN: <Mẫu câu tiếng Anh có ô trống {A} {B}>\nASK A: <câu hỏi bằng ${lang}>\nOPTIONS A: <nghĩa ${lang}> = <từ tiếng Anh> | <nghĩa> = <từ>\nASK B: <câu hỏi bằng ${lang}>\nOPTIONS B: <nghĩa ${lang}> = <từ tiếng Anh> | <nghĩa> = <từ>`;
+    // ── SIMPLE OUTLINE: 1 AI call, output = VI description + EN sample sentences ──
+    function buildSimpleOutlinePrompt(c) {
+      const { tp, lvl, lang, L, tone, aud } = c;
+      const vi = lang !== 'English';
+      const plan = OUTLINE_PLAN[lvl];
+      const parts = plan.parts;
+      const toneDesc = OUTLINE_TONES[tone] || '';
+      const audDesc = OUTLINE_AUDIENCES[aud] || '';
+      const numBody = parts.filter(t => t === 'body').length;
 
-      return `Write a COMPLETE write-along outline guide for "${tp}" in ONE single response. No JSON, plain text only.
-Level: ${L.code}. Guidance in ${lang}, English sentences natural.
-Keep it SHORT: 1-sentence TALK, exactly 2 options per slot, no EXTRA or TIP lines.
+      return `You are helping a ${L.code} learner write an essay about "${tp}".
+Tone: ${toneDesc}
+Audience: ${audDesc}
+${L.modelRule}
 
-KIND: <loại bài viết bằng ${lang}>
-OPENING: <2 câu động viên bằng ${lang}>
-STORYLINE: <1 câu tiếng Anh tóm tắt>
-CHECK: <câu hỏi kiểm tra 1>
-CHECK: <câu hỏi 2>
-CLOSING: <1 câu kết động viên>
+Write a simple outline. For EACH part below, write:
+- DESC: one short sentence in Vietnamese explaining what to write in that part
+- EN: ${lvl === 'A' ? '1 sample sentence' : lvl === 'B' ? '2 sample sentences' : '3 sample sentences'} in English (natural, fits the tone and audience)
 
-${types.map((t, i) => `=== PART ${i + 1} ===\n${partFmt}`).join('\n\n')}`;
+Respond in this EXACT format, nothing else:
+
+PART 1 INTRO
+DESC: <một câu tiếng Việt giải thích nội dung mở bài>
+EN: <${lvl === 'A' ? '1 câu' : lvl === 'B' ? '2 câu' : '3 câu'} tiếng Anh mẫu>
+
+${Array.from({ length: numBody }, (_, i) => `PART ${i + 2} BODY ${i + 1}
+DESC: <một câu tiếng Việt giải thích ý thân bài ${i + 1}>
+EN: <${lvl === 'A' ? '1 câu' : lvl === 'B' ? '2 câu' : '3 câu'} tiếng Anh mẫu>`).join('\n\n')}
+
+PART ${parts.length} CONCL
+DESC: <một câu tiếng Việt giải thích nội dung kết bài>
+EN: <${lvl === 'A' ? '1 câu' : lvl === 'B' ? '2 câu' : '3 câu'} tiếng Anh mẫu>`;
     }
 
-    // 2. HÀM PHÂN TÍCH KẾT QUẢ GỘP
-    function parseUnifiedOutline(raw, c) {
+    function parseSimpleOutline(raw, c) {
       const { lvl, vi } = c;
-      const expectedCount = OUTLINE_PLAN[lvl].parts.length;
-      const text = strip(String(raw || '')).replace(/<think>[\s\S]*?<\/think>/gi, '');
+      const plan = OUTLINE_PLAN[lvl];
+      const text = strip(String(raw || '')).replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think>/gi, '');
+      const X = OUTLINE_TXT[vi ? 'vi' : 'en'];
 
-      // Match "=== PART 1 ===" or "### PART 1" or "PART 1" at line start, consuming trailing separators
-      const matches = [...text.matchAll(/^[ \t]*(?:={2,}|#{2,})?[ \t]*PART[ \t]*(\d+)[^\n]*/gim)];
-      let planText = text;
-      const partTexts = Array(expectedCount).fill('');
-
-      if (matches.length > 0) {
-        planText = text.slice(0, matches[0].index);
-        for (let m = 0; m < matches.length; m++) {
-          const pNum = parseInt(matches[m][1], 10) - 1;
-          const start = matches[m].index + matches[m][0].length;
-          const end = (m + 1 < matches.length) ? matches[m + 1].index : text.length;
-          if (pNum >= 0 && pNum < expectedCount) partTexts[pNum] = text.slice(start, end);
-        }
+      // Split on PART N markers
+      const matches = [...text.matchAll(/^[ \t]*PART[ \t]*(\d+)[^\n]*/gim)];
+      const partTexts = Array(plan.parts.length).fill('');
+      for (let m = 0; m < matches.length; m++) {
+        const pNum = parseInt(matches[m][1], 10) - 1;
+        const start = matches[m].index + matches[m][0].length;
+        const end = m + 1 < matches.length ? matches[m + 1].index : text.length;
+        if (pNum >= 0 && pNum < plan.parts.length) partTexts[pNum] = text.slice(start, end).trim();
       }
 
-      const parsedPlan = parseOutlinePlan(planText, expectedCount) || {
-        kind: vi ? 'Bài viết cá nhân' : 'Personal Writing',
-        opening: vi ? 'Cùng lập dàn ý nhé!' : "Let's build an outline!",
-        checklist: [], closing: vi ? 'Viết câu đầu tiên nào!' : 'Start writing!'
-      };
-
-      const parts = partTexts.map((rawPart, i) => {
-        const titleMatch = rawPart ? rawPart.match(/^TITLE\s*:\s*(.*)$/im) : null;
-        const title = titleMatch ? titleMatch[1].trim() : 'none';
-        const parsedP = parseOutlinePart(rawPart);
-        const check = checkOutlinePart({ lvl, vi }, i, parsedP, 'Lỗi định dạng');
-        return check.ok ? { title, status: 'ready', ...check.ok } : { title, status: 'failed', problems: check.problems };
+      const parts = plan.parts.map((type, i) => {
+        const chunk = partTexts[i] || '';
+        const descM = chunk.match(/^DESC\s*:\s*(.+)$/im);
+        const enM = chunk.match(/^EN\s*:\s*([\s\S]+?)(?=\n[A-Z]+\s*:|$)/im);
+        const desc = descM ? descM[1].trim() : '';
+        const en = enM ? enM[1].replace(/\n/g, ' ').trim() : '';
+        if (!desc && !en) return { status: 'failed', type };
+        return { status: 'ready', type, desc, en };
       });
 
-      return { ...parsedPlan, parts };
+      return { parts };
+    }
+
+    function renderSimpleOutlineHtml(state) {
+      const { vi, data } = state;
+      const X = OUTLINE_TXT[vi ? 'vi' : 'en'];
+      const _e = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      let h = '<div class="ol">';
+
+      data.parts.forEach((p, i) => {
+        const typeName = p.type === 'intro' ? X.intro : p.type === 'concl' ? X.concl : `${X.body} ${data.parts.slice(0, i).filter(x => x.type === 'body').length + 1}`;
+        const icon = p.type === 'intro' ? '📝' : p.type === 'concl' ? '🏁' : ['🌱', '🌿', '🍀'][data.parts.slice(0, i).filter(x => x.type === 'body').length] || '🌿';
+        h += `<article class="ol-part" data-i="${i}">`;
+        h += `<div class="ol-part-h"><span class="ol-num">${i + 1}</span><h3>${icon} ${_e(typeName)}</h3></div>`;
+        h += `<div class="ol-part-body">`;
+        if (p.status === 'pending') {
+          h += `<div class="ol-skel"><div class="ol-sk-line"></div><div class="ol-sk-line" style="width:70%"></div></div><p class="ol-writing">${_e(X.writing)}</p>`;
+        } else if (p.status === 'failed') {
+          h += `<p class="ol-fail">${_e(X.partFail)}</p><button class="ol-retry" data-i="${i}">${_e(X.retry)}</button>`;
+        } else {
+          h += `<p class="ol-talk">${_e(p.desc)}</p>`;
+          h += `<div class="ol-en-block">${_e(p.en)}<button class="ol-ins" data-en="${_e(p.en)}">${_e(X.insert)}</button></div>`;
+        }
+        h += `</div></article>`;
+      });
+
+      h += '</div>';
+      return h;
+    }
+
+    function renderOutlineHtml(state) {
+      return renderSimpleOutlineHtml(state);
+    }
+
+    function buildUnifiedOutlinePrompt(c) {
+      return buildSimpleOutlinePrompt(c);
+    }
+
+    function parseUnifiedOutline(raw, c) {
+      return parseSimpleOutline(raw, c);
     }
 

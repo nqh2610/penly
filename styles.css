@@ -2046,6 +2046,26 @@
       margin: .2rem 0 .8rem
     }
 
+    .ol-en-block {
+      background: var(--surface2);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: .7rem .9rem;
+      font-size: .9rem;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: .6rem;
+      display: flex;
+      align-items: flex-start;
+      gap: .7rem;
+      flex-wrap: wrap
+    }
+
+    .ol-en-block .ol-ins {
+      margin-top: .1rem;
+      flex-shrink: 0
+    }
+
     .ol-slot {
       margin: .8rem 0
     }

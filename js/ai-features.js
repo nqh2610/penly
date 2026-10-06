@@ -7,32 +7,44 @@
       const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
       const vi = uiLang !== 'en';
 
+      const normTp = olNormTopic(tp);
+      const cacheKey = `v16|${normTp}|${lvl}|${tone}|${aud}|${lang}`;
+
+      // 1. Doc cache
       const d = getDoc(currentId);
-      const cacheKey = `v12|${tp}|${lvl}|${tone}|${aud}|${lang}`;
       if (d && d.outline && d.outlineKey === cacheKey && String(d.outline).startsWith(OL_PREFIX)) {
         showOutline(d.outline); return;
       }
+      // 2. localStorage cache
+      const lsCached = olLsGet(cacheKey);
+      if (lsCached && String(lsCached).startsWith(OL_PREFIX)) {
+        showOutline(lsCached);
+        if (d) { d.outline = lsCached; d.outlineKey = cacheKey; saveDocs(); }
+        return;
+      }
 
+      if (_olAbort) { _olAbort.abort(); _olAbort = null; }
       const run = ++_olRun;
       const c = { tp, lvl, tone, aud, L, lang };
+      const plan = OUTLINE_PLAN[lvl];
 
+      // Show skeleton
       showOutlineState({
         lvl, vi, c, d, cacheKey,
-        data: {
-          kind: vi ? 'Đang tạo dàn ý...' : 'Creating outline...',
-          opening: vi ? 'AI đang thiết kế dàn ý siêu tốc...' : 'Generating outline...',
-          checklist: [], parts: Array.from({ length: OUTLINE_PLAN[lvl].parts.length }, () => ({ status: 'pending' }))
-        }
+        data: { parts: plan.parts.map(type => ({ status: 'pending', type })) }
       });
 
       setBusy('btn-outline', true, false);
-      const raw = await callAI(buildUnifiedOutlinePrompt(c), 'btn-outline', false, false, 2200);
+      const raw = await callAI(buildSimpleOutlinePrompt(c), 'btn-outline', true, true, 800);
       setBusy('btn-outline', false, false);
 
       if (run !== _olRun) return;
-      if (!raw) return showOutlineError(vi);
+      if (!raw) {
+        const outage = aiOutageInfo();
+        return showOutlineError(vi, outage || null);
+      }
 
-      const state = { lvl, vi, data: parseUnifiedOutline(raw, c), c, d, cacheKey };
+      const state = { lvl, vi, data: parseSimpleOutline(raw, c), c, d, cacheKey };
       showOutlineState(state);
       olFinalize(state);
     }

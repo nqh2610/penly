@@ -99,6 +99,9 @@ RULES:
       editor.dispatchEvent(new Event('input')); toast(t('toast-fixed'), 's');
     };
 
+    // Suggest cache: keyed by para state hash, holds parsed result
+    const _suggestCache = new Map();
+
     async function callSuggest() {
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text-short'));
@@ -121,6 +124,13 @@ RULES:
       const isIntro = totalParas === 1;
       const isNewPara = currentPara.trim().length < 20;
       const isParaLong = sentencesInPara >= 3;
+
+      // Cache key: all inputs that affect output
+      const cacheKey = `${topic()}|${lvlSel.value}|${uiLang}|${totalParas}|${currentPara.trim().slice(0, 300)}`;
+      if (_suggestCache.has(cacheKey)) {
+        openPanel(t('panel-suggest'), '', _suggestCache.get(cacheKey));
+        return;
+      }
 
       // Dynamic 3 angles based on context
       const angles = isIntro && sentencesInPara <= 1
@@ -147,10 +157,13 @@ RULES:
               `add a personal feeling, experience, or opinion that connects to the last sentence`,
             ];
 
-      const levelRules = `STRICTLY match the user's level:
-- A1/A2: max 8–10 words, basic vocabulary, "and/but/so" connectors only
-- B1/B2: 12–18 words, varied vocab, "because/when/although/however" are fine
-- C1/C2: 15–25 words, rich vocabulary, complex structures welcome`;
+      // Level rule for active level only
+      const lvlCode = (lvlSel.value.match(/^[ABC]/) || ['B'])[0];
+      const levelRule = lvlCode === 'A'
+        ? 'Max 8–10 words, basic vocabulary, "and/but/so" connectors only'
+        : lvlCode === 'C'
+          ? '15–25 words, rich vocabulary, complex structures welcome'
+          : '12–18 words, varied vocab, "because/when/although/however" are fine';
 
       const r = await callAI(
         `You are an English writing coach helping a user write a well-structured essay.
@@ -171,7 +184,7 @@ Generate exactly 3 next sentences, each with a DIFFERENT purpose:
 
 Rules for ALL sentences:
 1. Do NOT repeat or restate anything already written above
-2. ${levelRules}
+2. STRICTLY match the user's level: ${levelRule}
 3. Sound natural — NOT textbook-formal
 4. NO em dash (—). Use comma or "and/but" instead.
 5. Vietnamese translation: natural spoken Vietnamese with appropriate pronouns
@@ -187,6 +200,7 @@ Return ONLY a valid JSON array, no other text:
       if (!r) return;
       try {
         const arr = JSON.parse(strip(r));
+        _suggestCache.set(cacheKey, arr);
         openPanel(t('panel-suggest'), '', arr);
       } catch {
         openPanel(t('panel-suggest'), r, null);
@@ -210,63 +224,56 @@ Return ONLY a valid JSON array, no other text:
       const baseText = improveOriginalText;
 
       setPanelTitle('panel-improve');
-      const r = await callAI(
-        `You are an expert English language editor and experienced ESL writing coach. Your task is to IMPROVE the user's writing — not rewrite it, not simplify it, not replace their ideas.
 
-user's ORIGINAL text (baseline — never improve beyond this):
+      const improveLevel = (lvlSel.value.match(/^[ABC]/) || ['B'])[0];
+      const improveRule = improveLevel === 'A'
+        ? 'Fix unnatural phrasing → more natural simple expressions; add ONE basic connector (e.g. "and", "so", "because") where missing; correct word order issues'
+        : improveLevel === 'C'
+          ? 'Elevate to sophisticated vocabulary; vary sentence structures; add discourse markers; improve cohesion and coherence'
+          : 'Replace repetitive/weak words with more precise vocabulary; combine short choppy sentences into smoother ones; add transitional phrases ("In addition", "However", "As a result")';
+
+      const r = await callAI(
+        `You are an expert English editor and ESL writing coach. IMPROVE the user's writing — do not rewrite or replace their ideas.
+
+user's ORIGINAL text:
 """
 ${baseText}
 """
-${baseText !== text ? `\nuser's CURRENT text (already improved once — use this as the starting point, but compare against the original above to avoid over-editing):
+${baseText !== text ? `\nuser's CURRENT text (already improved once — use as starting point, avoid over-editing):
 """
 ${text}
 """` : ''}
 ${ctx()}
 Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 
-LANGUAGE RULE: Write ALL section headings, explanations, tips, and change descriptions in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
+LANGUAGE RULE: Write ALL headings, explanations, and tips in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
 
-## YOUR TASK: Style Upgrade
+**KEEP:** Every idea, fact, detail, narrator voice, emotional tone. Do NOT add or remove content.
+**IMPROVE (level ${improveLevel}):** ${improveRule}
 
-You must EDIT the user's text to make it sound more natural and fluent. Follow these strict rules:
+**RULES:**
+- NEVER invent new content
+- NEVER use em dash (—)
+- NEVER change word count by more than 30% vs ORIGINAL
+- If improved once, focus on a DIFFERENT aspect
+- Bold (**word**) ONLY words/phrases changed from current version
 
-**WHAT YOU MUST KEEP (never change these):**
-- Every idea, fact, event, and detail the user wrote — do NOT add new content, do NOT remove content
-- The narrator's voice and perspective (I/we/he/she)
-- The emotional tone the user intended
-- The proficiency level context: ${ctx()}
-
-**WHAT YOU SHOULD IMPROVE (based on level):**
-- A1/A2: Fix unnatural phrasing → more natural simple expressions; add ONE basic connector (e.g. "and", "so", "because") where missing; correct word order issues
-- B1/B2: Replace repetitive/weak words with more precise vocabulary; combine short choppy sentences into smoother ones; add transitional phrases ("In addition", "However", "As a result")
-- C1/C2: Elevate to sophisticated vocabulary; vary sentence structures; add discourse markers; improve cohesion and coherence
-
-**ABSOLUTE RULES:**
-- NEVER invent new content (new people, new events, new emotions not in the original)
-- NEVER use em dash (—). Use comma or "and/but/so" instead
-- NEVER downgrade: if user wrote "I want to tell you about", keep the meaning — don't simplify to "I will talk about"
-- NEVER change the word count by more than 30% compared to the ORIGINAL text
-- If the text has already been improved once, focus on a DIFFERENT aspect (e.g. if vocabulary was improved before, now improve sentence flow or connectors) — do NOT pile more synonyms onto already-upgraded words
-- Bold (**word**) ONLY the words/phrases you changed from the current version
-
-%%IMPROVED_START%%
-(Write ONLY the improved version here. Bold every changed word/phrase. No headings, no markdown except bold.)
-%%IMPROVED_END%%
+%%S%%
+(Improved text only. Bold changed words. No headings.)
+%%E%%
 
 ## ✏️ ${uiLang === 'en' ? 'Changes made' : 'Thay đổi'}
-
-*(${uiLang === 'en' ? 'List only actual changes. Format: original → improved — short reason, 1 sentence' : 'Liệt kê thay đổi. Format: gốc → cải thiện — lý do ngắn, 1 câu'})*
+*(${uiLang === 'en' ? 'original → improved — short reason' : 'gốc → cải thiện — lý do ngắn'})*
 
 ## 💡 ${uiLang === 'en' ? 'Practice tips' : 'Mẹo luyện tập'}
-
-*(${uiLang === 'en' ? '1–2 practical tips related to this text' : '1–2 mẹo thực dụng, gắn với bài này'})*`,
+*(${uiLang === 'en' ? '1–2 practical tips' : '1–2 mẹo thực dụng'})*`,
         'btn-improve'
       );
       if (!r) return;
 
       // extract improved text — try marker first, fallback to first paragraph block
       let improvedText = null;
-      const markerMatch = r.match(/%%IMPROVED_START%%\s*([\s\S]*?)\s*%%IMPROVED_END%%/);
+      const markerMatch = r.match(/%%S%%\s*([\s\S]*?)\s*%%E%%/);
       if (markerMatch) {
         improvedText = markerMatch[1].trim();
       } else {
@@ -282,7 +289,7 @@ You must EDIT the user's text to make it sound more natural and fluent. Follow t
       }
 
       // strip markers from displayed markdown
-      const displayMd = r.replace(/%%IMPROVED_START%%[\s\S]*?%%IMPROVED_END%%/,
+      const displayMd = r.replace(/%%S%%[\s\S]*?%%E%%/,
         improvedText ? improvedText : '');
 
       openPanel(t('panel-improve'), displayMd, null);
@@ -405,13 +412,22 @@ LANGUAGE RULE: Write ALL feedback, section headings, explanations, and suggestio
       if (!tp && !text) return toast(t('no-text-vocab'));
       setPanelTitle('panel-vocab');
 
-      // Cache check — reuse if same topic/level/lang
+      // Cache check — doc-level first, then localStorage
       const d = getDoc(currentId);
       const vocabKey = `${tp}|${lvlSel.value}|${uiLang}`;
       if (d && d.vocab && d.vocabKey === vocabKey) {
         openPanel(t('panel-vocab'), d.vocab, null);
         return;
       }
+      const lsVocabKey = `vocab|${vocabKey}`;
+      try {
+        const lsCached = localStorage.getItem(lsVocabKey);
+        if (lsCached) {
+          if (d) { d.vocab = lsCached; d.vocabKey = vocabKey; saveDocs(); }
+          openPanel(t('panel-vocab'), lsCached, null);
+          return;
+        }
+      } catch (_) {}
 
       const r = await callAI(
         `You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for this user.
@@ -493,10 +509,11 @@ Rules:
         'btn-vocab',
         false,
         false,
-        3500
+        1800
       );
       if (r) {
         if (d) { d.vocab = r; d.vocabKey = vocabKey; saveDocs(); }
+        try { localStorage.setItem(lsVocabKey, r); } catch (_) {}
         openPanel(t('panel-vocab'), r, null);
       }
     }

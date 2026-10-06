@@ -127,9 +127,9 @@ TIP: Nói họ đúng ở đâu trước, rồi mới chỉ ra họ chưa nhìn 
     let _olRun = 0;
     let _olAbort = null; // AbortController for cancelling in-flight outline calls
 
-    // ── localStorage cache (cross-session, TTL 7 days) ──
+    // ── localStorage cache (cross-session, TTL 30 days) ──
     const OL_LS_PREFIX = 'penly_ol_';
-    const OL_LS_TTL = 7 * 24 * 60 * 60 * 1000;
+    const OL_LS_TTL = 30 * 24 * 60 * 60 * 1000;
     function olLsGet(key) {
       try {
         const raw = localStorage.getItem(OL_LS_PREFIX + key);
@@ -144,11 +144,13 @@ TIP: Nói họ đúng ở đâu trước, rồi mới chỉ ra họ chưa nhìn 
     }
 
     // ── smart topic normalization for cache key ──
-    // Strips punctuation, lowercases, removes common stop words, sorts tokens
+    // Strips punctuation, lowercases, removes diacritics, removes stop words, sorts tokens
     const _OL_STOPS = new Set('a an the my your our his her its this that these those i we you he she they it of in on at to for with about'.split(' '));
     function olNormTopic(tp) {
-      const tokens = String(tp).toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').trim().split(/\s+/).filter(w => w && !_OL_STOPS.has(w));
-      return tokens.sort().join(' ') || String(tp).toLowerCase().trim();
+      // NFD decompose → strip combining diacritics (handles Vietnamese, accented Latin)
+      const stripped = String(tp).normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const tokens = stripped.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').trim().split(/\s+/).filter(w => w && !_OL_STOPS.has(w));
+      return tokens.sort().join(' ') || stripped.toLowerCase().trim();
     }
 
     // ── static intro/concl templates (no AI needed) ──

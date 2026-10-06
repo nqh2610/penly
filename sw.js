@@ -1,9 +1,22 @@
-const CACHE = 'writing-coach-v1';
+const CACHE = 'writing-coach-v2';
 const ASSETS = [
   './index.html',
+  './styles.css',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './js/core.js',
+  './js/docs.js',
+  './js/editor.js',
+  './js/ai-core.js',
+  './js/outline.js',
+  './js/ai-features.js',
+  './js/file.js',
+  './js/settings.js',
+  './js/tts.js',
+  './js/context-menu.js',
+  './js/pwa.js',
+  './js/i18n.js'
 ];
 
 // Install: cache core assets

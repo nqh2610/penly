@@ -1969,54 +1969,345 @@
     }
 
     /* ── Outline guide (interactive builder) ── */
-    .ol { font-size: .86rem; color: var(--text2); line-height: 1.55 }
-    .ol h2 { font-size: .96rem; margin: 1.1rem 0 .4rem }
-    .ol-lead { color: var(--text); font-weight: 500; margin: .2rem 0 .5rem }
-    .ol-meta { margin: 0 0 .35rem; color: var(--text) }
-    .ol-note { font-size: .78rem; color: var(--muted); margin: 0 0 .5rem }
-    .ol-road { list-style: none; padding: 0; margin: .4rem 0 .5rem; counter-reset: olr }
-    .ol-road li { counter-increment: olr; display: flex; flex-direction: column; padding: .4rem .6rem .4rem 2rem; margin-bottom: .3rem; border-radius: 9px; background: var(--bg); position: relative }
-    .ol-road li::before { content: counter(olr); position: absolute; left: .55rem; top: .45rem; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: .68rem; font-weight: 700; display: flex; align-items: center; justify-content: center }
-    .ol-road li b { color: var(--text); font-size: .84rem }
-    .ol-road li span { font-size: .76rem; color: var(--muted) }
-    .ol-part { border: 1px solid var(--border); border-radius: 13px; padding: .85rem .9rem; margin: .9rem 0; background: var(--surface) }
-    .ol-part-h { display: flex; align-items: center; gap: .55rem; margin-bottom: .4rem }
-    .ol-part-h h3 { margin: 0; font-size: .97rem }
-    .ol-num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none }
-    .ol-talk { color: var(--text2); line-height: 1.65; margin: .2rem 0 .8rem }
-    .ol-slot { margin: .8rem 0 }
-    .ol-q { font-size: .8rem; font-weight: 700; color: var(--text); margin-bottom: .4rem; display: flex; align-items: center; gap: .45rem }
-    .ol-q i { font-style: normal; width: 20px; height: 20px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-size: .72rem; display: flex; align-items: center; justify-content: center; flex: none }
-    .ol-q small { font-weight: 500; color: var(--muted) }
-    .ol-opts { display: grid; gap: .35rem }
-    .ol-opt, .ol-move { text-align: left; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); border-radius: 10px; padding: .45rem .7rem; font: inherit; display: flex; flex-direction: column; gap: 1px }
-    .ol-opt { cursor: pointer; transition: border-color .12s, background .12s }
-    .ol-opt:hover { border-color: var(--accent) }
-    .ol-opt.on { border-color: var(--accent); background: var(--accent-soft) }
-    .ol-en { font-weight: 600; font-size: .9rem; color: var(--text); font-style: normal }
-    .ol-gl { font-size: .75rem; color: var(--muted); font-style: normal }
-    .ol-move { margin-bottom: .4rem; gap: 3px }
-    .ol-prev { margin-top: .9rem; border-radius: 10px; background: var(--accent-soft); border-left: 3px solid var(--accent); padding: .6rem .75rem }
-    .ol-prev-l { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); margin-bottom: 2px }
-    .ol-prev-t { font-size: .94rem; line-height: 1.65; color: var(--text); font-weight: 500 }
-    .ol-prev-t mark { background: transparent; color: var(--accent); font-weight: 700; border-bottom: 2px solid var(--accent) }
-    .ol-ins { margin-top: .5rem; border: none; background: var(--accent); color: #fff; border-radius: 8px; padding: .38rem .8rem; font-size: .76rem; font-weight: 600; cursor: pointer }
-    .ol-ins:hover { background: var(--accent-h) }
-    .ol-ins-s { align-self: flex-start }
-    .ol-own { font-size: .75rem; color: var(--muted); margin: .55rem 0 0 }
-    .ol-extra { margin-top: .8rem; font-size: .78rem }
-    .ol-chip { display: inline-block; border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; margin: 3px 4px 0 0; background: var(--bg); color: var(--text); font-weight: 600 }
-    .ol-chip small { color: var(--muted); font-weight: 400 }
-    .ol-tip { margin-top: .8rem; padding: .5rem .7rem; border-radius: 9px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: .8rem }
-    [data-theme="dark"] .ol-tip { background: #2a2410; border-color: #4a3f12; color: #fcd34d }
-    .ol-check { list-style: none; padding: 0; margin: .3rem 0 .6rem }
-    .ol-check li { margin: .3rem 0 }
-    .ol-check label { display: flex; gap: .5rem; align-items: flex-start; cursor: pointer }
-    .ol-check input { margin-top: .25rem }
-    .ol-skel i { display: block; height: 12px; border-radius: 6px; margin: 9px 0; background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%); background-size: 200% 100%; animation: olsk 1.2s linear infinite }
-    .ol-skel i:nth-child(2) { width: 86% }
-    .ol-skel i:nth-child(3) { width: 62% }
-    @keyframes olsk { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+    .ol {
+      font-size: .86rem;
+      color: var(--text2);
+      line-height: 1.55
+    }
+
+    .ol h2 {
+      font-size: .96rem;
+      margin: 1.1rem 0 .4rem
+    }
+
+    .ol-lead {
+      color: var(--text);
+      font-weight: 500;
+      margin: .2rem 0 .5rem
+    }
+
+    .ol-meta {
+      margin: 0 0 .35rem;
+      color: var(--text)
+    }
+
+    .ol-note {
+      font-size: .78rem;
+      color: var(--muted);
+      margin: 0 0 .5rem
+    }
+
+    .ol-road {
+      list-style: none;
+      padding: 0;
+      margin: .4rem 0 .5rem;
+      counter-reset: olr
+    }
+
+    .ol-road li {
+      counter-increment: olr;
+      display: flex;
+      flex-direction: column;
+      padding: .4rem .6rem .4rem 2rem;
+      margin-bottom: .3rem;
+      border-radius: 9px;
+      background: var(--bg);
+      position: relative
+    }
+
+    .ol-road li::before {
+      content: counter(olr);
+      position: absolute;
+      left: .55rem;
+      top: .45rem;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: .68rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .ol-road li b {
+      color: var(--text);
+      font-size: .84rem
+    }
+
+    .ol-road li span {
+      font-size: .76rem;
+      color: var(--muted)
+    }
+
+    .ol-part {
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: .85rem .9rem;
+      margin: .9rem 0;
+      background: var(--surface)
+    }
+
+    .ol-part-h {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      margin-bottom: .4rem
+    }
+
+    .ol-part-h h3 {
+      margin: 0;
+      font-size: .97rem
+    }
+
+    .ol-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: .75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none
+    }
+
+    .ol-talk {
+      color: var(--text2);
+      line-height: 1.65;
+      margin: .2rem 0 .8rem
+    }
+
+    .ol-slot {
+      margin: .8rem 0
+    }
+
+    .ol-q {
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: .4rem;
+      display: flex;
+      align-items: center;
+      gap: .45rem
+    }
+
+    .ol-q i {
+      font-style: normal;
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: .72rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none
+    }
+
+    .ol-q small {
+      font-weight: 500;
+      color: var(--muted)
+    }
+
+    .ol-opts {
+      display: grid;
+      gap: .35rem
+    }
+
+    .ol-opt,
+    .ol-move {
+      text-align: left;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 10px;
+      padding: .45rem .7rem;
+      font: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 1px
+    }
+
+    .ol-opt {
+      cursor: pointer;
+      transition: border-color .12s, background .12s
+    }
+
+    .ol-opt:hover {
+      border-color: var(--accent)
+    }
+
+    .ol-opt.on {
+      border-color: var(--accent);
+      background: var(--accent-soft)
+    }
+
+    .ol-en {
+      font-weight: 600;
+      font-size: .9rem;
+      color: var(--text);
+      font-style: normal
+    }
+
+    .ol-gl {
+      font-size: .75rem;
+      color: var(--muted);
+      font-style: normal
+    }
+
+    .ol-move {
+      margin-bottom: .4rem;
+      gap: 3px
+    }
+
+    .ol-prev {
+      margin-top: .9rem;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      border-left: 3px solid var(--accent);
+      padding: .6rem .75rem
+    }
+
+    .ol-prev-l {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 2px
+    }
+
+    .ol-prev-t {
+      font-size: .94rem;
+      line-height: 1.65;
+      color: var(--text);
+      font-weight: 500
+    }
+
+    .ol-prev-t mark {
+      background: transparent;
+      color: var(--accent);
+      font-weight: 700;
+      border-bottom: 2px solid var(--accent)
+    }
+
+    .ol-ins {
+      margin-top: .5rem;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 8px;
+      padding: .38rem .8rem;
+      font-size: .76rem;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    .ol-ins:hover {
+      background: var(--accent-h)
+    }
+
+    .ol-ins-s {
+      align-self: flex-start
+    }
+
+    .ol-own {
+      font-size: .75rem;
+      color: var(--muted);
+      margin: .55rem 0 0
+    }
+
+    .ol-extra {
+      margin-top: .8rem;
+      font-size: .78rem
+    }
+
+    .ol-chip {
+      display: inline-block;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 10px;
+      margin: 3px 4px 0 0;
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 600
+    }
+
+    .ol-chip small {
+      color: var(--muted);
+      font-weight: 400
+    }
+
+    .ol-tip {
+      margin-top: .8rem;
+      padding: .5rem .7rem;
+      border-radius: 9px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      font-size: .8rem
+    }
+
+    [data-theme="dark"] .ol-tip {
+      background: #2a2410;
+      border-color: #4a3f12;
+      color: #fcd34d
+    }
+
+    .ol-check {
+      list-style: none;
+      padding: 0;
+      margin: .3rem 0 .6rem
+    }
+
+    .ol-check li {
+      margin: .3rem 0
+    }
+
+    .ol-check label {
+      display: flex;
+      gap: .5rem;
+      align-items: flex-start;
+      cursor: pointer
+    }
+
+    .ol-check input {
+      margin-top: .25rem
+    }
+
+    .ol-skel i {
+      display: block;
+      height: 12px;
+      border-radius: 6px;
+      margin: 9px 0;
+      background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%);
+      background-size: 200% 100%;
+      animation: olsk 1.2s linear infinite
+    }
+
+    .ol-skel i:nth-child(2) {
+      width: 86%
+    }
+
+    .ol-skel i:nth-child(3) {
+      width: 62%
+    }
+
+    @keyframes olsk {
+      from {
+        background-position: 200% 0
+      }
+
+      to {
+        background-position: -200% 0
+      }
+    }
 
 
     /* ═══ SETTINGS DRAWER ═══ */
@@ -4713,10 +5004,10 @@ Gợi ý:
 
       const prompt = currentParaWords < 4 && essayStage !== 'new paragraph start'
         // Very short text — just get started
-        ? `You are an English writing coach helping a student practise writing.
+        ? `You are an English writing coach helping a user practise writing.
 Topic: "${tp || 'general'}"
 ${ctx()}
-The student has just started: "${currentPara.trim()}"
+The user has just started: "${currentPara.trim()}"
 ${prevSummary}
 Task: Suggest ONE natural next sentence to help them continue.
 ${levelRules}
@@ -4725,11 +5016,11 @@ ${levelRules}
 
         : essayStage === 'new paragraph start'
           // User pressed Enter — starting a new paragraph
-          ? `You are an English writing coach helping a student practise writing.
+          ? `You are an English writing coach helping a user practise writing.
 Topic: "${tp || 'general'}"
 ${ctx()}
 ${prevSummary}
-The student is starting a NEW paragraph.
+The user is starting a NEW paragraph.
 Task: Suggest ONE strong topic sentence that introduces a NEW idea not yet covered above.
 ${levelRules}
 - The sentence must be clearly different from previous paragraphs
@@ -4737,18 +5028,18 @@ ${levelRules}
 
           : !endsWithPunct
             // Mid-sentence — complete the current sentence
-            ? `You are an English writing coach helping a student practise writing.
+            ? `You are an English writing coach helping a user practise writing.
 Topic: "${tp || 'general'}"
 ${ctx()}
 Current paragraph so far: "${currentPara.trim()}"
-The student stopped mid-sentence. The unfinished part: "...${currentPara.trim().split(/\s+/).slice(-10).join(' ')}"
+The user stopped mid-sentence. The unfinished part: "...${currentPara.trim().split(/\s+/).slice(-10).join(' ')}"
 Task: Complete this unfinished sentence naturally — add only the missing ending words.
 - Match the sentence's meaning and vocabulary exactly
 - Do NOT start a new sentence
 - NO em dash (—), NO quotes, NO explanation — output only the completion words`
 
             // End of sentence — suggest what comes next based on role
-            : `You are an English writing coach helping a student practise writing.
+            : `You are an English writing coach helping a user practise writing.
 Topic: "${tp || 'general'}"
 ${ctx()}
 ${prevSummary ? prevSummary + '\n' : ''}Current paragraph (sentence ${sentencesInPara} of this paragraph):
@@ -4787,20 +5078,20 @@ ${levelRules}
       A: {
         code: 'A1–A2',
         struggle: 'afraid of not knowing enough words or grammar, and frozen by a blank page',
-        topicRule: 'ALWAYS write about the student\'s OWN life. A general topic such as "family" means "my family"; "hobby" means "my hobby". Every option must be something the student can answer from their own memory with everyday words (people, things they do, how they feel).',
-        modelRule: 'English: sentences of 5–9 words, simple present only, the 1000 most common words. Guidance text: the simplest everyday words, very short sentences, NO grammar jargon. Describe each part by what the student will TALK ABOUT (e.g. "Giới thiệu một người trong nhà"), never by essay terms.'
+        topicRule: 'ALWAYS write about the user\'s OWN life. A general topic such as "family" means "my family"; "hobby" means "my hobby". Every option must be something the user can answer from their own memory with everyday words (people, things they do, how they feel).',
+        modelRule: 'English: sentences of 5–9 words, simple present only, the 1000 most common words. Guidance text: the simplest everyday words, very short sentences, NO grammar jargon. Describe each part by what the user will TALK ABOUT (e.g. "Giới thiệu một người trong nhà"), never by essay terms.'
       },
       B: {
         code: 'B1–B2',
         struggle: 'ideas feel thin, sentences repeat the same pattern, and paragraphs do not connect',
-        topicRule: 'If the topic is a general noun or an open question, choose the angle that matches the tone (personal story, opinion, argument) and keep a personal anchor the student can supply from their own experience.',
+        topicRule: 'If the topic is a general noun or an open question, choose the angle that matches the tone (personal story, opinion, argument) and keep a personal anchor the user can supply from their own experience.',
         modelRule: 'English: sentences of 10–18 words, natural and varied, with a connector where it fits. Guidance text: clear and friendly; explain any writing term in a few plain words.'
       },
       C: {
         code: 'C1–C2',
         struggle: 'getting past the obvious points, finding an original angle, and analysing instead of just describing',
-        topicRule: 'Push beyond the obvious: offer genuinely distinct angles, including at least one less common one, and keep a personal anchor or concrete case the student can supply.',
-        modelRule: 'English: sentences of 18–30 words, sophisticated structure and precise collocations, like strong published prose. Guidance text: precise and respectful of the student\'s ability; technical terms are fine.'
+        topicRule: 'Push beyond the obvious: offer genuinely distinct angles, including at least one less common one, and keep a personal anchor or concrete case the user can supply.',
+        modelRule: 'English: sentences of 18–30 words, sophisticated structure and precise collocations, like strong published prose. Guidance text: precise and respectful of the user\'s ability; technical terms are fine.'
       }
     };
 
@@ -4809,7 +5100,7 @@ ${levelRules}
       casual: `Friendly personal talk. Body paragraphs are personal reasons or experiences told like chatting to someone. Ideas grow from "what happened to me / what I do". Contractions and direct address are fine.`,
       humorous: `Each body paragraph is one FUNNY ANGLE (exaggeration, surprise, self-mockery, unexpected comparison). For each, show where the setup goes and where the punchline goes. Still keep a clear idea underneath.`,
       professional: `Formal argument. Body paragraphs follow claim → reason → evidence → implication. Impersonal voice, avoid "I" and slang. Ideas grow from facts, data, institutions and cause-effect logic.`,
-      persuasive: `Persuasive argument. Choose a clear position, order the reasons from strongest to supporting, include one counter-argument that the student answers, and end with a call to action. Ideas grow from reason → proof → rebuttal.`,
+      persuasive: `Persuasive argument. Choose a clear position, order the reasons from strongest to supporting, include one counter-argument that the user answers, and end with a call to action. Ideas grow from reason → proof → rebuttal.`,
       emotional: `Emotional, personal writing. Body paragraphs are meaningful MOMENTS or feelings. Ideas grow by showing instead of telling: what I saw, heard and felt, and why it mattered.`
     };
 
@@ -4827,7 +5118,7 @@ ${levelRules}
       const a = audSel.value;
       const aud = /children/i.test(a) ? 'children'
         : /friends|family/i.test(a) ? 'friends'
-        : /teachers|professionals/i.test(a) ? 'pro' : 'public';
+          : /teachers|professionals/i.test(a) ? 'pro' : 'public';
       return { lvl, tone, aud };
     }
 
@@ -5052,21 +5343,21 @@ TIP: Nói họ đúng ở đâu trước, rồi mới chỉ ra họ chưa nhìn 
     }
 
     // ── prompts ──
-    function outlineStudentBlock(c) {
+    function outlineuserBlock(c) {
       const { tp, tone, aud, L, lang } = c;
-      return `STUDENT
+      return `user
 - Topic: "${tp}"
-- Level: ${L.code}. Students at this level are often: ${L.struggle}.
+- Level: ${L.code}. users at this level are often: ${L.struggle}.
 - Tone / style: ${toneSel.value}
 - Audience (the reader): ${audSel.value}
-- Guidance language: ${lang}. Everything you write is in ${lang}, EXCEPT the English text the student will write (PATTERN, the English side of every option, BEAT, STORYLINE, and the text of OPTION lines).
+- Guidance language: ${lang}. Everything you write is in ${lang}, EXCEPT the English text the user will write (PATTERN, the English side of every option, BEAT, STORYLINE, and the text of OPTION lines).
 
 CONTENT DIRECTION
 ${L.topicRule}
 Level: ${L.modelRule}
 Tone: ${OUTLINE_TONES[tone]}
 Audience: ${OUTLINE_AUDIENCES[aud]}
-Every idea, word and example must be specific to "${tp}". Never assume facts about the student's life (a brother, a pet, a trip): offer them as options.`;
+Every idea, word and example must be specific to "${tp}". Never assume facts about the user's life (a brother, a pet, a trip): offer them as options.`;
     }
 
     function outlineSlotRules(c, type) {
@@ -5116,9 +5407,9 @@ TIP: <one short sentence>      (or: TIP: none)`;
       const { lvl, lang } = c;
       const types = OUTLINE_PLAN[lvl].parts;
       const lines = types.map((t, i) => `PART ${i + 1} TITLE: <${t === 'body' ? 'short inviting title' : 'none'}>\nPART ${i + 1} PURPOSE: <...>\nPART ${i + 1} BEAT: <...>`).join('\n');
-      return `You are a warm writing coach. Write the PLAN of a write-along guide for this student. Answer in plain text, one item per line, using exactly these keys. No JSON, no markdown, no extra text.
+      return `You are a warm writing coach. Write the PLAN of a write-along guide for this user. Answer in plain text, one item per line, using exactly these keys. No JSON, no markdown, no extra text.
 
-${outlineStudentBlock(c)}
+${outlineuserBlock(c)}
 
 The guide has ${types.length} parts in exactly this order: ${types.map((t, i) => `${i + 1}. ${t}`).join(', ')}  (intro = introduction, body = body paragraph, concl = conclusion).
 
@@ -5134,13 +5425,13 @@ CLOSING: <...>
 
 RULES
 - KIND: one plain line on what kind of writing this is${lvl === 'A' ? ' (never essay terms such as narrative, overview or thesis)' : ''}.
-- OPENING: 3 sentences speaking to the student: name the exact feeling a student like them has about THIS topic and give one concrete reason this topic is easier or more interesting than it looks. No numbers, no generic praise.
-- STORYLINE: ONE English sentence describing the thread of the sample text (who or what it is about, then what happens or what they do, then how the student feels), written as the student would.
+- OPENING: 3 sentences speaking to the user: name the exact feeling a user like them has about THIS topic and give one concrete reason this topic is easier or more interesting than it looks. No numbers, no generic praise.
+- STORYLINE: ONE English sentence describing the thread of the sample text (who or what it is about, then what happens or what they do, then how the user feels), written as the user would.
 - PART n TITLE: a short inviting title naming the KIND of moment, not fixed facts. It MUST be written in ${lang}${lang === 'Vietnamese' ? ' (for example "Một khoảnh khắc buổi sáng"), never in English' : ''}. Write "none" for intro and concl parts.
-- PART n PURPOSE: what the student will talk about in this part, in plain words, written in ${lang}.
+- PART n PURPOSE: what the user will talk about in this part, in plain words, written in ${lang}.
 - PART n BEAT: what the sample (the first option of everything) says in this part, in English, at most 12 words. Together the beats tell the storyline.
-- CHECK: 3 questions the student asks about THEIR OWN text. Never mention counts, slots, letters or rules.
-- CLOSING: one warm sentence inviting the student to write the first sentence now.`;
+- CHECK: 3 questions the user asks about THEIR OWN text. Never mention counts, slots, letters or rules.
+- CLOSING: one warm sentence inviting the user to write the first sentence now.`;
     }
 
     function outlinePartList(lvl, parts) {
@@ -5153,7 +5444,7 @@ RULES
       const plan = OUTLINE_PLAN[lvl], type = plan.parts[i], part = data.parts[i];
       return `You are a warm writing coach writing ONE part of a write-along guide. Answer in plain text, one item per line, using exactly these keys. No JSON, no markdown, no extra text.
 
-${outlineStudentBlock(c)}
+${outlineuserBlock(c)}
 
 THE WHOLE GUIDE (so all parts fit together)
 Storyline of the sample: ${data.storyline || 'a coherent small story or description'}
@@ -5167,7 +5458,7 @@ ${OUTLINE_PART_FORMAT(lvl)}
 
 RULES
 - TALK: 2–3 human lines in ${lang}: what this part is for and one concrete thing to imagine so ideas come easily. It must describe exactly what the example built from the FIRST options does.
-- TIP: "none" unless students at ${L.code} really make a mistake with THESE patterns; then one short sentence.
+- TIP: "none" unless users at ${L.code} really make a mistake with THESE patterns; then one short sentence.
 - ${outlineExtraRule(lvl, type)}
 
 ${outlineSlotRules(c, type)}
@@ -5184,7 +5475,7 @@ ${OUTLINE_SAMPLE[lvl]}`;
       const sizes = lvl === 'C' ? '' : `\nPattern size: intro about ${plan.sentences.intro} sentence(s) with at most ${plan.maxFixed.intro} fixed words; body about ${plan.sentences.body} with at most ${plan.maxFixed.body}; conclusion about ${plan.sentences.concl} with at most ${plan.maxFixed.concl}.`;
       return `You are a warm writing coach writing ALL ${n} parts of a write-along guide. Answer in plain text. Start each part with a line "=== PART n ===" (n = 1 to ${n}), then that part's lines. Use exactly these keys. No JSON, no markdown, no extra text.
 
-${outlineStudentBlock(c)}
+${outlineuserBlock(c)}
 
 THE GUIDE
 Storyline of the sample: ${data.storyline || 'a coherent small story or description'}
@@ -5195,7 +5486,7 @@ ${OUTLINE_PART_FORMAT(lvl)}
 
 RULES
 - TALK: 2–3 human lines in ${lang}: what the part is for and one concrete thing to imagine so ideas come easily. It must describe exactly what the example built from the FIRST options does.
-- TIP: "none" unless students at ${L.code} really make a mistake with THESE patterns; then one short sentence. At most ${plan.tips} real tips in total.
+- TIP: "none" unless users at ${L.code} really make a mistake with THESE patterns; then one short sentence. At most ${plan.tips} real tips in total.
 - EXTRA: ${lvl === 'A' ? 'always none' : lvl === 'B' ? 'body parts only: exactly 3 useful collocations or connectors NOT used in the options, each "meaning = english", separated by " | "; none for intro and conclusion' : 'body parts only: 3 or 4 precise collocations or discourse markers NOT used in the options, separated by " | " ("meaning = english" only for rare ones, otherwise just the English); none for intro and conclusion'}.
 
 ${outlineSlotRules(c, 'body')}${sizes}
@@ -5500,9 +5791,9 @@ ${OUTLINE_SAMPLE[lvl]}`;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
       const r = await callAI(
-        `You are a professional English proofreader. Check the student's text carefully based on their level.
+        `You are a professional English proofreader. Check the user's text carefully based on their level.
 
-Student text:
+user text:
 """
 ${text}
 """
@@ -5511,7 +5802,7 @@ Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 
 LANGUAGE RULE: Write ALL explanations, labels, and feedback in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
 
-IMPORTANT — adjust expectations to the student's level:
+IMPORTANT — adjust expectations to the user's level:
 - A1/A2: only mark clear errors (wrong verb form, wrong pronoun, obvious misspelling). Do NOT penalize simple sentence structure or basic vocabulary — that is appropriate for their level.
 - B1/B2: mark grammar, collocation, punctuation and word-choice errors.
 - C1/C2: mark all errors including subtle word choice, register, and style inconsistencies.
@@ -5594,13 +5885,13 @@ RULES:
               `add a personal feeling, experience, or opinion that connects to the last sentence`,
             ];
 
-      const levelRules = `STRICTLY match the student's level:
+      const levelRules = `STRICTLY match the user's level:
 - A1/A2: max 8–10 words, basic vocabulary, "and/but/so" connectors only
 - B1/B2: 12–18 words, varied vocab, "because/when/although/however" are fine
 - C1/C2: 15–25 words, rich vocabulary, complex structures welcome`;
 
       const r = await callAI(
-        `You are an English writing coach helping a student write a well-structured essay.
+        `You are an English writing coach helping a user write a well-structured essay.
 
 Topic: "${topic() || 'not specified'}"
 ${ctx()}
@@ -5658,13 +5949,13 @@ Return ONLY a valid JSON array, no other text:
 
       setPanelTitle('panel-improve');
       const r = await callAI(
-        `You are an expert English language editor and experienced ESL writing coach. Your task is to IMPROVE the student's writing — not rewrite it, not simplify it, not replace their ideas.
+        `You are an expert English language editor and experienced ESL writing coach. Your task is to IMPROVE the user's writing — not rewrite it, not simplify it, not replace their ideas.
 
-Student's ORIGINAL text (baseline — never improve beyond this):
+user's ORIGINAL text (baseline — never improve beyond this):
 """
 ${baseText}
 """
-${baseText !== text ? `\nStudent's CURRENT text (already improved once — use this as the starting point, but compare against the original above to avoid over-editing):
+${baseText !== text ? `\nuser's CURRENT text (already improved once — use this as the starting point, but compare against the original above to avoid over-editing):
 """
 ${text}
 """` : ''}
@@ -5675,12 +5966,12 @@ LANGUAGE RULE: Write ALL section headings, explanations, tips, and change descri
 
 ## YOUR TASK: Style Upgrade
 
-You must EDIT the student's text to make it sound more natural and fluent. Follow these strict rules:
+You must EDIT the user's text to make it sound more natural and fluent. Follow these strict rules:
 
 **WHAT YOU MUST KEEP (never change these):**
-- Every idea, fact, event, and detail the student wrote — do NOT add new content, do NOT remove content
+- Every idea, fact, event, and detail the user wrote — do NOT add new content, do NOT remove content
 - The narrator's voice and perspective (I/we/he/she)
-- The emotional tone the student intended
+- The emotional tone the user intended
 - The proficiency level context: ${ctx()}
 
 **WHAT YOU SHOULD IMPROVE (based on level):**
@@ -5691,7 +5982,7 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
 **ABSOLUTE RULES:**
 - NEVER invent new content (new people, new events, new emotions not in the original)
 - NEVER use em dash (—). Use comma or "and/but/so" instead
-- NEVER downgrade: if student wrote "I want to tell you about", keep the meaning — don't simplify to "I will talk about"
+- NEVER downgrade: if user wrote "I want to tell you about", keep the meaning — don't simplify to "I will talk about"
 - NEVER change the word count by more than 30% compared to the ORIGINAL text
 - If the text has already been improved once, focus on a DIFFERENT aspect (e.g. if vocabulary was improved before, now improve sentence flow or connectors) — do NOT pile more synonyms onto already-upgraded words
 - Bold (**word**) ONLY the words/phrases you changed from the current version
@@ -5795,7 +6086,7 @@ You must EDIT the student's text to make it sound more natural and fluent. Follo
 
       if (wc < 60) {
         // short text — lightweight feedback proportional to length
-        reviewPrompt = `You are an expert ESL writing reviewer. The student wrote a short piece (${wc} word${wc === 1 ? '' : 's'}).
+        reviewPrompt = `You are an expert ESL writing reviewer. The user wrote a short piece (${wc} word${wc === 1 ? '' : 's'}).
 
 Topic: "${tp || 'not specified'}"
 Text:
@@ -5818,7 +6109,7 @@ Give brief, honest feedback proportional to the text length. Use 2 short section
 Keep response short — do not pad or invent issues that aren't there.`;
       } else {
         // full review for substantial text
-        reviewPrompt = `You are an expert English writing reviewer. Give honest and helpful feedback on the student's writing.
+        reviewPrompt = `You are an expert English writing reviewer. Give honest and helpful feedback on the user's writing.
 
 Topic: "${tp || 'not specified'}"
 Text:
@@ -5861,10 +6152,10 @@ LANGUAGE RULE: Write ALL feedback, section headings, explanations, and suggestio
       }
 
       const r = await callAI(
-        `You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for this student.
+        `You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for this user.
 
 ${tp ? `Topic: "${tp}"` : ''}
-${text ? `Student's text so far:\n"""\n${text.substring(0, 400)}\n"""` : ''}
+${text ? `user's text so far:\n"""\n${text.substring(0, 400)}\n"""` : ''}
 Level: ${lvlSel.value}
 
 Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
@@ -5872,7 +6163,7 @@ Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 Rules:
 - Silently match ALL examples to the level above — never mention the level in the output
 - NO em dash (—). Use comma or and/but/so instead
-- Keep it practical: words the student can use TODAY in their writing
+- Keep it practical: words the user can use TODAY in their writing
 - Show words IN ACTION, not just definitions
 - LANGUAGE RULE: Write ALL section headings, labels, explanations, and translations in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 - For Phrasal Verbs, Idioms, and Fixed Expressions: ONLY include if they are genuinely relevant to the topic. If there are none, SKIP that section entirely — do not force examples.
@@ -7638,8 +7929,8 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
 
       const isVi = uiLang !== 'en';
       const prompt =
-        `You are a vocabulary assistant for an ESL student writing in English.
-The student wants to express this idea but doesn't know the right words:
+        `You are a vocabulary assistant for an ESL user writing in English.
+The user wants to express this idea but doesn't know the right words:
 "${vi}"
 ${tp ? `Writing topic: "${tp}"` : ''}Level: ${level} | Tone: ${tone} | Audience: ${aud}
 Interface language: ${isVi ? 'Vietnamese' : 'English'}

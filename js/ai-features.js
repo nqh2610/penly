@@ -27,7 +27,7 @@
       });
 
       setBusy('btn-outline', true, false);
-      const raw = await callAI(buildUnifiedOutlinePrompt(c), 'btn-outline', false, false, 1400);
+      const raw = await callAI(buildUnifiedOutlinePrompt(c), 'btn-outline', false, false, 1800);
       setBusy('btn-outline', false, false);
 
       if (run !== _olRun) return;

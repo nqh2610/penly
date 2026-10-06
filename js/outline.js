@@ -661,7 +661,8 @@ ${types.map((t, i) => `=== PART ${i + 1} ===\n${partFmt}`).join('\n\n')}`;
       const expectedCount = OUTLINE_PLAN[lvl].parts.length;
       const text = strip(String(raw || '')).replace(/<think>[\s\S]*?<\/think>/gi, '');
 
-      const matches = [...text.matchAll(/(?:===|\#\#\#)?\s*PART\s*(\d+)/gi)];
+      // Match "=== PART 1 ===" or "### PART 1" or "PART 1" at line start, consuming trailing separators
+      const matches = [...text.matchAll(/^[ \t]*(?:={2,}|#{2,})?[ \t]*PART[ \t]*(\d+)[^\n]*/gim)];
       let planText = text;
       const partTexts = Array(expectedCount).fill('');
 

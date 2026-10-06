@@ -58,6 +58,14 @@
       if (run !== _olRun) { setBusy('btn-outline', false, false); return; }
 
       const parsedPlan = planRaw ? (parseOutlinePlan(planRaw, plan.parts.length) || null) : null;
+      if (!planRaw) {
+        // Plan call failed — show static parts with quota warning
+        setBusy('btn-outline', false, false);
+        const outage = aiOutageInfo();
+        if (outage) return showOutlineError(vi, outage);
+        toast(vi ? 'AI đang bận, bạn thử lại sau ít phút nhé.' : 'AI is busy. Please try again shortly.', 'd');
+        return;
+      }
       const planData = parsedPlan || {
         kind: vi ? 'Bài viết cá nhân' : 'Personal Writing',
         opening: vi ? 'Cùng lập dàn ý nhé!' : "Let's build your outline!",
@@ -90,6 +98,14 @@
 
       setBusy('btn-outline', false, false);
       if (run !== _olRun) return;
+
+      // If all body parts failed (quota exhausted), show a clear message
+      const allBodyFailed = bodyIndices.every(i => olStatus(state.data.parts[i]) === 'failed');
+      if (allBodyFailed) {
+        const outage = aiOutageInfo();
+        if (outage) return showOutlineError(vi, outage);
+        toast(vi ? 'AI đang hết lượt, bạn thử lại sau 1–2 phút nhé.' : 'AI quota exhausted. Please try again in 1–2 minutes.', 'd');
+      }
 
       olFinalize(state);
     }

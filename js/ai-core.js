@@ -120,9 +120,14 @@
               d.error.toLowerCase().includes("do not have access")
             );
             const isDaily = d.error && /per day|\bTPD\b|\bRPD\b/i.test(d.error);
+            const isPerMinute = d.error && /per minute|\bTPM\b|\bRPM\b/i.test(d.error);
             const w = String(d.error || '').match(/try again in\s*(?:(\d+)h)?\s*(?:(\d+)m(?!s))?\s*(?:([\d.]+)s)?/i);
-            const advised = w ? (((+w[1] || 0) * 60 + (+w[2] || 0)) * 60 + (+w[3] || 0)) * 1000 + 5000 : 0;
-            _modelCooldown[model] = Date.now() + (isPermError ? 24 * 60 * 60 * 1000 : Math.min(24 * 60 * 60 * 1000, Math.max(advised, isDaily ? 30 * 60 * 1000 : 2 * 60 * 1000)));
+            const advised = w ? (((+w[1] || 0) * 60 + (+w[2] || 0)) * 60 + (+w[3] || 0)) * 1000 + 2000 : 0;
+            const defaultCooldown = isPermError ? 24 * 60 * 60 * 1000
+              : isDaily ? 30 * 60 * 1000
+              : isPerMinute ? 15 * 1000
+              : 30 * 1000;
+            _modelCooldown[model] = Date.now() + Math.min(24 * 60 * 60 * 1000, Math.max(advised, defaultCooldown));
             console.info(`[ai] ${model} unavailable${isDaily ? ' (daily quota)' : ''}: ${String(d.error || '').slice(0, 400)}`);
             // check if there's a next non-cooled model
             const hasNext = chain.slice(i + 1).some(m => !_modelCooldown[m] || Date.now() >= _modelCooldown[m]);

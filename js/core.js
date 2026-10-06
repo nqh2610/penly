@@ -12,14 +12,32 @@
       if (!/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(key)) return false;
       const cached = _lkCache[key];
       if (cached && Date.now() - cached.ts < LK_CACHE_TTL) return cached.ok;
+      // Only call server when user is actively submitting a key, not on every AI call.
+      // callAI uses this function too — serve from cache if available, else trust format.
+      if (cached) return cached.ok; // expired but exists — keep using it until next explicit submit
       try {
         const res = await fetch(WORKER_URL + '/validate?key=' + encodeURIComponent(key));
+        if (!res.ok) return true;
         const data = await res.json();
         _lkCache[key] = { ok: !!data.valid, ts: Date.now() };
         return !!data.valid;
       } catch {
-        // network error — fall back to format-only check so app still works offline
         return true;
+      }
+    }
+
+    // Eagerly validate and cache a key (called on explicit submit only)
+    async function validateKeyFromServer(raw) {
+      const key = raw.trim().toUpperCase();
+      if (!/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(key)) return false;
+      try {
+        const res = await fetch(WORKER_URL + '/validate?key=' + encodeURIComponent(key));
+        if (!res.ok) return false;
+        const data = await res.json();
+        _lkCache[key] = { ok: !!data.valid, ts: Date.now() };
+        return !!data.valid;
+      } catch {
+        return false;
       }
     }
 
@@ -48,7 +66,7 @@
       errEl.classList.remove('show');
       input.classList.remove('err');
 
-      const ok = await isValidKey(raw);
+      const ok = await validateKeyFromServer(raw);
       if (ok) {
         setLicenseKey(raw.trim().toUpperCase());
         document.getElementById('licenseGate').classList.add('hidden');

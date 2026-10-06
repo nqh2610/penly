@@ -97,7 +97,7 @@
       const inp = document.getElementById('sdKeyInput');
       const raw = inp.value.trim().toUpperCase();
       const err = document.getElementById('sdKeyErr');
-      if (!(await isValidKey(raw))) {
+      if (!(await validateKeyFromServer(raw))) {
         err.style.display = 'block'; return;
       }
       setLicenseKey(raw);

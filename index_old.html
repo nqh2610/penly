@@ -1072,6 +1072,14 @@
       flex-shrink: 0
     }
 
+    .tb-sep2 {
+      width: 1px;
+      height: 1.4rem;
+      background: var(--border);
+      align-self: center;
+      flex-shrink: 0
+    }
+
     /* ── TTS ── */
     .tts-wrap {
       position: relative;
@@ -4097,15 +4105,6 @@ Gợi ý:
         }
       }
     }
-
-    // Đảm bảo lưu doc.topic độc lập với doc.title
-    function onTopicInput(val) {
-      const doc = docs.find(d => d.id === currentDocId);
-      if (doc) {
-        doc.topic = val; // Lưu riêng chủ đề
-        saveDocs();
-      }
-    }
     function getDoc(id) { return docs.find(d => d.id === id); }
 
     function createDoc(render = true) {
@@ -4118,27 +4117,16 @@ Gợi ý:
       };
       docs.unshift(d); saveDocs(); openDoc(d.id, render);
     }
-    function newDoc() {
-      createDoc(true);
-      if (document.getElementById('editor')) document.getElementById('editor').value = '';
-      if (document.getElementById('outlineBox')) document.getElementById('outlineBox').innerHTML = '';
-      _olState = null;
-    }
+    function newDoc() { createDoc(true); }
 
     function openDoc(id, render = true) {
       if (currentId && currentId !== id) {
         const cur = getDoc(currentId);
-        if (cur) {
-          cur.html = editor.innerHTML;
-          cur.topic = topicInput.value.trim(); // Lưu topic bài cũ trước khi chuyển
-        }
+        if (cur) cur.html = editor.innerHTML;
       }
       currentId = id;
       improveOriginalText = null; // reset khi chuyển doc
       const d = getDoc(id); if (!d) return;
-
-      topicInput.value = d.topic || ''; // Nạp topic của bài được chọn vào ô nhập
-
       titleInput.value = d.titleCustom ? (d.title || '') : (d.topic || '');
       document.getElementById('audSel').value = d.aud || document.getElementById('audSel').options[1].value;
       document.getElementById('toneSel').value = d.tone || document.getElementById('toneSel').options[1].value;
@@ -4190,11 +4178,12 @@ Gợi ý:
     const _debouncedTopicSave = debounce(() => { saveDocs(); renderDocList(); }, 300);
 
     function onTitleChange() {
-      const doc = docs.find(d => d.id === currentDocId);
-      if (doc) {
-        doc.title = document.getElementById('titleInput').value; // Chỉ đổi tiêu đề
-        saveDocs(); // Lưu lại (doc.topic vẫn giữ nguyên giá trị cũ)
-      }
+      const d = getDoc(currentId); if (!d) return;
+      d.titleCustom = titleInput.value.trim() !== topicInput.value.trim();
+      d.title = titleInput.value.trim();
+      const display = document.getElementById('titleDisplay');
+      if (display) display.textContent = titleInput.value.trim() || topicInput.value.trim() || '(Chưa đặt tên)';
+      _debouncedTitleRender();
     }
     const _debouncedTitleRender = debounce(() => renderDocList(), 300);
 
@@ -5594,7 +5583,7 @@ ${OUTLINE_SAMPLE[lvl]}`;
     function showOutline(stored) {
       let obj = null;
       try { obj = JSON.parse(String(stored).slice(OL_PREFIX.length)); } catch { obj = null; }
-      if (obj && obj.data) showOutlineState({ lvl: obj.lvl, vi: obj.vi, data: obj.data, c: obj.c }); // Truyền lại c
+      if (obj && obj.data) showOutlineState({ lvl: obj.lvl, vi: obj.vi, data: obj.data });
     }
 
     function showOutlineError(vi, outage) {
@@ -5699,9 +5688,9 @@ ${OUTLINE_SAMPLE[lvl]}`;
     }
 
     function olFinalize(state) {
-      const { lvl, vi, data, d, cacheKey, c } = state;
+      const { lvl, vi, data, d, cacheKey } = state;
       if (data.parts.every(p => olStatus(p) === 'ready') && d) {
-        d.outline = OL_PREFIX + JSON.stringify({ lvl, vi, data, c }); // Lưu thêm c
+        d.outline = OL_PREFIX + JSON.stringify({ lvl, vi, data });
         d.outlineKey = cacheKey;
         saveDocs();
       }
@@ -5719,64 +5708,6 @@ ${OUTLINE_SAMPLE[lvl]}`;
       if (run === _olRun) olFinalize(st);
     }
 
-    // 1. HÀM TẠO PROMPT GỘP MỚI
-    function buildUnifiedOutlinePrompt(c) {
-      const { tp, lvl, lang, L } = c;
-      const types = OUTLINE_PLAN[lvl].parts;
-      const partFmt = lvl === 'C'
-        ? `TITLE: <tên đoạn>\nPURPOSE: <1 câu ý chính bằng ${lang}>\nTALK: <2-3 câu hướng dẫn bằng ${lang}>\nMOVE: <tên biện pháp>\nOPTION: <mô tả> => <1-2 câu tiếng Anh>\nOPTION: <mô tả> => <1-2 câu tiếng Anh>\nOPTION: <mô tả> => <1-2 câu tiếng Anh>\nEXTRA: none\nTIP: none`
-        : `TITLE: <tên đoạn>\nPURPOSE: <1 câu ý chính bằng ${lang}>\nTALK: <2-3 câu hướng dẫn bằng ${lang}>\nPATTERN: <Mẫu câu tiếng Anh có ô trống {A} {B} {C}>\nASK A: <câu hỏi bằng ${lang}>\nOPTIONS A: <nghĩa ${lang}> = <từ tiếng Anh> | <nghĩa> = <từ>\nASK B: <câu hỏi bằng ${lang}>\nOPTIONS B: <nghĩa ${lang}> = <từ tiếng Anh> | <nghĩa> = <từ>\nEXTRA: none\nTIP: none`;
-
-      return `Write a COMPLETE write-along outline guide for "${tp}" in ONE single response. No JSON, plain text only.
-Level: ${L.code}. Guidance in ${lang}, English sentences natural.
-
-KIND: <loại bài viết bằng ${lang}>
-OPENING: <3 câu động viên bằng ${lang}>
-STORYLINE: <1 câu tiếng Anh tóm tắt>
-CHECK: <câu hỏi kiểm tra 1>\nCHECK: <câu hỏi 2>\nCHECK: <câu hỏi 3>
-CLOSING: <1 câu kết động viên>
-
-${types.map((t, i) => `=== PART ${i + 1} ===\n${partFmt}`).join('\n\n')}`;
-    }
-
-    // 2. HÀM PHÂN TÍCH KẾT QUẢ GỘP
-    function parseUnifiedOutline(raw, c) {
-      const { lvl, vi } = c;
-      const expectedCount = OUTLINE_PLAN[lvl].parts.length;
-      const text = strip(String(raw || '')).replace(/<think>[\s\S]*?<\/think>/gi, '');
-
-      const matches = [...text.matchAll(/(?:===|\#\#\#)?\s*PART\s*(\d+)/gi)];
-      let planText = text;
-      const partTexts = Array(expectedCount).fill('');
-
-      if (matches.length > 0) {
-        planText = text.slice(0, matches[0].index);
-        for (let m = 0; m < matches.length; m++) {
-          const pNum = parseInt(matches[m][1], 10) - 1;
-          const start = matches[m].index + matches[m][0].length;
-          const end = (m + 1 < matches.length) ? matches[m + 1].index : text.length;
-          if (pNum >= 0 && pNum < expectedCount) partTexts[pNum] = text.slice(start, end);
-        }
-      }
-
-      const parsedPlan = parseOutlinePlan(planText, expectedCount) || {
-        kind: vi ? 'Bài viết cá nhân' : 'Personal Writing',
-        opening: vi ? 'Cùng lập dàn ý nhé!' : "Let's build an outline!",
-        checklist: [], closing: vi ? 'Viết câu đầu tiên nào!' : 'Start writing!'
-      };
-
-      const parts = partTexts.map((rawPart, i) => {
-        const titleMatch = rawPart ? rawPart.match(/^TITLE\s*:\s*(.*)$/im) : null;
-        const title = titleMatch ? titleMatch[1].trim() : 'none';
-        const parsedP = parseOutlinePart(rawPart);
-        const check = checkOutlinePart({ lvl, vi }, i, parsedP, 'Lỗi định dạng');
-        return check.ok ? { title, status: 'ready', ...check.ok } : { title, status: 'failed', problems: check.problems };
-      });
-
-      return { ...parsedPlan, parts };
-    }
-
-    // 3. HÀM THỰC THI CHÍNH (THAY THẾ callOutline CŨ)
     async function callOutline() {
       const tp = topic(); if (!tp) return toast(t('no-topic'));
       setPanelTitle('panel-outline');
@@ -5785,34 +5716,75 @@ ${types.map((t, i) => `=== PART ${i + 1} ===\n${partFmt}`).join('\n\n')}`;
       const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
       const vi = uiLang !== 'en';
 
+      // Cache check: reuse if same topic/level/tone/audience/language
       const d = getDoc(currentId);
-      const cacheKey = `v12|${tp}|${lvl}|${tone}|${aud}|${lang}`;
+      const cacheKey = `v11|${tp}|${lvl}|${tone}|${aud}|${lang}`;
       if (d && d.outline && d.outlineKey === cacheKey && String(d.outline).startsWith(OL_PREFIX)) {
-        showOutline(d.outline); return;
+        showOutline(d.outline);
+        return;
       }
+
+      const outageNow = typeof aiOutageInfo === 'function' ? aiOutageInfo() : null;
+      if (outageNow) return showOutlineError(vi, outageNow);
 
       const run = ++_olRun;
       const c = { tp, lvl, tone, aud, L, lang };
+      const plan = OUTLINE_PLAN[lvl];
+      const t0 = Date.now();
 
-      showOutlineState({
-        lvl, vi, c, d, cacheKey,
-        data: {
-          kind: vi ? 'Đang tạo dàn ý...' : 'Creating outline...',
-          opening: vi ? 'AI đang thiết kế dàn ý siêu tốc...' : 'Generating outline...',
-          checklist: [], parts: Array.from({ length: OUTLINE_PLAN[lvl].parts.length }, () => ({ status: 'pending' }))
-        }
-      });
-
-      setBusy('btn-outline', true, false);
-      const raw = await callAI(buildUnifiedOutlinePrompt(c), 'btn-outline', false, false, 2200);
-      setBusy('btn-outline', false, false);
-
+      // Stage 1: the plan, written by the best available model. Opens the panel with the usual progress state.
+      const raw = await callAI(buildOutlinePlanPrompt(c), 'btn-outline', false, false, OUTLINE_PLAN_TOKENS);
       if (run !== _olRun) return;
-      if (!raw) return showOutlineError(vi);
+      const pl = raw && parseOutlinePlan(raw, plan.parts.length);
+      if (!pl) {
+        if (raw) console.info(`[outline] plan answer not in the required format: "${String(raw).replace(/\s+/g, ' ').slice(0, 200)}"`);
+        return showOutlineError(vi, typeof aiOutageInfo === 'function' ? aiOutageInfo() : null);
+      }
+      const tPlan = Date.now() - t0;
 
-      const state = { lvl, vi, data: parseUnifiedOutline(raw, c), c, d, cacheKey };
+      const data = {
+        kind: pl.kind, opening: pl.opening, storyline: pl.storyline, checklist: pl.checklist, closing: pl.closing,
+        parts: pl.parts.map(p => ({ title: p.title, purpose: p.purpose, beat: p.beat, status: 'pending' }))
+      };
+      // When every main model is busy only the slower fallback service answers
+      const fallbackMode = typeof _modelCooldown !== 'undefined' && outlineModels().every(m => _modelCooldown[m] && Date.now() < _modelCooldown[m]);
+      const state = { lvl, vi, data, c, d, cacheKey, slow: fallbackMode };
       showOutlineState(state);
+
+      // Stage 2. Normal: one small request per part, all in parallel, each card filling in as it arrives.
+      // Fallback: that service is slow, so ask for every part in ONE request and wait only once.
+      setBusy('btn-outline', true, false);
+      const indices = data.parts.map((_, i) => i);
+      const rejected = [];
+      if (fallbackMode) {
+        const raw2 = await callAI(buildOutlineAllPartsPrompt(c, data), 'btn-outline', true, true, Math.min(5000, plan.partTokens * indices.length), null, outlineModels());
+        if (run !== _olRun) return;
+        if (raw2 && !/PART\s*\d/i.test(raw2)) console.info(`[outline] combined answer has no "=== PART n ===" lines: "${String(raw2).replace(/\s+/g, ' ').slice(0, 200)}"`);
+        const chunks = splitOutlineParts(raw2, indices.length);
+        indices.forEach(i => {
+          const r = chunks[i] ? readOutlinePart(state, i, chunks[i]) : checkOutlinePart(state, i, null, raw2 ? 'this part is missing from the combined answer' : 'no answer was received from the AI service');
+          if (r.ok) setOutlinePart(state, i, r); else rejected.push([i, r]);
+        });
+      } else {
+        await runLimited(indices, indices.length, async i => {
+          const r = await tryOutlinePart(state, i);
+          if (run !== _olRun) return;
+          if (r.ok) setOutlinePart(state, i, r);
+          else rejected.push([i, r]);
+        });
+      }
+      // Second pass for the parts that failed, at most two at a time; the model is told what was wrong
+      await runLimited(rejected, 2, async ([i, first]) => {
+        if (run !== _olRun) return;
+        console.info(`[outline] part ${i + 1} first try rejected: ${first.problems.join('; ')}`);
+        const r = await tryOutlinePart(state, i, outlineRetryNote(first.problems));
+        if (run !== _olRun) return;
+        setOutlinePart(state, i, r);
+      });
+      setBusy('btn-outline', false, false);
+      if (run !== _olRun) return;
       olFinalize(state);
+      console.info(`[outline] plan ${tPlan} ms, all parts ${Date.now() - t0} ms, failed ${data.parts.filter(p => p.status === 'failed').length}`);
     }
 
     async function callGrammar() {
@@ -6937,8 +6909,6 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
     let ttsChunks = [], ttsChunkIdx = 0;
 
     function ttsSpeak(text, fromChar) {
-      if (!tts) return toast(uiLang === 'en' ? 'TTS not supported' : 'Trình duyệt không hỗ trợ đọc âm thanh', 'd');
-      if (!text.trim()) return;
       if (!text.trim()) return;
       ttsFullText = text;
       ttsResumeChar = fromChar || 0;
@@ -7335,7 +7305,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
 
       let dictData = null;
       try {
-        const res = await fetch(`${WORKER_URL}/dict?word=${encodeURIComponent(word)}`);
+        const res = await fetch(`https://penly-proxy.nqh2610.workers.dev/dict?word=${encodeURIComponent(word)}`);
         if (res.ok) dictData = await res.json();
       } catch (e) { console.error('Dict API error:', e); }
 
@@ -7606,6 +7576,12 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       });
 
       // Samsung Internet / iOS: no beforeinstallprompt — show banner after 3s
+      setTimeout(() => {
+        if (!window.matchMedia('(display-mode: standalone)').matches &&
+          localStorage.getItem('pwa_dismissed') !== 'forever') {
+          banner.classList.add('show');
+        }
+      }, 3000);
       setTimeout(() => {
         if (!window.matchMedia('(display-mode: standalone)').matches &&
           localStorage.getItem('pwa_dismissed') !== 'forever') {
@@ -8055,7 +8031,102 @@ Rules: NO long explanations. Every example must be copy-paste ready. Match level
     <button class="sel-btn" id="selAnalyzeBtn" onclick="selAnalyze()" title="Phân tích"><i
         class="bi bi-diagram-3"></i></button>
   </div>
+  <!-- 🚀 TỐI ƯU DÀN Ý (GHI ĐÈ) -->
+<script>
+function buildUnifiedOutlinePrompt(c) {
+  const { tp, lvl, lang, L } = c;
+  const types = OUTLINE_PLAN[lvl].parts;
+  const n = types.length;
+  
+  const partFmt = lvl === 'C'
+    ? `TITLE: <tên đoạn, hoặc "none">\nPURPOSE: <1 câu ý chính bằng ${lang}>\nTALK: <2-3 câu hướng dẫn bằng ${lang}>\nMOVE: <tên biện pháp>\nOPTION: <mô tả> => <1-2 câu tiếng Anh>\nOPTION: <mô tả> => <1-2 câu tiếng Anh>\nOPTION: <mô tả> => <1-2 câu tiếng Anh>\nEXTRA: none\nTIP: none`
+    : `TITLE: <tên đoạn, hoặc "none">\nPURPOSE: <1 câu ý chính bằng ${lang}>\nTALK: <2-3 câu hướng dẫn bằng ${lang}>\nPATTERN: <Mẫu câu tiếng Anh có ô trống {A} {B} {C}>\nASK A: <câu hỏi bằng ${lang}>\nOPTIONS A: <nghĩa ${lang}> = <từ tiếng Anh> | <nghĩa> = <từ>\nASK B: <câu hỏi bằng ${lang}>\nOPTIONS B: <nghĩa ${lang}> = <từ tiếng Anh> | <nghĩa> = <từ>\nEXTRA: none\nTIP: none`;
 
+  return `Write a COMPLETE write-along outline guide for "${tp}" in ONE single response. No JSON, plain text only.
+Level: ${L.code}. Guidance in ${lang}, English sentences natural.
+
+KIND: <loại bài viết bằng ${lang}>
+OPENING: <3 câu động viên bằng ${lang}>
+STORYLINE: <1 câu tiếng Anh tóm tắt>
+CHECK: <câu hỏi kiểm tra 1>\nCHECK: <câu hỏi 2>\nCHECK: <câu hỏi 3>
+CLOSING: <1 câu kết động viên>
+
+${types.map((t, i) => `=== PART ${i + 1} ===\n${partFmt}`).join('\n\n')}`;
+}
+
+function parseUnifiedOutline(raw, c) {
+  const { lvl, vi } = c;
+  const expectedCount = OUTLINE_PLAN[lvl].parts.length;
+  const text = strip(String(raw || '')).replace(/<think>[\s\S]*?<\/think>/gi, '');
+  
+  const matches = [...text.matchAll(/(?:===|\#\#\#)?\s*PART\s*(\d+)/gi)];
+  let planText = text;
+  const partTexts = Array(expectedCount).fill('');
+
+  if (matches.length > 0) {
+    planText = text.slice(0, matches[0].index);
+    for (let m = 0; m < matches.length; m++) {
+      const pNum = parseInt(matches[m][1], 10) - 1;
+      const start = matches[m].index + matches[m][0].length;
+      const end = (m + 1 < matches.length) ? matches[m + 1].index : text.length;
+      if (pNum >= 0 && pNum < expectedCount) partTexts[pNum] = text.slice(start, end);
+    }
+  }
+
+  const parsedPlan = parseOutlinePlan(planText, expectedCount) || {
+    kind: vi ? 'Bài viết cá nhân' : 'Personal Writing',
+    opening: vi ? 'Cùng lập dàn ý nhé!' : "Let's build an outline!",
+    checklist: [], closing: vi ? 'Viết câu đầu tiên nào!' : 'Start writing!'
+  };
+
+  const parts = partTexts.map((rawPart, i) => {
+    const titleMatch = rawPart ? rawPart.match(/^TITLE\s*:\s*(.*)$/im) : null;
+    const title = titleMatch ? titleMatch[1].trim() : 'none';
+    const parsedP = parseOutlinePart(rawPart);
+    const check = checkOutlinePart({ lvl, vi }, i, parsedP, 'Lỗi định dạng');
+    return check.ok ? { title, status: 'ready', ...check.ok } : { title, status: 'failed', problems: check.problems };
+  });
+
+  return { ...parsedPlan, parts };
+}
+
+window.callOutline = async function() {
+  const tp = topic(); if (!tp) return toast(t('no-topic'));
+  setPanelTitle('panel-outline');
+  const { lvl, tone, aud } = outlineKeys();
+  const L = OUTLINE_LEVELS[lvl];
+  const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
+  const vi = uiLang !== 'en';
+
+  const d = getDoc(currentId);
+  const cacheKey = `v12|${tp}|${lvl}|${tone}|${aud}|${lang}`;
+  if (d && d.outline && d.outlineKey === cacheKey && String(d.outline).startsWith(OL_PREFIX)) {
+    showOutline(d.outline); return;
+  }
+
+  const run = ++_olRun;
+  const c = { tp, lvl, tone, aud, L, lang };
+  
+  showOutlineState({
+    lvl, vi, c, d, cacheKey,
+    data: {
+      kind: vi ? 'Đang tạo dàn ý...' : 'Creating outline...',
+      opening: vi ? 'AI đang thiết kế dàn ý siêu tốc...' : 'Generating outline...',
+      checklist: [], parts: Array.from({ length: OUTLINE_PLAN[lvl].parts.length }, () => ({ status: 'pending' }))
+    }
+  });
+
+  setBusy('btn-outline', true, false);
+  const raw = await callAI(buildUnifiedOutlinePrompt(c), 'btn-outline', false, false, 2200);
+  setBusy('btn-outline', false, false);
+
+  if (run !== _olRun) return;
+  if (!raw) return showOutlineError(vi);
+
+  const state = { lvl, vi, data: parseUnifiedOutline(raw, c), c, d, cacheKey };
+  showOutlineState(state);
+  olFinalize(state);
+};
+</script>
 </body>
-
 </html>

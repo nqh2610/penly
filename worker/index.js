@@ -111,6 +111,7 @@ async function handleAdmin(request, env, url) {
 
     const { name, groqKey, geminiKey } = body;
     if (!name || !groqKey) return json({ error: "name and groqKey required" }, 400);
+    if (geminiKey && !geminiKey.startsWith('AIza')) return json({ error: "Gemini key phải bắt đầu bằng 'AIza'" }, 400);
 
     const penlyKey = genPenlyKey();
     const hash = await sha256(penlyKey.trim().toUpperCase());
@@ -140,7 +141,12 @@ async function handleAdmin(request, env, url) {
     if (body.active !== undefined) val.active = body.active;
     if (body.name) val.name = body.name;
     if (body.groqKey) val.groqKey = body.groqKey;
-    if (body.geminiKey !== undefined) val.geminiKey = body.geminiKey;
+    if (body.geminiKey !== undefined) {
+      if (body.geminiKey && !body.geminiKey.startsWith('AIza')) {
+        return json({ error: "Gemini key phải bắt đầu bằng 'AIza'" }, 400);
+      }
+      val.geminiKey = body.geminiKey;
+    }
     await env.PENLY_KEYS.put(hash, JSON.stringify(val));
     return json({ ok: true, active: val.active });
   }
@@ -150,7 +156,7 @@ async function handleAdmin(request, env, url) {
 
 // ── Gemini fallback (user's own key — 1500 req/day free) ────────────────────
 async function callGemini(geminiKey, prompt, temperature, max_tokens) {
-  if (!geminiKey) return null;
+  if (!geminiKey || !geminiKey.startsWith('AIza')) return null;
 
   for (const model of GEMINI_MODELS) {
     try {

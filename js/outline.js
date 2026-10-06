@@ -739,6 +739,15 @@ ${OUTLINE_SAMPLE[lvl]}`;
       const st = _olState;
       if (!st || !st.c) return;
       const run = _olRun;
+      const type = OUTLINE_PLAN[st.lvl].parts[i];
+      // Static parts don't need AI — just re-apply the template
+      if (type === 'intro' || type === 'concl') {
+        const p = type === 'intro' ? olStaticIntro(st.c, OUTLINE_PLAN[st.lvl]) : olStaticConcl(st.c, OUTLINE_PLAN[st.lvl]);
+        Object.assign(st.data.parts[i], p);
+        olUpdatePart(st, i);
+        olFinalize(st);
+        return;
+      }
       st.data.parts[i].status = 'pending';
       olUpdatePart(st, i);
       setBusy('btn-outline', true, false);

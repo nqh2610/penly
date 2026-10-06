@@ -9,7 +9,7 @@
 
       // Smart cache key: normalize topic deeply (stop words removed, sorted)
       const normTp = olNormTopic(tp);
-      const cacheKey = `v14|${normTp}|${lvl}|${tone}|${aud}|${lang}`;
+      const cacheKey = `v15|${normTp}|${lvl}|${tone}|${aud}|${lang}`;
 
       // 1. Check doc cache
       const d = getDoc(currentId);
@@ -34,11 +34,11 @@
       const introIdx = plan.parts.indexOf('intro');
       const conclIdx = plan.parts.indexOf('concl');
 
-      // Show skeleton with static intro/concl already filled
+      // Show skeleton with static intro/concl already filled, body pending
       const skeletonParts = plan.parts.map((type, i) => {
         if (type === 'intro') return olStaticIntro(c, plan);
         if (type === 'concl') return olStaticConcl(c, plan);
-        return { status: 'pending' };
+        return { status: 'pending', title: '', purpose: '', beat: '' };
       });
       showOutlineState({
         lvl, vi, c, d, cacheKey,
@@ -67,9 +67,14 @@
 
       // Build full state — intro/concl static, body pending
       const fullParts = plan.parts.map((type, i) => {
-        if (type === 'intro') { const p = olStaticIntro(c, plan); p.purpose = planData.parts[i]?.purpose || ''; p.title = planData.parts[i]?.title || p.title; return p; }
-        if (type === 'concl') { const p = olStaticConcl(c, plan); p.purpose = planData.parts[i]?.purpose || ''; p.title = planData.parts[i]?.title || p.title; return p; }
-        return { status: 'pending', title: planData.parts[i]?.title || '', purpose: planData.parts[i]?.purpose || '', beat: planData.parts[i]?.beat || '' };
+        const pd = planData.parts[i] || {};
+        // Filter out literal "none" string from AI
+        const title = (pd.title && !/^none$/i.test(pd.title.trim())) ? pd.title.trim() : '';
+        const purpose = pd.purpose || '';
+        const beat = pd.beat || '';
+        if (type === 'intro') { const p = olStaticIntro(c, plan); p.purpose = purpose; if (title) p.title = title; return p; }
+        if (type === 'concl') { const p = olStaticConcl(c, plan); p.purpose = purpose; if (title) p.title = title; return p; }
+        return { status: 'pending', title, purpose, beat };
       });
 
       const state = { lvl, vi, c, d, cacheKey, data: { ...planData, parts: fullParts } };

@@ -2,17 +2,17 @@
     const MODEL_CHAIN = [
       'openai/gpt-oss-120b',
       'openai/gpt-oss-20b',
-      'meta-llama/llama-4-scout-17b-16e-instruct',
-      'qwen/qwen3-8b',
+      'llama-3.3-70b-versatile',
       'llama-3.1-8b-instant',
+      'gemma2-9b-it',
     ];
     // Human-readable tier labels (no technical names)
     const MODEL_LABELS = {
       'openai/gpt-oss-120b': { text: '✦ Cấp 1', cls: 'tier-1', title: 'Đang dùng AI cấp cao nhất' },
       'openai/gpt-oss-20b': { text: '⚡ Cấp 2', cls: 'tier-2', title: 'Đang dùng AI cấp 2 do cấp 1 bận' },
-      'meta-llama/llama-4-scout-17b-16e-instruct': { text: '⚡ Cấp 3', cls: 'tier-3', title: 'Đang dùng AI cấp 3 do cấp trên bận' },
-      'qwen/qwen3-8b': { text: '⚡ Cấp 4', cls: 'tier-4', title: 'Đang dùng AI cấp 4 do cấp trên bận' },
-      'llama-3.1-8b-instant': { text: '⚡ Cấp 5', cls: 'tier-4', title: 'Đang dùng AI cấp 5 do cấp trên bận' },
+      'llama-3.3-70b-versatile': { text: '⚡ Cấp 3', cls: 'tier-3', title: 'Đang dùng AI cấp 3 do cấp trên bận' },
+      'llama-3.1-8b-instant': { text: '⚡ Cấp 4', cls: 'tier-4', title: 'Đang dùng AI cấp 4 do cấp trên bận' },
+      'gemma2-9b-it': { text: '⚡ Cấp 5', cls: 'tier-4', title: 'Đang dùng AI cấp 5 do cấp trên bận' },
       '__or__': { text: '🌐 Dự phòng 2', cls: 'tier-4', title: 'Đang dùng OpenRouter (miễn phí)' },
       '__gemini__': { text: '✨ Gemini', cls: 'tier-3', title: 'Đang dùng Gemini (Groq bận)' },
       '__cf__': { text: '☁ Dự phòng 3', cls: 'tier-4', title: 'Đang dùng Cloudflare AI (tất cả model chính bận)' },

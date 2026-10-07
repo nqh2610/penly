@@ -152,7 +152,7 @@
     }
 
     // ── CONTEXT ──
-    function ctx() {
+    function ctx(includeSentenceRule = true) {
       const src = typeof writingSource !== 'undefined' && writingSource;
       const srcNote = src === 'sample' ? '\n- Writing origin: AI-generated sample essay (user is studying/adapting it)'
         : src === 'improve' ? '\n- Writing origin: User draft refined by AI improvement tool'
@@ -160,10 +160,13 @@
       const { lvlCode, toneWord, lvlStd, toneStd } = getStandards();
       const extra = typeof consumeTopicExtra === 'function' ? consumeTopicExtra() : '';
       const extraNote = extra ? `\n- Topic clarification: ${extra}` : '';
+      const levelDetail = includeSentenceRule
+        ? `sentences: ${lvlStd.sentences}; vocabulary: ${lvlStd.vocab}; connectors: ${lvlStd.connectors}`
+        : `vocabulary: ${lvlStd.vocab}; connectors: ${lvlStd.connectors}`;
       return `WRITING CONTEXT:
 - Audience: ${audSel.value}
 - Tone: ${toneSel.value} (register: ${toneStd.register})
-- Level: ${lvlSel.value} (sentences: ${lvlStd.sentences}; vocabulary: ${lvlStd.vocab}; connectors: ${lvlStd.connectors})
+- Level: ${lvlSel.value} (${levelDetail})
 - Style rules: no em dash; ${toneStd.contractions ? 'contractions OK' : 'no contractions'}; ${toneStd.firstPerson ? 'first person OK' : 'no first person ("I")'}${srcNote}${extraNote}
 - LANGUAGE QUALITY: Every sentence must sound like something a real person would naturally say or write. Be specific — no generic filler. Each sentence must make sense on its own and connect directly to the topic.`;
     }

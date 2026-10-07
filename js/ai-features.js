@@ -347,7 +347,7 @@ Text:
 """
 ${text}
 """
-${ctx()}
+${ctx(false)}
 Interface language: ${vi ? 'Vietnamese' : 'English'}
 
 LANGUAGE RULE: Write ALL feedback in ${vi ? 'Vietnamese' : 'English'}.
@@ -391,7 +391,7 @@ Text:
 """
 ${text}
 """
-${ctx()}${srcInstruction}
+${ctx(false)}${srcInstruction}
 Interface language: ${vi ? 'Vietnamese' : 'English'}
 
 LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.

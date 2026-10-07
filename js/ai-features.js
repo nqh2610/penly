@@ -350,7 +350,8 @@ Rules:
 - NO em dash (—). Use comma or and/but/so instead
 - NO markdown tables. Use the exact card format shown below.
 - Keep it practical: words the user can use TODAY in their writing
-- LANGUAGE RULE: Write ALL section headings, labels, explanations, and translations in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+- LANGUAGE RULE: Write ALL section headings, labels, explanations, and meanings in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+- EXAMPLE SENTENCES: ALL example sentences (lines starting with >) must ALWAYS be written in English — never in Vietnamese, regardless of interface language.
 - For Phrasal Verbs, Idioms, and Fixed Expressions: ONLY include if genuinely relevant. If none, SKIP that section entirely.
 - NATURALNESS: every example sentence must sound like something a real person would actually say or write — specific, vivid, directly connected to the topic. No generic filler like "She uses this word." No robot-sounding sentences.
 - TRANSLATION: when writing meanings or translations in Vietnamese, translate the MEANING not the words — use natural Vietnamese equivalents and collocations. Bad: "có một nụ cười lớn". Good: "có nụ cười tươi".
@@ -364,7 +365,7 @@ ${uiLang === 'en' ? '10–12 words/phrases — practical, level-appropriate, top
 Use this EXACT format for each word (no tables, no columns):
 
 **word** /IPA/ *(part of speech)* — ${uiLang === 'en' ? 'meaning in English' : 'nghĩa tiếng Việt'}
-> *Example sentence using this word.*
+> *Example sentence in English using this word.*
 
 *(repeat for each word)*
 
@@ -374,7 +375,7 @@ Use this EXACT format for each word (no tables, no columns):
 
 ${uiLang === 'en' ? 'List 4–6 level-appropriate connectors with short examples' : 'Chỉ liệt kê 4–6 từ nối phù hợp trình độ, kèm ví dụ ngắn'}
 
-- **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *Example sentence.*
+- **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *English example sentence.*
 
 ---
 
@@ -392,18 +393,19 @@ ${uiLang === 'en'
   : `CÁC PHẦN TÙY CHỌN — chỉ đưa vào nếu tìm được ít nhất 1 ví dụ thực sự tự nhiên và gắn trực tiếp với chủ đề "${tp || 'đã cho'}". Nếu không có, bỏ qua hoàn toàn — không cố viết ví dụ gượng ép.
 
 ## 🔄 Cụm động từ
-*(Chỉ khi có 1+ cụm động từ phù hợp tự nhiên. Định dạng: **cụm động từ** /IPA/ — nghĩa → câu ví dụ.)*
+*(Chỉ khi có 1+ cụm động từ phù hợp tự nhiên. Định dạng: **cụm động từ** /IPA/ — nghĩa → câu ví dụ tiếng Anh.)*
 
 ## 💬 Thành ngữ & tục ngữ
-*(Chỉ khi có 1+ thành ngữ/tục ngữ gắn tự nhiên. Định dạng: **thành ngữ** — ý nghĩa thực → câu ví dụ.)*
+*(Chỉ khi có 1+ thành ngữ/tục ngữ gắn tự nhiên. Định dạng: **thành ngữ** — ý nghĩa thực → câu ví dụ tiếng Anh.)*
 
 ## 📌 Cụm từ cố định & diễn đạt hay
-*(Chỉ khi có 1+ cụm từ thực sự dùng trong chủ đề này. Định dạng: **cụm từ** — nghĩa/khi dùng → câu ví dụ.)*`}
+*(Chỉ khi có 1+ cụm từ thực sự dùng trong chủ đề này. Định dạng: **cụm từ** — nghĩa/khi dùng → câu ví dụ tiếng Anh.)*`}
 
 ---
 
-## ✍️ ${uiLang === 'en' ? '3 sample sentences to use now' : '3 câu mẫu có thể dùng ngay'}
+## ✍️ ${uiLang === 'en' ? '3 sample sentences to use now' : '3 câu mẫu tiếng Anh có thể dùng ngay'}
 
+*(Always write these 3 sentences in English — they are English writing examples for the student.)*
 > *Sentence 1*
 > *Sentence 2*
 > *Sentence 3*`,
@@ -424,8 +426,8 @@ ${uiLang === 'en'
       if (!text) return toast(t('no-text'));
       const tp = topic();
 
-      // Detect target language from UI language setting
-      const targetLang = uiLang === 'en' ? 'Vietnamese' : 'Vietnamese';
+      // Always translate to Vietnamese — this app is for Vietnamese learners of English
+      const targetLang = 'Vietnamese';
 
       // Count source paragraphs to reconstruct structure
       const srcParas = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
@@ -481,7 +483,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const title = 'Diễn đạt lại';
       openPanelWith(title);
       const r = await callAI(
-        `Rewrite in 2 ways: 1) natural, 2) more advanced. Be brief.${vi ? ' Dịch nghĩa ngắn bằng tiếng Việt sau mỗi cách.' : ''}
+        `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced. Keep both rewrites in English.${vi ? ' After each rewrite, add a short Vietnamese translation.' : ''} Be brief.
 "${text}"`,
         null, false, true, 400
       );
@@ -516,7 +518,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const title = vi ? 'Phân tích ngữ pháp' : 'Grammar Analysis';
       openPanelWith(title);
       const r = await callAI(
-        `Grammar check: tense, structure, errors. Be concise.${vi ? ' Bằng tiếng Việt.' : ''}
+        `Grammar check: tense, structure, errors. Be concise.${vi ? ' Explain in Vietnamese, but keep all example sentences and corrections in English.' : ''}
 "${text}"`,
         null, false, true, 500
       );
@@ -590,7 +592,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
         // fallback to AI for definition
         const loadingEl = document.createElement('span');
         const aiPrompt = vi
-          ? `Tra từ tiếng Anh "${word}". Trả lời ngắn gọn bằng tiếng Việt: phiên âm IPA, loại từ, nghĩa chính (1-2 nghĩa), 1 ví dụ câu. Không giải thích dài dòng.`
+          ? `Tra từ tiếng Anh "${word}". Trả lời ngắn gọn bằng tiếng Việt: phiên âm IPA, loại từ, nghĩa chính (1-2 nghĩa), 1 câu ví dụ tiếng Anh (kèm dịch nghĩa tiếng Việt). Không giải thích dài dòng.`
           : `Define the English word "${word}" briefly: IPA pronunciation, part of speech, 1-2 main meanings, 1 example sentence.`;
         const aiResult = await callAI(aiPrompt, null, true, true, 400);
         loadingEl.remove();

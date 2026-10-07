@@ -423,9 +423,15 @@ Output the essay now:
 
       // Prefer non-reasoning models — gpt-oss thinks out loud and leaks planning text into output
       // Put gpt-oss last so they're only used when all others are unavailable
-      const sampleModels = typeof MODEL_CHAIN !== 'undefined'
-        ? [...MODEL_CHAIN.filter(m => !m.includes('gpt-oss')), ...MODEL_CHAIN.filter(m => m.includes('gpt-oss'))]
-        : null;
+      const nonReasoning = typeof MODEL_CHAIN !== 'undefined'
+        ? MODEL_CHAIN.filter(m => !m.includes('gpt-oss'))
+        : [];
+      const reasoning = typeof MODEL_CHAIN !== 'undefined'
+        ? MODEL_CHAIN.filter(m => m.includes('gpt-oss'))
+        : [];
+      const sampleModels = nonReasoning.length
+        ? [...nonReasoning, ...reasoning]
+        : null; // null = use full MODEL_CHAIN (all gpt-oss)
 
       setBusy('btn-outline', true, true, uiLang === 'en' ? 'Sample Essay' : 'Bài Mẫu');
 

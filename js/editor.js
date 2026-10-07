@@ -162,7 +162,8 @@
 - Audience: ${audSel.value}
 - Tone: ${toneSel.value} (register: ${toneStd.register})
 - Level: ${lvlSel.value} (sentences: ${lvlStd.sentences}; vocabulary: ${lvlStd.vocab}; connectors: ${lvlStd.connectors})
-- Style rules: no em dash; ${toneStd.contractions ? 'contractions OK' : 'no contractions'}; ${toneStd.firstPerson ? 'first person OK' : 'no first person ("I")'}${srcNote}`;
+- Style rules: no em dash; ${toneStd.contractions ? 'contractions OK' : 'no contractions'}; ${toneStd.firstPerson ? 'first person OK' : 'no first person ("I")'}${srcNote}
+- LANGUAGE QUALITY: Every sentence must sound like something a real person would naturally say or write. Be specific — no generic filler. Each sentence must make sense on its own and connect directly to the topic.`;
     }
     function topic() {
       return topicInput.value.trim();

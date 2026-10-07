@@ -352,6 +352,7 @@ Rules:
 - Keep it practical: words the user can use TODAY in their writing
 - LANGUAGE RULE: Write ALL section headings, labels, explanations, and translations in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 - For Phrasal Verbs, Idioms, and Fixed Expressions: ONLY include if genuinely relevant. If none, SKIP that section entirely.
+- NATURALNESS: every example sentence must sound like something a real person would actually say or write — specific, vivid, directly connected to the topic. No generic filler like "She uses this word." No robot-sounding sentences.
 
 ---
 

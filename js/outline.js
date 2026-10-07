@@ -144,6 +144,7 @@ QUALITY RULES — every paragraph must follow these:
 8. Clincher: last sentence of the conclusion must be memorable — an image, a question, or a truth. NOT a plain summary. Bad: "So, dogs are great pets." Good: "Maybe what we love most about dogs is what they remind us to be: present, loyal, and unafraid to show it."
 9. NEVER use em dash (—). Use a comma, "and", or "but" instead.
 10. Vary sentence openings — do not start 2 sentences in a row with the same word.
+11. NATURALNESS: every sentence must sound like something a real person would actually say or write. Be specific — no generic filler like "This topic is important." Each sentence must make sense on its own and connect directly to the topic.
 
 Use EXACTLY this output format — replace each marker with real text, no extra commentary:
 ${Array.from({length: 5}, (_, i) => `[P${i+1}]\n[V${i+1}]`).join('\n')}

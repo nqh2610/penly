@@ -16,7 +16,7 @@
       return false;
     }
 
-    function setCooldown(btnId, ms = 8000) {
+    function setCooldown(btnId, ms = 30000) {
       if (btnId) _btnCooldown[btnId] = Date.now() + ms;
     }
 
@@ -209,11 +209,8 @@ LANGUAGE RULE: Write ALL headings, explanations, and tips in ${uiLang === 'en' ?
 ${styleRules}
 
 **RULES:**
-- NEVER invent new content — do not add adjectives, clauses, or ideas that are not in the original
-- A sentence ending with "X, Y, and Z" is COMPLETE — never append "and [new word]" after it
-- If a sentence is already complete and natural, leave it as-is — do not extend or append to it
-- Keep roughly the same length as the original
-- NEVER output any reasoning, word counts, or internal notes — output ONLY the three sections below
+- NEVER invent new content
+- NEVER change word count by more than 30% vs ORIGINAL
 - If improved once, focus on a DIFFERENT aspect
 - Bold (**word**) ONLY words/phrases changed from current version
 - You MUST output ALL THREE sections below in order: the improved text between %%S%% and %%E%%, then the changes section, then the tips section. Do not stop after the improved text.
@@ -384,7 +381,6 @@ CALIBRATION RULES — follow strictly:
 4. If the writing has serious problems, name them clearly but kindly — do not soften to avoid discouraging the student
 5. Feedback must be actionable — every suggestion must have a concrete example or rewrite
 6. Evaluate against the WRITING CONTEXT below — the style rules (connectors, contractions, first person, sentence length) are the agreed standard for this text. Do NOT flag something as a problem if it follows those rules. Do NOT praise deviating from those rules.
-7. LEVEL RULE (most important): The student's current level is ${lvlSel.value}. This is their STARTING point, not a ceiling. If they write vocabulary or sentences MORE advanced than their stated level, that is a POSITIVE sign — praise it and encourage them to keep growing. Only flag level-related issues if they write BELOW their stated level (e.g. very simple repetitive sentences when they claim B2), or if there are actual grammar/vocabulary errors regardless of level. Never tell a student to simplify correct, natural writing.
 
 Topic: "${tp || 'not specified'}"
 Text:
@@ -400,13 +396,13 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
 
 ## ✅ ${vi ? 'Điểm làm tốt' : 'What works well'}
 *(${vi
-  ? 'Chỉ nêu những điểm thực sự tốt — trích dẫn câu/từ cụ thể → giải thích tại sao hiệu quả. Khen nếu câu/từ phù hợp đúng trình độ đang chọn.'
-  : 'Only genuinely strong points — quote specific sentence or phrase → explain why it works. Praise when vocabulary and sentence length match the selected level.'})*
+  ? 'Chỉ nêu những điểm thực sự tốt — trích dẫn câu/từ cụ thể → giải thích tại sao hiệu quả về mặt ngôn ngữ hoặc sư phạm. Nếu không có điểm nổi bật, hãy nói thẳng và chuyển sang phần cải thiện.'
+  : 'Only genuinely strong points — quote specific sentence or phrase → explain why it is linguistically or pedagogically effective. If nothing stands out, say so honestly and move on.'})*
 
 ## ⚠️ ${vi ? 'Cần cải thiện' : 'Areas to improve'}
 *(${vi
-  ? `Chỉ nêu vấn đề thực sự: lỗi ngữ pháp, từ dùng sai, câu không tự nhiên. KHÔNG yêu cầu người dùng viết đơn giản hơn nếu bài đang viết tốt hơn trình độ ${lvlSel.value} — đó là điều đáng khen, không phải lỗi. Với mỗi vấn đề: trích dẫn câu gốc → viết lại → giải thích ngắn.`
-  : `Only flag real issues: grammar errors, wrong word choice, unnatural phrasing. Do NOT ask the student to simplify writing that exceeds ${lvlSel.value} level — that is growth, not a mistake. For each issue: quote original → rewrite → brief explanation.`})*
+  ? 'Chỉ nêu vấn đề thực sự — trích dẫn câu gốc → viết lại hay hơn → giải thích ngắn gọn tại sao bản viết lại tốt hơn. Nếu bài không có vấn đề đáng kể, nói thẳng là bài viết đã tốt ở tiêu chí này.'
+  : 'Only real issues — quote original → rewrite → brief explanation of why the rewrite is better. If there are no significant issues, say so directly.'})*
 
 ## 🎯 ${vi ? 'Nội dung & mạch văn' : 'Content & flow'}
 *(${vi
@@ -415,8 +411,8 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
 
 ## 📊 ${vi ? 'Trình độ & định hướng' : 'Level & next step'}
 *(${vi
-  ? `Đánh giá trình độ CEFR thực tế của bài dựa trên bằng chứng cụ thể. Nếu bài vượt trình độ ${lvlSel.value} đang chọn thì nói rõ — đây là tín hiệu tích cực. Đề xuất 1 kỹ năng cụ thể để tiếp tục phát triển.`
-  : `Assess the actual CEFR level based on specific evidence. If the writing exceeds the selected ${lvlSel.value} level, say so clearly — that is a positive sign. Suggest 1 concrete skill to keep growing.`})*`;
+  ? 'Ước tính trình độ CEFR thực tế của bài (A1–C2) — giải thích ngắn dựa trên bằng chứng cụ thể trong bài. Sau đó đề xuất 1 kỹ năng cụ thể để tiến lên trình độ cao hơn.'
+  : 'Estimate the actual CEFR level (A1–C2) — brief explanation based on specific evidence from the text. Then suggest 1 concrete skill to work on to reach the next level.'})*`;
       }
 
       const r = await callAI(reviewPrompt, 'btn-review');

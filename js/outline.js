@@ -191,6 +191,14 @@ ${toneStructure}
 INTRO EXAMPLE for level ${lvl} with ${bodyCount} body paragraphs (model the quality and structure, do NOT copy):
 ${introExamples}
 
+PERSPECTIVE — decide this silently before writing a single word:
+- Choose ONE specific moment, memory, or situation connected to this topic — not a general overview
+- Choose ONE concrete detail from that moment (a sound, a smell, an object, a face, a feeling)
+- Decide the writer's honest opinion — it may be mixed, unexpected, or imperfect ("I did not always like it", "It surprised me", "I used to think X but now I think Y")
+- Write the ENTIRE essay from inside that specific moment and perspective
+- NEVER step outside it to say "everyone", "most people", "people in general", or "it is important"
+- The essay should read like ONE person's specific experience, not a general article about the topic
+
 QUALITY RULES — every paragraph must follow these:
 1. ONE idea per paragraph — do not mix two topics in one paragraph.
 2. INTRO must preview exactly ${bodyCount} ideas — one per body paragraph. Each body paragraph covers exactly one previewed idea.

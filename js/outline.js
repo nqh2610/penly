@@ -388,7 +388,7 @@ Output the essay now:
     async function callSample() {
       const tp = topic();
       if (!tp) return toast(uiLang === 'en' ? 'Enter a topic first.' : 'Nhập chủ đề trước.');
-      if (!await guardTopic('btn-outline')) return;
+      if (!guardTopic('btn-outline')) return;
 
       const { lvl, tone, aud } = sampleKeys();
       const normTp = sampleNormTopic(tp);

@@ -1,8 +1,7 @@
     // callSample is defined in outline.js
 
     // ── TOPIC VALIDATION ──
-    const _topicValidCache = {}; // topic -> true/false
-    const _btnCooldown = {};     // btnId -> timestamp
+    const _btnCooldown = {}; // btnId -> timestamp
 
     function isCooldown(btnId) {
       if (!btnId) return false;
@@ -19,48 +18,30 @@
       if (btnId) _btnCooldown[btnId] = Date.now() + ms;
     }
 
-    async function validateTopic(tp) {
-      if (!tp || tp.trim().length < 2) return false;
-      const key = tp.trim().toLowerCase();
-      if (key in _topicValidCache) return _topicValidCache[key];
-      const lk = getLicenseKey();
-      if (!lk) return true; // no key → skip validation, let main call handle it
-      try {
-        const res = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            penly_key: lk,
-            prompt: `Is "${tp.trim()}" a valid English writing topic? Reply only YES or NO.`,
-            temperature: 0,
-            max_tokens: 5,
-            model: 'llama-3.1-8b-instant'
-          })
-        });
-        const d = await res.json();
-        const ans = (d.content || '').trim().toUpperCase();
-        const valid = ans.startsWith('YES');
-        _topicValidCache[key] = valid;
-        return valid;
-      } catch {
-        return true; // network error → don't block user
-      }
-    }
-
-    async function guardTopic(btnId) {
+    function guardTopic(btnId) {
       if (isCooldown(btnId)) return false;
-      const tp = topic();
-      if (!tp) return true; // no topic required for some features
-      const valid = await validateTopic(tp);
-      if (!valid) {
-        toast(uiLang === 'en' ? 'Topic doesn\'t look valid. Please enter a real writing topic.' : 'Chủ đề không hợp lệ. Vui lòng nhập chủ đề thực sự.', 'i');
+      const tp = (topic() || '').trim();
+      if (!tp) return true; // no topic — other guards handle this
+      // reject obvious gibberish: no real letters at all
+      const hasLetters = /[a-zA-ZÀ-ỹ]/.test(tp);
+      if (!hasLetters) {
+        toast(uiLang === 'en' ? 'Please enter a real writing topic.' : 'Vui lòng nhập chủ đề thực sự.', 'i');
         return false;
+      }
+      // reject keyboard mashing: very high ratio of repeated chars (e.g. "aaaaaaa", "asdfasdf")
+      const letters = tp.toLowerCase().replace(/[^a-z]/g, '');
+      if (letters.length > 4) {
+        const uniqueRatio = new Set(letters).size / letters.length;
+        if (uniqueRatio < 0.25) {
+          toast(uiLang === 'en' ? 'Topic doesn\'t look valid. Please enter a real writing topic.' : 'Chủ đề không hợp lệ. Vui lòng nhập chủ đề thực sự.', 'i');
+          return false;
+        }
       }
       return true;
     }
 
     async function callGrammar() {
-      if (!await guardTopic('btn-grammar')) return;
+      if (!guardTopic('btn-grammar')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
       const r = await callAI(
@@ -113,7 +94,7 @@ RULES:
 
 
     async function callImprove() {
-      if (!await guardTopic('btn-improve')) return;
+      if (!guardTopic('btn-improve')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
 
@@ -268,7 +249,7 @@ Output format — follow EXACTLY:
     }
 
     async function callReview() {
-      if (!await guardTopic('btn-review')) return;
+      if (!guardTopic('btn-review')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text-review'));
       setPanelTitle('panel-review');
@@ -379,7 +360,7 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
     }
 
     async function callVocab() {
-      if (!await guardTopic('btn-vocab')) return;
+      if (!guardTopic('btn-vocab')) return;
       const tp = topic(); const text = editor.innerText.trim();
       if (!tp && !text) return toast(t('no-text-vocab'));
       setPanelTitle('panel-vocab');
@@ -488,7 +469,7 @@ ${uiLang === 'en'
     }
 
     async function callTranslate() {
-      if (!await guardTopic('btn-translate')) return;
+      if (!guardTopic('btn-translate')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
       const tp = topic();

@@ -1,7 +1,9 @@
     // callSample is defined in outline.js
 
     // ── TOPIC VALIDATION ──
-    const _btnCooldown = {}; // btnId -> timestamp
+    const _btnCooldown = {};      // btnId -> timestamp
+    const _topicValidCache = {};  // topic key -> true/false
+    let _topicExtra = '';         // extra context added via clarify dialog
 
     function isCooldown(btnId) {
       if (!btnId) return false;
@@ -18,30 +20,94 @@
       if (btnId) _btnCooldown[btnId] = Date.now() + ms;
     }
 
-    function guardTopic(btnId) {
+    // Returns extra topic context (if user clarified), resets after use
+    function consumeTopicExtra() {
+      const x = _topicExtra; _topicExtra = ''; return x;
+    }
+
+    function _isObviousGibberish(tp) {
+      if (!/[a-zA-ZÀ-ỹ]/.test(tp)) return true;
+      const letters = tp.toLowerCase().replace(/[^a-z]/g, '');
+      if (letters.length > 4 && new Set(letters).size / letters.length < 0.25) return true;
+      return false;
+    }
+
+    function _showClarifyDialog(resolve) {
+      const vi = uiLang !== 'en';
+      const overlay = document.getElementById('topicClarifyOverlay');
+      document.getElementById('topicClarifyTitle').textContent = vi ? 'Chủ đề chưa rõ' : 'Topic unclear';
+      document.getElementById('topicClarifyDesc').textContent = vi
+        ? 'AI chưa hiểu chủ đề này. Bạn muốn viết về điều gì cụ thể?'
+        : 'AI couldn\'t understand this topic. What specifically do you want to write about?';
+      document.getElementById('topicClarifyInput').placeholder = vi ? 'Mô tả thêm về chủ đề…' : 'Describe your topic further…';
+      document.getElementById('topicClarifyOK').textContent = vi ? 'Tiếp tục' : 'Continue';
+      document.getElementById('topicClarifyCancel').textContent = vi ? 'Huỷ' : 'Cancel';
+      document.getElementById('topicClarifyInput').value = '';
+      overlay.style.display = 'flex';
+      document.getElementById('topicClarifyInput').focus();
+
+      const ok = document.getElementById('topicClarifyOK');
+      const cancel = document.getElementById('topicClarifyCancel');
+      function cleanup() {
+        overlay.style.display = 'none';
+        ok.replaceWith(ok.cloneNode(true));
+        cancel.replaceWith(cancel.cloneNode(true));
+      }
+      document.getElementById('topicClarifyOK').onclick = () => {
+        const extra = document.getElementById('topicClarifyInput').value.trim();
+        cleanup();
+        resolve(extra || null);
+      };
+      document.getElementById('topicClarifyCancel').onclick = () => { cleanup(); resolve(false); };
+      document.getElementById('topicClarifyInput').onkeydown = e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('topicClarifyOK').click(); }
+        if (e.key === 'Escape') { cleanup(); resolve(false); }
+      };
+    }
+
+    async function _validateTopicAI(tp) {
+      const key = tp.trim().toLowerCase();
+      if (key in _topicValidCache) return _topicValidCache[key];
+      const lk = getLicenseKey();
+      if (!lk) return true;
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            penly_key: lk,
+            prompt: `Is "${tp.trim()}" a valid English writing topic? Reply only YES or NO.`,
+            temperature: 0,
+            max_tokens: 5,
+            model: 'llama-3.1-8b-instant'
+          })
+        });
+        const d = await res.json();
+        const valid = (d.content || '').trim().toUpperCase().startsWith('YES');
+        _topicValidCache[key] = valid;
+        return valid;
+      } catch { return true; }
+    }
+
+    async function guardTopic(btnId) {
       if (isCooldown(btnId)) return false;
       const tp = (topic() || '').trim();
-      if (!tp) return true; // no topic — other guards handle this
-      // reject obvious gibberish: no real letters at all
-      const hasLetters = /[a-zA-ZÀ-ỹ]/.test(tp);
-      if (!hasLetters) {
+      if (!tp) return true;
+      if (_isObviousGibberish(tp)) {
         toast(uiLang === 'en' ? 'Please enter a real writing topic.' : 'Vui lòng nhập chủ đề thực sự.', 'i');
         return false;
       }
-      // reject keyboard mashing: very high ratio of repeated chars (e.g. "aaaaaaa", "asdfasdf")
-      const letters = tp.toLowerCase().replace(/[^a-z]/g, '');
-      if (letters.length > 4) {
-        const uniqueRatio = new Set(letters).size / letters.length;
-        if (uniqueRatio < 0.25) {
-          toast(uiLang === 'en' ? 'Topic doesn\'t look valid. Please enter a real writing topic.' : 'Chủ đề không hợp lệ. Vui lòng nhập chủ đề thực sự.', 'i');
-          return false;
-        }
+      const valid = await _validateTopicAI(tp);
+      if (!valid) {
+        const extra = await new Promise(resolve => _showClarifyDialog(resolve));
+        if (extra === false) return false; // user cancelled
+        if (extra) _topicExtra = extra;    // user added context — use it in next AI call
       }
       return true;
     }
 
     async function callGrammar() {
-      if (!guardTopic('btn-grammar')) return;
+      if (!await guardTopic('btn-grammar')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
       const r = await callAI(
@@ -94,7 +160,7 @@ RULES:
 
 
     async function callImprove() {
-      if (!guardTopic('btn-improve')) return;
+      if (!await guardTopic('btn-improve')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
 
@@ -249,7 +315,7 @@ Output format — follow EXACTLY:
     }
 
     async function callReview() {
-      if (!guardTopic('btn-review')) return;
+      if (!await guardTopic('btn-review')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text-review'));
       setPanelTitle('panel-review');
@@ -360,7 +426,7 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
     }
 
     async function callVocab() {
-      if (!guardTopic('btn-vocab')) return;
+      if (!await guardTopic('btn-vocab')) return;
       const tp = topic(); const text = editor.innerText.trim();
       if (!tp && !text) return toast(t('no-text-vocab'));
       setPanelTitle('panel-vocab');
@@ -469,7 +535,7 @@ ${uiLang === 'en'
     }
 
     async function callTranslate() {
-      if (!guardTopic('btn-translate')) return;
+      if (!await guardTopic('btn-translate')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
       const tp = topic();

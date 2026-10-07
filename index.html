@@ -236,13 +236,7 @@
               </div>
               <div class="topic-divider"></div>
 
-              <div id="editor" contenteditable="true" spellcheck="false" data-placeholder="Bắt đầu viết tiếng Anh tại đây…
-
-Gợi ý:
-  • Nhập chủ đề ở trên → nhấn [Bài Mẫu] để xem ví dụ
-  • Chèn từng đoạn vào bài hoặc tự viết theo phong cách đó
-  • Nhấn [Kiểm tra lỗi] sau mỗi đoạn
-  • Nhấn Tab để chấp nhận gợi ý tự động"></div>
+              <div id="editor" contenteditable="true" spellcheck="false" data-placeholder="Bắt đầu viết tiếng Anh tại đây…"></div>
 
             </div>
           </div>
@@ -584,6 +578,21 @@ Gợi ý:
         <button class="express-submit" id="expressSubmitBtn" onclick="submitExpress()">
           <i class="bi bi-search"></i> Tra cứu
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOPIC CLARIFY DIALOG -->
+  <div id="topicClarifyOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center">
+    <div style="background:var(--surface);border-radius:14px;padding:1.5rem 1.75rem;width:min(90vw,380px);box-shadow:0 8px 32px rgba(0,0,0,.25)">
+      <div style="font-size:1rem;font-weight:600;margin-bottom:.5rem" id="topicClarifyTitle">Chủ đề chưa rõ</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:.9rem" id="topicClarifyDesc">Bạn muốn viết về điều gì cụ thể hơn?</div>
+      <textarea id="topicClarifyInput" rows="3"
+        style="width:100%;box-sizing:border-box;padding:.55rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;background:var(--bg);color:var(--text);outline:none;resize:vertical"
+        placeholder="Mô tả thêm về chủ đề…"></textarea>
+      <div style="display:flex;gap:.6rem;justify-content:flex-end;margin-top:1rem">
+        <button id="topicClarifyCancel" style="padding:.45rem 1.1rem;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.88rem">Huỷ</button>
+        <button id="topicClarifyOK" style="padding:.45rem 1.2rem;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:.88rem;font-weight:600">Tiếp tục</button>
       </div>
     </div>
   </div>

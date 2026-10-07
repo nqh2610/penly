@@ -2,7 +2,7 @@
     // Replaces the old outline feature.
     // One AI call → a complete sample essay with VI translation toggle + per-paragraph insert.
 
-    const SAMPLE_LS_PREFIX = 'penly_sample3_';
+    const SAMPLE_LS_PREFIX = 'penly_sample4_';
     const SAMPLE_LS_TTL = 30 * 24 * 60 * 60 * 1000;
 
     function sampleLsGet(key) {
@@ -212,10 +212,26 @@ QUALITY RULES — every paragraph must follow these:
 10. Vary sentence openings — do not start 2 sentences in a row with the same word.
 11. NATURALNESS: every sentence must sound like something a real person would actually say or write. Be specific — no generic filler like "This topic is important."
 
-Use EXACTLY this output format — replace each marker with real text, no extra commentary:
-${Array.from({length: paraCount}, (_, i) => `[P${i+1}]\n[V${i+1}]`).join('\n')}
+Use EXACTLY this output format — each marker on its own line, English and Vietnamese strictly separated:
+[P1] (English paragraph 1 only — NO Vietnamese here)
+[V1] (Vietnamese translation of P1 only — NO English here)
+[P2] (English paragraph 2 only)
+[V2] (Vietnamese translation of P2 only)
+... and so on for all ${paraCount} paragraphs.
 
-Where [P1]–[P${paraCount}] = English paragraphs, [V1]–[V${paraCount}] = natural Vietnamese translations.
+CRITICAL: [P] markers contain ONLY English. [V] markers contain ONLY Vietnamese. Never mix both languages inside the same marker.
+
+Example of CORRECT format:
+[P1] I still remember the day I walked into my first classroom. The smell of new books filled the air, and I chose a seat near the window.
+[V1] Tôi vẫn còn nhớ cái ngày đầu tiên bước vào lớp học. Mùi sách mới thoang thoảng trong không khí, và tôi chọn ngồi gần cửa sổ.
+[P2] My teacher had a loud laugh that made everyone relax.
+[V2] Cô giáo tôi có tiếng cười rất to khiến cả lớp bỗng thấy thoải mái hơn.
+
+Example of WRONG format (never do this):
+[P1] I love school. Tôi yêu trường học. (WRONG — mixed languages in one marker)
+
+Now output the essay for topic "${tp}":
+[P1]
 
 TRANSLATION RULES for [V1]–[V${paraCount}]:
 - Translate MEANING, not words — use natural Vietnamese equivalents, not word-for-word mapping

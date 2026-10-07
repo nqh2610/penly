@@ -1,6 +1,66 @@
     // callSample is defined in outline.js
 
+    // ── TOPIC VALIDATION ──
+    const _topicValidCache = {}; // topic -> true/false
+    const _btnCooldown = {};     // btnId -> timestamp
+
+    function isCooldown(btnId) {
+      if (!btnId) return false;
+      const until = _btnCooldown[btnId] || 0;
+      if (Date.now() < until) {
+        const secs = Math.ceil((until - Date.now()) / 1000);
+        toast(uiLang === 'en' ? `Please wait ${secs}s before trying again.` : `Vui lòng chờ ${secs}s trước khi thử lại.`, 'i');
+        return true;
+      }
+      return false;
+    }
+
+    function setCooldown(btnId, ms = 30000) {
+      if (btnId) _btnCooldown[btnId] = Date.now() + ms;
+    }
+
+    async function validateTopic(tp) {
+      if (!tp || tp.trim().length < 2) return false;
+      const key = tp.trim().toLowerCase();
+      if (key in _topicValidCache) return _topicValidCache[key];
+      const lk = getLicenseKey();
+      if (!lk) return true; // no key → skip validation, let main call handle it
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            penly_key: lk,
+            prompt: `Is "${tp.trim()}" a valid English writing topic? Reply only YES or NO.`,
+            temperature: 0,
+            max_tokens: 5,
+            model: 'llama-3.1-8b-instant'
+          })
+        });
+        const d = await res.json();
+        const ans = (d.content || '').trim().toUpperCase();
+        const valid = ans.startsWith('YES');
+        _topicValidCache[key] = valid;
+        return valid;
+      } catch {
+        return true; // network error → don't block user
+      }
+    }
+
+    async function guardTopic(btnId) {
+      if (isCooldown(btnId)) return false;
+      const tp = topic();
+      if (!tp) return true; // no topic required for some features
+      const valid = await validateTopic(tp);
+      if (!valid) {
+        toast(uiLang === 'en' ? 'Topic doesn\'t look valid. Please enter a real writing topic.' : 'Chủ đề không hợp lệ. Vui lòng nhập chủ đề thực sự.', 'i');
+        return false;
+      }
+      return true;
+    }
+
     async function callGrammar() {
+      if (!await guardTopic('btn-grammar')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
       const r = await callAI(
@@ -38,6 +98,7 @@ RULES:
         'btn-grammar', false, true
       );
       if (!r) return;
+      setCooldown('btn-grammar');
       const clean = strip(r);
       editor.innerHTML = clean;
       const n = (clean.match(/<span class="ge"/g) || []).length;
@@ -52,6 +113,7 @@ RULES:
 
 
     async function callImprove() {
+      if (!await guardTopic('btn-improve')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
 
@@ -149,6 +211,7 @@ Output format — follow EXACTLY:
         improvedText ? improvedText : '');
 
       openPanel(t('panel-improve'), displayMd, null);
+      setCooldown('btn-improve');
 
       // inject "use this version" button at top of panel body
       if (improvedText) {
@@ -205,6 +268,7 @@ Output format — follow EXACTLY:
     }
 
     async function callReview() {
+      if (!await guardTopic('btn-review')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text-review'));
       setPanelTitle('panel-review');
@@ -311,10 +375,11 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
       }
 
       const r = await callAI(reviewPrompt, 'btn-review');
-      if (r) openPanel(t('panel-review'), r, null);
+      if (r) { setCooldown('btn-review'); openPanel(t('panel-review'), r, null); }
     }
 
     async function callVocab() {
+      if (!await guardTopic('btn-vocab')) return;
       const tp = topic(); const text = editor.innerText.trim();
       if (!tp && !text) return toast(t('no-text-vocab'));
       setPanelTitle('panel-vocab');
@@ -415,6 +480,7 @@ ${uiLang === 'en'
         1800
       );
       if (r) {
+        setCooldown('btn-vocab');
         if (d) { d.vocab = r; d.vocabKey = vocabKey; saveDocs(); }
         try { localStorage.setItem(lsVocabKey, r); } catch (_) {}
         openPanel(t('panel-vocab'), r, null);
@@ -422,6 +488,7 @@ ${uiLang === 'en'
     }
 
     async function callTranslate() {
+      if (!await guardTopic('btn-translate')) return;
       const text = editor.innerText.trim();
       if (!text) return toast(t('no-text'));
       const tp = topic();
@@ -461,6 +528,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
         }
         if (buf.length) paras.push(buf.join(' '));
         openPanel(t('panel-translate'), paras.join('\n\n'), null);
+        setCooldown('btn-translate');
       }
     }
 

@@ -359,6 +359,7 @@ Output the essay now:
       document.getElementById('resultPanel').classList.add('open');
       document.getElementById('editorPane').classList.add('shifted');
       document.getElementById('panelTitle').textContent = uiLang === 'en' ? 'Sample Essay' : 'Bài Mẫu';
+      setCooldown('btn-outline');
     }
 
     // Check if cached paras are valid (not placeholder or reasoning model output)
@@ -387,6 +388,7 @@ Output the essay now:
     async function callSample() {
       const tp = topic();
       if (!tp) return toast(uiLang === 'en' ? 'Enter a topic first.' : 'Nhập chủ đề trước.');
+      if (!await guardTopic('btn-outline')) return;
 
       const { lvl, tone, aud } = sampleKeys();
       const normTp = sampleNormTopic(tp);

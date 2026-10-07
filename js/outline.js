@@ -422,20 +422,14 @@ Output the essay now:
       const maxTokens = lvl === 'A' ? 1000 : lvl === 'C' ? 1800 : 1300;
 
       // Prefer non-reasoning models — gpt-oss thinks out loud and leaks planning text into output
+      // Put gpt-oss last so they're only used when all others are unavailable
       const sampleModels = typeof MODEL_CHAIN !== 'undefined'
-        ? MODEL_CHAIN.filter(m => !m.includes('gpt-oss'))
+        ? [...MODEL_CHAIN.filter(m => !m.includes('gpt-oss')), ...MODEL_CHAIN.filter(m => m.includes('gpt-oss'))]
         : null;
-      const hasNonGptOss = sampleModels && sampleModels.length > 0;
-      const modelsToUse = hasNonGptOss ? sampleModels : null; // null = use full chain as fallback
 
       setBusy('btn-outline', true, true, uiLang === 'en' ? 'Sample Essay' : 'Bài Mẫu');
 
-      // Try non-reasoning models first; if all fail, retry with full chain (gpt-oss)
-      let raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, modelsToUse);
-      if (!raw && hasNonGptOss) {
-        // non-gpt-oss all failed — retry with full chain
-        raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, null);
-      }
+      const raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, sampleModels);
       setBusy('btn-outline', false, false);
 
       if (!raw) {

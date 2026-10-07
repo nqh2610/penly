@@ -230,6 +230,8 @@ Example of CORRECT format:
 Example of WRONG format (never do this):
 [P1] I love school. Tôi yêu trường học. (WRONG — mixed languages in one marker)
 
+IMPORTANT — reasoning models only: Do NOT output any planning, thinking, or notes before the essay. Start your response with [P1] immediately. No preamble, no "let's", no "we need to", no reasoning — just the essay paragraphs in the exact format above.
+
 Now output the essay for topic "${tp}":
 [P1]
 
@@ -294,7 +296,7 @@ Output the essay now:
       }
 
       // Filter out reasoning/planning lines that gpt-oss reasoning models leak
-      const planningPattern = /^(need to|let'?s |choose |concrete |opinion:|write from|must not|sentence \d|good\.|words?\.|so |now |we |this |that |for |the essay|i will|i'll|step \d|\d+ words?\.?$)/i;
+      const planningPattern = /^(need to|let'?s |choose |concrete |opinion:|write from|must not|sentence \d|good\.|words?\.|so |now |we |this |that |for |the essay|i will|i'll|step \d|\d+ words?\.?$|also must|topic:|we need|must decide|decide |pick |but |or "|but we|e\.g\.,)/i;
       return paras.filter(p =>
         p.en && p.en.length > 15 &&
         !/^\[.*\]$/.test(p.en.trim()) &&

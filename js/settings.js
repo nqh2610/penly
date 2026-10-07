@@ -69,6 +69,16 @@
       if (open) { sdRefreshKey(); }
     }
 
+    async function clearCacheAndReload() {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) await reg.unregister();
+      } catch (_) {}
+      location.reload(true);
+    }
+
     function sdRefreshKey() {
       const k = getLicenseKey();
       const el = document.getElementById('sdKeyDisplay');

@@ -97,12 +97,6 @@
         toast(uiLang === 'en' ? 'Please enter a real writing topic.' : 'Vui lòng nhập chủ đề thực sự.', 'i');
         return false;
       }
-      const valid = await _validateTopicAI(tp);
-      if (!valid) {
-        const extra = await new Promise(resolve => _showClarifyDialog(resolve));
-        if (extra === false) return false; // user cancelled
-        if (extra) _topicExtra = extra;    // user added context — use it in next AI call
-      }
       return true;
     }
 

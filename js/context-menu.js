@@ -2,6 +2,52 @@
     let ctxLongPressTimer = null;
     let ctxTargetNode = null;
     let ctxFromPanel = false;
+    let _ctxPopoverSel = null; // saved selection range for popover positioning
+
+    function openCtxPopover(title, md) {
+      const pop = document.getElementById('ctxPopover');
+      document.getElementById('ctxPopoverTitle').textContent = title;
+      document.getElementById('ctxPopoverBody').innerHTML = md ? marked.parse(md) : '<p style="color:var(--muted);font-style:italic;font-size:.83rem">Đang xử lý…</p>';
+      // Position near saved selection
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const pw = Math.min(380, vw * 0.92);
+      pop.style.width = pw + 'px';
+      pop.style.display = 'block';
+      let left = 0, top = 0;
+      if (_ctxPopoverSel) {
+        try {
+          const rect = _ctxPopoverSel.getBoundingClientRect();
+          left = rect.left;
+          top = rect.bottom + 10;
+          // keep in viewport
+          if (left + pw > vw - 8) left = vw - pw - 8;
+          if (left < 8) left = 8;
+          const ph = Math.min(vh * 0.7, 480);
+          if (top + ph > vh - 8) top = rect.top - ph - 10;
+          if (top < 8) top = 8;
+        } catch { left = 8; top = 60; }
+      } else {
+        left = Math.max(8, vw / 2 - pw / 2);
+        top = 60;
+      }
+      pop.style.left = left + 'px';
+      pop.style.top = top + 'px';
+      setTimeout(() => document.addEventListener('pointerdown', _closePopoverOutside, { once: true }), 50);
+    }
+
+    function updateCtxPopover(md) {
+      const body = document.getElementById('ctxPopoverBody');
+      if (body) body.innerHTML = md ? marked.parse(md) : '';
+    }
+
+    function closeCtxPopover() {
+      document.getElementById('ctxPopover').style.display = 'none';
+    }
+
+    function _closePopoverOutside(e) {
+      if (!document.getElementById('ctxPopover')?.contains(e.target)) closeCtxPopover();
+      else setTimeout(() => document.addEventListener('pointerdown', _closePopoverOutside, { once: true }), 50);
+    }
 
     function showCtxMenu(x, y, panelMode = false) {
       ctxFromPanel = panelMode;
@@ -44,6 +90,9 @@
       }
 
       menu.classList.add('open');
+      // save selection range for popover positioning
+      const sel = window.getSelection();
+      _ctxPopoverSel = (sel && sel.rangeCount) ? sel.getRangeAt(0).cloneRange() : null;
       const vw = window.innerWidth, vh = window.innerHeight;
       const mw = 200, mh = 280;
       let left = x, top = y;

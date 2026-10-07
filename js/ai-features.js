@@ -595,15 +595,15 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const text = (sel || ttsGetCurrentPara()).slice(0, 400);
       if (!text) return toast(t('no-text'));
       const vi = uiLang !== 'en';
-      const title = 'Diễn đạt lại';
-      openPanelWith(title);
+      const title = vi ? 'Diễn đạt lại' : 'Paraphrase';
+      openCtxPopover(title, null);
       const r = await callAI(
         `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced. Keep both rewrites in English.${vi ? ' After each rewrite, add a short Vietnamese translation.' : ''} Be brief.
 "${text}"`,
         null, false, true, 400
       );
-      if (r) openPanel(title, r, null);
-      else document.getElementById('lbar').classList.add('hidden');
+      if (r) updateCtxPopover(r);
+      else closeCtxPopover();
     }
 
     async function callExplain() {
@@ -612,7 +612,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       if (!text) return toast(t('no-text'));
       const vi = uiLang !== 'en';
       const title = vi ? 'Giải thích' : 'Explain';
-      openPanelWith(title);
+      openCtxPopover(title, null);
       const r = await callAI(
         vi
           ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm: nghĩa tiếng Việt đơn giản + 1 ví dụ ngắn bằng tiếng Anh. Bỏ qua từ quá đơn giản (a, the, is...).
@@ -621,8 +621,8 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
 "${text}"`,
         null, false, true, 500
       );
-      if (r) openPanel(title, r, null);
-      else document.getElementById('lbar').classList.add('hidden');
+      if (r) updateCtxPopover(r);
+      else closeCtxPopover();
     }
 
     async function callAnalyze() {
@@ -631,14 +631,14 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       if (!text) return toast(t('no-text'));
       const vi = uiLang !== 'en';
       const title = vi ? 'Phân tích ngữ pháp' : 'Grammar Analysis';
-      openPanelWith(title);
+      openCtxPopover(title, null);
       const r = await callAI(
         `Grammar check: tense, structure, errors. Be concise.${vi ? ' Explain in Vietnamese, but keep all example sentences and corrections in English.' : ''}
 "${text}"`,
         null, false, true, 500
       );
-      if (r) openPanel(title, r, null);
-      else document.getElementById('lbar').classList.add('hidden');
+      if (r) updateCtxPopover(r);
+      else closeCtxPopover();
     }
 
     // load IPA_DATA in background — starts immediately, non-blocking
@@ -663,129 +663,93 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       if (!word) return toast(t('no-text'));
       const vi = uiLang !== 'en';
       const title = vi ? `Từ điển: ${word}` : `Dictionary: ${word}`;
-      openPanelWith(title);
+      openCtxPopover(title, null);
+      const body = document.getElementById('ctxPopoverBody');
+      body.innerHTML = `<p style="color:var(--muted);font-style:italic;font-size:.83rem">${t('processing')}</p>`;
 
-      // try local IPA first for instant display, then fetch full API data
       const localIpa = (typeof IPA_DATA !== 'undefined' ? IPA_DATA[word] : null) || null;
-
       let dictData = null;
       try {
         const res = await fetch(`${WORKER_URL}/dict?word=${encodeURIComponent(word)}`);
         if (res.ok) dictData = await res.json();
       } catch (e) { console.error('Dict API error:', e); }
 
-      // render DOM trực tiếp — không dùng marked.parse()
-      const pContent = document.getElementById('pContent');
-      document.getElementById('pCards').style.display = 'none';
-      document.getElementById('lbar').classList.add('hidden');
-      document.getElementById('panelTitle').textContent = title;
-      document.getElementById('resultPanel').classList.add('open');
-      document.getElementById('editorPane').classList.add('shifted');
-      pContent.innerHTML = '';
+      body.innerHTML = '';
+
+      // helper to append to popover body
+      const app = el => body.appendChild(el);
+
+      // header: word + IPA + speak button
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem';
+      const wordEl = document.createElement('h2');
+      wordEl.style.cssText = 'margin:0;font-size:1.4rem';
+      wordEl.textContent = word;
+      header.appendChild(wordEl);
+
+      const ipa = (!dictData || !dictData[0])
+        ? localIpa
+        : (dictData[0].phonetics?.find(p => p.text)?.text || dictData[0].phonetic || localIpa || '');
+      if (ipa) {
+        const ipaEl = document.createElement('span');
+        ipaEl.style.cssText = 'color:var(--muted);font-size:.95rem';
+        ipaEl.textContent = ipa;
+        header.appendChild(ipaEl);
+      }
+      const speakBtn = document.createElement('button');
+      speakBtn.className = 'dict-audio-btn';
+      speakBtn.title = vi ? 'Nghe phát âm' : 'Listen';
+      speakBtn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
+      speakBtn.onclick = () => { const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); };
+      header.appendChild(speakBtn);
+      app(header);
 
       if (!dictData || !dictData[0]) {
-        // build header with IPA if available
-        if (localIpa) {
-          const header = document.createElement('div');
-          header.style.cssText = 'display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem';
-          const wordEl = document.createElement('h2');
-          wordEl.style.cssText = 'margin:0;font-size:1.6rem';
-          wordEl.textContent = word;
-          header.appendChild(wordEl);
-          const ipaEl = document.createElement('span');
-          ipaEl.style.cssText = 'color:var(--muted);font-size:1rem';
-          ipaEl.textContent = localIpa;
-          header.appendChild(ipaEl);
-          const speakBtn = document.createElement('button');
-          speakBtn.className = 'dict-audio-btn';
-          speakBtn.title = vi ? 'Nghe phát âm' : 'Listen';
-          speakBtn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
-          speakBtn.onclick = () => { const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); };
-          header.appendChild(speakBtn);
-          pContent.appendChild(header);
-        }
-        // fallback to AI for definition
-        const loadingEl = document.createElement('span');
+        // fallback to AI
         const aiPrompt = vi
           ? `Tra từ tiếng Anh "${word}". Trả lời ngắn gọn bằng tiếng Việt: phiên âm IPA, loại từ, nghĩa chính (1-2 nghĩa), 1 câu ví dụ tiếng Anh (kèm dịch nghĩa tiếng Việt). Không giải thích dài dòng.`
           : `Define the English word "${word}" briefly: IPA pronunciation, part of speech, 1-2 main meanings, 1 example sentence.`;
         const aiResult = await callAI(aiPrompt, null, true, true, 400);
-        loadingEl.remove();
         if (aiResult) {
           const aiEl = document.createElement('div');
           aiEl.innerHTML = marked.parse(aiResult);
-          pContent.appendChild(aiEl);
+          app(aiEl);
         } else {
           const errEl = document.createElement('p');
           errEl.style.cssText = 'color:var(--muted);font-style:italic';
           errEl.textContent = vi ? 'Không tìm thấy từ này.' : 'Word not found.';
-          pContent.appendChild(errEl);
+          app(errEl);
         }
         return;
       }
 
       const entry = dictData[0];
-      const phonetics = entry.phonetics || [];
-      const ipa = phonetics.find(p => p.text)?.text || entry.phonetic || localIpa || '';
-
-      // header: từ + IPA + nút phát âm
-      const header = document.createElement('div');
-      header.style.cssText = 'display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem';
-      const wordEl = document.createElement('h2');
-      wordEl.style.cssText = 'margin:0;font-size:1.6rem';
-      wordEl.textContent = word;
-      header.appendChild(wordEl);
-
-      if (ipa) {
-        const ipaEl = document.createElement('span');
-        ipaEl.style.cssText = 'color:var(--muted);font-size:1rem';
-        ipaEl.textContent = ipa;
-        header.appendChild(ipaEl);
-      }
-
-      // nút phát âm bằng Web Speech API
-      const speakBtn = document.createElement('button');
-      speakBtn.className = 'dict-audio-btn';
-      speakBtn.title = vi ? 'Nghe phát âm' : 'Listen';
-      speakBtn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
-      speakBtn.onclick = () => {
-        const u = new SpeechSynthesisUtterance(word);
-        u.lang = 'en-US'; u.rate = 0.85;
-        speechSynthesis.cancel();
-        speechSynthesis.speak(u);
-      };
-      header.appendChild(speakBtn);
-      pContent.appendChild(header);
-
-      // meanings
       for (const meaning of (entry.meanings || []).slice(0, 4)) {
         const posEl = document.createElement('div');
-        posEl.style.cssText = 'font-weight:600;color:var(--accent);margin:.6rem 0 .3rem;font-size:.9rem;text-transform:uppercase;letter-spacing:.04em';
+        posEl.style.cssText = 'font-weight:600;color:var(--accent);margin:.6rem 0 .3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:.04em';
         posEl.textContent = meaning.partOfSpeech;
-        pContent.appendChild(posEl);
-
+        app(posEl);
         const ul = document.createElement('ul');
         ul.style.cssText = 'margin:0 0 .4rem;padding-left:1.2rem';
         for (const def of (meaning.definitions || []).slice(0, 3)) {
           const li = document.createElement('li');
-          li.style.cssText = 'margin-bottom:.35rem;font-size:.9rem';
+          li.style.cssText = 'margin-bottom:.35rem;font-size:.88rem';
           li.textContent = def.definition;
           if (def.example) {
             const ex = document.createElement('div');
-            ex.style.cssText = 'color:var(--muted);font-style:italic;font-size:.83rem;margin-top:.15rem;padding-left:.5rem;border-left:2px solid var(--border)';
+            ex.style.cssText = 'color:var(--muted);font-style:italic;font-size:.82rem;margin-top:.15rem;padding-left:.5rem;border-left:2px solid var(--border)';
             ex.textContent = def.example;
             li.appendChild(ex);
           }
           ul.appendChild(li);
         }
-        pContent.appendChild(ul);
-
+        app(ul);
         const synonyms = (meaning.synonyms || []).slice(0, 5);
         if (synonyms.length) {
           const synEl = document.createElement('div');
-          synEl.style.cssText = 'font-size:.83rem;color:var(--muted);margin-bottom:.4rem';
+          synEl.style.cssText = 'font-size:.82rem;color:var(--muted);margin-bottom:.4rem';
           synEl.innerHTML = `<span style="font-weight:600">${vi ? 'Từ đồng nghĩa:' : 'Synonyms:'}</span> ${synonyms.join(', ')}`;
-          pContent.appendChild(synEl);
+          app(synEl);
         }
       }
     }

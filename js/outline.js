@@ -414,9 +414,17 @@ Output the essay now:
 
       // maxTokens scales with paraCount: A=4 paras, B=5 paras, C=6 paras
       const maxTokens = lvl === 'A' ? 1000 : lvl === 'C' ? 1800 : 1300;
+
+      // Prefer non-reasoning models — gpt-oss thinks out loud and leaks planning text into output
+      const sampleModels = typeof MODEL_CHAIN !== 'undefined'
+        ? MODEL_CHAIN.filter(m => !m.includes('gpt-oss'))
+        : null;
+      const hasNonGptOss = sampleModels && sampleModels.length > 0;
+      const modelsToUse = hasNonGptOss ? sampleModels : null; // null = use full chain as fallback
+
       setBusy('btn-outline', true, true, uiLang === 'en' ? 'Sample Essay' : 'Bài Mẫu');
 
-      const raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens);
+      const raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, modelsToUse);
       setBusy('btn-outline', false, false);
 
       if (!raw) {

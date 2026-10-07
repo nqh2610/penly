@@ -74,41 +74,41 @@
 
       // Tone-specific structural guidance
       const toneStructure = {
-        storytelling: `INTRO: Set the scene — where, when, who. End with a hook sentence that makes the reader want to know what happens next.
-BODY 1: The situation or problem that started everything.
-BODY 2: The key event or turning point — what happened and how you felt.
-BODY 3: The result or change — what was different after.
-CONCLUSION: Reflect on what this experience taught you. Connect back to the opening scene.`,
-        casual: `INTRO: Start with a relatable observation or personal opinion about the topic. Preview 2–3 things you will talk about.
-BODY 1: First point — explain it with a personal example or everyday situation.
-BODY 2: Second point — a different angle, keep it conversational.
-BODY 3: Third point — the most interesting or surprising one.
-CONCLUSION: Wrap up with your overall feeling or a friendly call-to-action.`,
-        humorous: `INTRO: Open with a funny observation, exaggeration, or self-deprecating remark about the topic. Hint at 2–3 comic angles.
-BODY 1: First funny angle — build the joke with a specific detail or absurd example.
+        storytelling: `INTRO (3 parts): 1) Hook — vivid opening scene (where, when, who). 2) Introduce the topic/situation. 3) One sentence hinting at what the story will cover (the problem or journey ahead).
+BODY 1: The situation or problem that started everything — specific detail, not summary.
+BODY 2: The key event or turning point — what happened, what you felt, show don't tell.
+BODY 3: The result or change — what was different after, what you gained or lost.
+CONCLUSION: Reflect on what this taught you. Echo the opening scene or image.`,
+        casual: `INTRO (3 parts): 1) Hook — a relatable observation, question, or personal opinion that grabs attention. 2) Briefly introduce the topic. 3) Preview exactly 3 things the essay will cover ("I want to talk about X, Y, and Z" or implied naturally).
+BODY 1: First point from the intro preview — personal example or everyday situation.
+BODY 2: Second point from the intro preview — different angle, conversational.
+BODY 3: Third point from the intro preview — most interesting or surprising one.
+CONCLUSION: Overall feeling or friendly call-to-action. Refer back to the opening hook.`,
+        humorous: `INTRO (3 parts): 1) Hook — a funny observation, exaggeration, or self-deprecating remark. 2) Introduce the topic with a comic angle. 3) Hint at 2–3 funny angles the essay will explore.
+BODY 1: First funny angle — build the joke with a specific absurd detail or example.
 BODY 2: Second angle — escalate the humor, use contrast or unexpected comparison.
-BODY 3: Third angle — the funniest or most surprising point, land the punchline.
-CONCLUSION: Close with a light, witty remark that ties back to the opening joke.`,
-        professional: `INTRO: State the topic's importance and your clear position. List 3 specific points you will argue.
-BODY 1: Strongest argument — state the claim, give evidence or data, explain the implication.
-BODY 2: Second argument — different supporting reason, with a real-world example.
-BODY 3: Third argument or counter-argument addressed — acknowledge the opposing view, then refute it.
-CONCLUSION: Restate your position, summarize the 3 key points, and end with a forward-looking statement.`,
-        persuasive: `INTRO: Open with a bold statement or striking fact that creates urgency. State your position clearly. Preview your 3 reasons.
-BODY 1: Most compelling reason — back it up with a specific example, statistic, or consequence.
-BODY 2: Second reason — appeal to the reader's values or interests.
-BODY 3: Address the strongest objection — show why it doesn't outweigh your argument.
-CONCLUSION: Reinforce your position, summarize the key reasons, end with a direct call to action.`,
-        emotional: `INTRO: Open with a vivid sensory detail or emotional moment connected to the topic. Set the emotional tone for the piece.
-BODY 1: Describe the first emotional layer — what you saw, heard, or felt and why it mattered.
-BODY 2: Deepen the emotion — a memory, person, or moment that intensified the feeling.
-BODY 3: The shift or resolution — how your feelings evolved or what you understood differently.
-CONCLUSION: Return to the opening image or feeling. End with a quiet, meaningful reflection.`,
-      }[tone] || `INTRO: Introduce the topic and state what the essay will cover. End with a clear thesis or central idea.
-BODY 1: First main point — explain and give a specific example.
-BODY 2: Second main point — a different angle or supporting reason.
-BODY 3: Third main point — the most important or memorable idea.
-CONCLUSION: Restate the central idea, summarize the 3 points, end with a closing thought.`;
+BODY 3: Third angle — funniest or most surprising point, land the punchline.
+CONCLUSION: Light witty remark that ties back to the opening joke.`,
+        professional: `INTRO (3 parts): 1) Hook — a striking fact, statistic, or bold statement about the topic's importance. 2) State your clear position or thesis. 3) List exactly 3 points you will argue (explicit roadmap).
+BODY 1: Strongest argument — claim + evidence/data + implication.
+BODY 2: Second argument — different supporting reason + real-world example.
+BODY 3: Counter-argument acknowledged and refuted with evidence.
+CONCLUSION: Restate position, summarize 3 key points, forward-looking closing statement.`,
+        persuasive: `INTRO (3 parts): 1) Hook — bold statement or striking fact creating urgency. 2) State your position clearly. 3) Preview your 3 reasons explicitly.
+BODY 1: Most compelling reason — specific example, statistic, or consequence.
+BODY 2: Second reason — appeals to reader's values or interests.
+BODY 3: Strongest objection addressed and refuted.
+CONCLUSION: Reinforce position, summarize key reasons, direct call to action.`,
+        emotional: `INTRO (3 parts): 1) Hook — one vivid sensory detail or emotional moment (what you saw, heard, smelled). 2) Introduce the topic and its emotional significance. 3) Hint at the emotional journey the essay will take.
+BODY 1: First emotional layer — specific moment, show don't tell.
+BODY 2: Deepen the emotion — a memory, person, or detail that intensified the feeling.
+BODY 3: The shift or resolution — how feelings evolved, what you understood differently.
+CONCLUSION: Return to the opening image. End with a quiet, meaningful reflection.`,
+      }[tone] || `INTRO (3 parts): 1) Hook — an interesting question, surprising fact, or vivid image about the topic. 2) Introduce the topic clearly. 3) Preview the 3 main points the essay will cover.
+BODY 1: First main point from intro — explain and give a specific example.
+BODY 2: Second main point from intro — different angle or supporting reason.
+BODY 3: Third main point from intro — most important or memorable idea.
+CONCLUSION: Restate central idea, summarize 3 points, memorable closing thought.`;
 
       // Audience-specific language guidance
       const audDetail = {
@@ -132,6 +132,11 @@ TOTAL LENGTH: approximately ${wordTarget} words in English
 
 ESSAY STRUCTURE — follow this exactly:
 ${toneStructure}
+
+INTRO EXAMPLES by level (use as a model for quality and structure, NOT to copy):
+- A1/A2: "Every morning, I feel happy when I go to school. My school is a fun place. I like my teachers, my friends, and the games we play at recess."
+- B1/B2: "Have you ever walked into a place that felt like a second home? For me, that place is my school. It has shaped who I am through great teachers, close friendships, and lessons I will never forget."
+- C1/C2: "Few places leave as deep an impression on a person as the school where they spent their formative years. My school was not just a building where lessons were taught; it was where I discovered my curiosity, built lasting friendships, and learned that failure is often the best teacher."
 
 QUALITY RULES — every paragraph must follow these:
 1. ONE idea per paragraph — do not mix two topics in one paragraph.

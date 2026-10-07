@@ -293,7 +293,13 @@ Output the essay now:
         }
       }
 
-      return paras.filter(p => p.en && p.en.length > 15 && !/^\[.*\]$/.test(p.en.trim()));
+      // Filter out reasoning/planning lines that gpt-oss reasoning models leak
+      const planningPattern = /^(need to|let'?s |choose |concrete |opinion:|write from|must not|sentence \d|good\.|words?\.|so |now |we |this |that |for |the essay|i will|i'll|step \d|\d+ words?\.?$)/i;
+      return paras.filter(p =>
+        p.en && p.en.length > 15 &&
+        !/^\[.*\]$/.test(p.en.trim()) &&
+        !planningPattern.test(p.en.trim())
+      );
     }
     function renderSampleHtml(paras, showVi) {
       if (!paras || !paras.length) return '<p style="color:var(--muted)">—</p>';
@@ -424,7 +430,12 @@ Output the essay now:
 
       setBusy('btn-outline', true, true, uiLang === 'en' ? 'Sample Essay' : 'Bài Mẫu');
 
-      const raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, modelsToUse);
+      // Try non-reasoning models first; if all fail, retry with full chain (gpt-oss)
+      let raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, modelsToUse);
+      if (!raw && hasNonGptOss) {
+        // non-gpt-oss all failed — retry with full chain
+        raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, null);
+      }
       setBusy('btn-outline', false, false);
 
       if (!raw) {

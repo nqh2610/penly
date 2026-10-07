@@ -286,21 +286,12 @@ Output the essay now:
       }
       if (cur && cur.en) paras.push(cur);
 
-      // Fallback: blank-line split if no markers found at all
-      if (!paras.length && clean.length > 20) {
-        const blocks = clean.split(/\n{2,}/).map(b => b.trim()).filter(b => b.length > 20);
-        for (const block of blocks) {
-          if (/^(paragraph|intro|body|conclusion|we need|total|count|so |now |let |each |\[P|\[V)/i.test(block)) continue;
-          paras.push({ en: block.replace(/\n/g, ' '), vi: '' });
-        }
-      }
+      // No fallback parser — if no [P1] markers found, return empty so caller retries
+      // (fallback blank-line split was picking up gpt-oss planning/thinking text)
 
-      // Filter out reasoning/planning lines that gpt-oss reasoning models leak
-      const planningPattern = /^(need to|let'?s |choose |concrete |opinion:|write from|must not|sentence \d|good\.|words?\.|so |now |we |this |that |for |the essay|i will|i'll|step \d|\d+ words?\.?$|also must|topic:|we need|must decide|decide |pick |but |or "|but we|e\.g\.,)/i;
       return paras.filter(p =>
         p.en && p.en.length > 15 &&
-        !/^\[.*\]$/.test(p.en.trim()) &&
-        !planningPattern.test(p.en.trim())
+        !/^\[.*\]$/.test(p.en.trim())
       );
     }
     function renderSampleHtml(paras, showVi) {
@@ -451,10 +442,20 @@ Output the essay now:
 
       const paras = parseSampleResponse(raw);
       if (!paras.length) {
-        // clear any bad cache entry so next attempt re-fetches
+        // parse failed (likely gpt-oss leaked thinking text) — retry once
         sampleLsSet(cacheKey, null);
         try { localStorage.removeItem(SAMPLE_LS_PREFIX + cacheKey); } catch (_) {}
-        document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.85rem">${uiLang === 'en' ? 'Could not parse response. Please try again.' : 'Lỗi định dạng. Vui lòng thử lại.'}</p>`;
+        setBusy('btn-outline', true, true, uiLang === 'en' ? 'Sample Essay (retry…)' : 'Bài Mẫu (thử lại…)');
+        const raw2 = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, sampleModels);
+        setBusy('btn-outline', false, false);
+        const paras2 = raw2 ? parseSampleResponse(raw2) : [];
+        if (!paras2.length) {
+          document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.85rem">${uiLang === 'en' ? 'Could not parse response. Please try again.' : 'Lỗi định dạng. Vui lòng thử lại.'}</p>`;
+          return;
+        }
+        sampleLsSet(cacheKey, paras2);
+        if (d) { d.sample = paras2; d.sampleKey = cacheKey; saveDocs(); }
+        showSamplePanel(paras2);
         return;
       }
 

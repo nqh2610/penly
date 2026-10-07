@@ -70,6 +70,14 @@
     }
 
     async function clearCacheAndReload() {
+      // Clear localStorage caches (vocab, sample essays)
+      try {
+        const toRemove = Object.keys(localStorage).filter(k =>
+          k.startsWith('vocab3|') || k.startsWith('penly_sample4_')
+        );
+        toRemove.forEach(k => localStorage.removeItem(k));
+      } catch (_) {}
+      // Clear SW caches and unregister
       try {
         const keys = await caches.keys();
         await Promise.all(keys.map(k => caches.delete(k)));

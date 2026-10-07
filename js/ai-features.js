@@ -353,6 +353,7 @@ Rules:
 - LANGUAGE RULE: Write ALL section headings, labels, explanations, and translations in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 - For Phrasal Verbs, Idioms, and Fixed Expressions: ONLY include if genuinely relevant. If none, SKIP that section entirely.
 - NATURALNESS: every example sentence must sound like something a real person would actually say or write — specific, vivid, directly connected to the topic. No generic filler like "She uses this word." No robot-sounding sentences.
+- TRANSLATION: when writing meanings or translations in Vietnamese, translate the MEANING not the words — use natural Vietnamese equivalents and collocations. Bad: "có một nụ cười lớn". Good: "có nụ cười tươi".
 
 ---
 
@@ -423,11 +424,23 @@ ${uiLang === 'en'
       if (!text) return toast(t('no-text'));
       const tp = topic();
 
+      // Detect target language from UI language setting
+      const targetLang = uiLang === 'en' ? 'Vietnamese' : 'Vietnamese';
+
       // Count source paragraphs to reconstruct structure
       const srcParas = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
 
       const r = await callAI(
-        `Translate to Vietnamese naturally. One paragraph per line, ${srcParas.length} line(s) total. No extra text.
+        `Translate the following English text to ${targetLang}. ${srcParas.length} paragraph(s) — output exactly ${srcParas.length} line(s), one per paragraph.
+
+TRANSLATION RULES:
+- Translate MEANING, not words — find the natural equivalent in ${targetLang}, not a word-for-word mapping
+- Match tone: humorous stays humorous, formal stays formal, emotional stays emotional
+- Use natural ${targetLang} expressions and collocations — avoid literal translations that sound unnatural
+- Preserve the author's voice and style
+- Examples of natural translation: "has a big smile" → "có nụ cười tươi" (not "có một nụ cười lớn"); "broke my heart" → "khiến tôi đau lòng" (not "phá vỡ trái tim tôi")
+- No explanations, no extra text — translation only
+
 ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
         'btn-translate', false, false, 600, t('panel-translate')
       );

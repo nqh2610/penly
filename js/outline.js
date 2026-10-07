@@ -151,6 +151,12 @@ ${Array.from({length: 5}, (_, i) => `[P${i+1}]\n[V${i+1}]`).join('\n')}
 
 Where [P1]–[P5] = English paragraphs, [V1]–[V5] = natural Vietnamese translations.
 
+TRANSLATION RULES for [V1]–[V5]:
+- Translate MEANING, not words — use natural Vietnamese equivalents, not word-for-word mapping
+- Match tone: humorous stays humorous, formal stays formal, emotional stays emotional
+- Use Vietnamese collocations and expressions — avoid literal translations that sound unnatural
+- Example: "has a big smile" → "có nụ cười tươi" (not "có một nụ cười lớn"); "broke my heart" → "khiến tôi đau lòng" (not "phá vỡ trái tim tôi")
+
 Output the essay now:
 [P1]`;
     }

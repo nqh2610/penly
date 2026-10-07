@@ -32,7 +32,9 @@
         } else {
           // no suggestion yet — trigger immediately
           const txt = editor.innerText.trim();
-          if (txt.length > 3) { acSeq++; doAC(txt); }
+          const tp = topic();
+          if (txt.length > 3 || tp) { acSeq++; doAC(txt); }
+          else toast(uiLang === 'en' ? 'Enter a topic above first.' : 'Nhập chủ đề trước.', 'i');
         }
       }
     });
@@ -123,9 +125,44 @@
       }
     }
 
+    // ── SHARED WRITING STANDARDS ──
+    // Single source of truth used by Sample, Improve, and Review
+    const WRITING_STANDARDS = {
+      level: {
+        A: { sentences: '5–9 words', vocab: 'common everyday words only', connectors: '"and, but, so, because, or"', firstPerson: true },
+        B: { sentences: '10–18 words', vocab: 'varied, level-appropriate vocabulary', connectors: '"because, however, although, in addition, as a result, when"', firstPerson: true },
+        C: { sentences: '18–30 words', vocab: 'sophisticated, precise vocabulary with collocations', connectors: '"nevertheless, furthermore, consequently, whereas, given that"', firstPerson: true },
+      },
+      tone: {
+        storytelling: { emDash: false, contractions: true,  firstPerson: true,  register: 'narrative, personal, uses time connectors' },
+        casual:       { emDash: false, contractions: true,  firstPerson: true,  register: 'friendly, warm, informal' },
+        humorous:     { emDash: false, contractions: true,  firstPerson: true,  register: 'light, playful, self-deprecating' },
+        professional: { emDash: false, contractions: false, firstPerson: false, register: 'formal, objective, no "I" or slang' },
+        persuasive:   { emDash: false, contractions: false, firstPerson: true,  register: 'assertive, structured argument with call to action' },
+        emotional:    { emDash: false, contractions: true,  firstPerson: true,  register: 'reflective, uses sensory and emotional language' },
+      },
+    };
+
+    function getStandards() {
+      const lvlCode = (lvlSel.value.match(/^[ABC]/) || ['B'])[0];
+      const toneWord = (toneSel.value.split(/[\s—]/)[0] || 'casual').toLowerCase();
+      const lvlStd = WRITING_STANDARDS.level[lvlCode] || WRITING_STANDARDS.level.B;
+      const toneStd = WRITING_STANDARDS.tone[toneWord] || WRITING_STANDARDS.tone.casual;
+      return { lvlCode, toneWord, lvlStd, toneStd };
+    }
+
     // ── CONTEXT ──
     function ctx() {
-      return `WRITING CONTEXT:\n- Audience: ${audSel.value}\n- Tone: ${toneSel.value}\n- Level: ${lvlSel.value}`;
+      const src = typeof writingSource !== 'undefined' && writingSource;
+      const srcNote = src === 'sample' ? '\n- Writing origin: AI-generated sample essay (user is studying/adapting it)'
+        : src === 'improve' ? '\n- Writing origin: User draft refined by AI improvement tool'
+        : '';
+      const { lvlCode, toneWord, lvlStd, toneStd } = getStandards();
+      return `WRITING CONTEXT:
+- Audience: ${audSel.value}
+- Tone: ${toneSel.value} (register: ${toneStd.register})
+- Level: ${lvlSel.value} (sentences: ${lvlStd.sentences}; vocabulary: ${lvlStd.vocab}; connectors: ${lvlStd.connectors})
+- Style rules: no em dash; ${toneStd.contractions ? 'contractions OK' : 'no contractions'}; ${toneStd.firstPerson ? 'first person OK' : 'no first person ("I")'}${srcNote}`;
     }
     function topic() {
       return topicInput.value.trim();
@@ -137,6 +174,13 @@
       const btn = document.getElementById('acToggleBtn');
       if (btn) btn.classList.add('loading');
       const tp = topic();
+
+      // Nothing to work with — need either text or a topic
+      if (!txt && !tp) {
+        if (btn) btn.classList.remove('loading');
+        toast(uiLang === 'en' ? 'Enter a topic above first.' : 'Nhập chủ đề trước.', 'i');
+        return;
+      }
 
       // Parse paragraphs
       const paras = txt.split(/\n+/).filter(p => p.trim());
@@ -175,7 +219,18 @@
 - For B1/B2: 12–18 words, connectors like because/however/although are fine
 - For C1/C2: varied sentence structures, precise vocabulary, complex ideas welcome`;
 
-      const prompt = currentParaWords < 4 && essayStage !== 'new paragraph start'
+      const prompt = !txt && tp
+        // Empty editor with topic — suggest an opening sentence
+        ? `You are an English writing coach helping a user start their writing.
+Topic: "${tp}"
+${ctx()}
+The user has not written anything yet.
+Task: Suggest ONE strong opening sentence to begin a ${toneSel.value.split(/[\s—]/)[0] || 'casual'} essay about this topic.
+${levelRules}
+- This is the very first sentence of the essay — make it engaging and relevant to the topic
+- NO em dash (—), NO quotes, NO explanation — output the sentence only`
+
+        : currentParaWords < 4 && essayStage !== 'new paragraph start'
         // Very short text — just get started
         ? `You are an English writing coach helping a user practise writing.
 Topic: "${tp || 'general'}"

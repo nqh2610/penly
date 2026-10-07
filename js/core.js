@@ -104,6 +104,7 @@
     let docs = [], currentId = null;
     let saveTimer, pendingAC = "", acSeq = 0;
     let improveOriginalText = null; // bản gốc trước khi nâng cấp lần đầu
+    let writingSource = null; // 'sample' | 'improve' | null
     let savedRange = null;
 
     function triggerAC() {

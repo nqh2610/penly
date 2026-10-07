@@ -57,6 +57,7 @@
       }
       currentId = id;
       improveOriginalText = null; // reset khi chuyển doc
+      writingSource = null; // reset writing source khi chuyển doc
       const d = getDoc(id); if (!d) return;
 
       topicInput.value = d.topic || ''; // Nạp topic của bài được chọn vào ô nhập

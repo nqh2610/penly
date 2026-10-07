@@ -1,53 +1,4 @@
-    // 3. HÀM THỰC THI CHÍNH
-      async function callOutline() {
-      const tp = topic(); if (!tp) return toast(t('no-topic'));
-      setPanelTitle('panel-outline');
-      const { lvl, tone, aud } = outlineKeys();
-      const L = OUTLINE_LEVELS[lvl];
-      const lang = uiLang === 'en' ? 'English' : 'Vietnamese';
-      const vi = uiLang !== 'en';
-
-      const normTp = olNormTopic(tp);
-      const cacheKey = `v16|${normTp}|${lvl}|${tone}|${aud}|${lang}`;
-
-      // 1. Doc cache
-      const d = getDoc(currentId);
-      if (d && d.outline && d.outlineKey === cacheKey && String(d.outline).startsWith(OL_PREFIX)) {
-        showOutline(d.outline); return;
-      }
-      // 2. localStorage cache
-      const lsCached = olLsGet(cacheKey);
-      if (lsCached && String(lsCached).startsWith(OL_PREFIX)) {
-        showOutline(lsCached);
-        if (d) { d.outline = lsCached; d.outlineKey = cacheKey; saveDocs(); }
-        return;
-      }
-
-      if (_olAbort) { _olAbort.abort(); _olAbort = null; }
-      const run = ++_olRun;
-      const c = { tp, lvl, tone, aud, L, lang };
-      const plan = OUTLINE_PLAN[lvl];
-
-      // Show skeleton
-      showOutlineState({
-        lvl, vi, c, d, cacheKey,
-        data: { parts: plan.parts.map(type => ({ status: 'pending', type })) }
-      });
-
-      setBusy('btn-outline', true, false);
-      const raw = await callAI(buildSimpleOutlinePrompt(c), 'btn-outline', true, true, 800);
-      setBusy('btn-outline', false, false);
-
-      if (run !== _olRun) return;
-      if (!raw) {
-        const outage = aiOutageInfo();
-        return showOutlineError(vi, outage || null);
-      }
-
-      const state = { lvl, vi, data: parseSimpleOutline(raw, c), c, d, cacheKey };
-      showOutlineState(state);
-      olFinalize(state);
-    }
+    // callSample is defined in outline.js
 
     async function callGrammar() {
       const text = editor.innerText.trim();
@@ -99,113 +50,6 @@ RULES:
       editor.dispatchEvent(new Event('input')); toast(t('toast-fixed'), 's');
     };
 
-    // Suggest cache: keyed by para state hash, holds parsed result
-    const _suggestCache = new Map();
-
-    async function callSuggest() {
-      const text = editor.innerText.trim();
-      if (!text) return toast(t('no-text-short'));
-      setPanelTitle('panel-suggest');
-
-      const paras = text.split(/\n+/).filter(p => p.trim());
-      const totalParas = paras.length;
-      const currentPara = paras[totalParas - 1] || '';
-      const prevParas = paras.slice(0, -1);
-
-      const sentences = currentPara.trim().match(/[^.!?]+[.!?]+/g) || [];
-      const sentencesInPara = sentences.length;
-      const lastSentence = sentences[sentences.length - 1]?.trim() || currentPara.trim();
-
-      const prevSummary = prevParas.length
-        ? `What has been written so far:\n${prevParas.map((p, i) => `- Para ${i + 1}: "${p.trim().slice(0, 200)}${p.trim().length > 200 ? '...' : ''}"`).join('\n')}`
-        : '';
-
-      // Determine essay stage
-      const isIntro = totalParas === 1;
-      const isNewPara = currentPara.trim().length < 20;
-      const isParaLong = sentencesInPara >= 3;
-
-      // Cache key: all inputs that affect output
-      const cacheKey = `${topic()}|${lvlSel.value}|${uiLang}|${totalParas}|${currentPara.trim().slice(0, 300)}`;
-      if (_suggestCache.has(cacheKey)) {
-        openPanel(t('panel-suggest'), '', _suggestCache.get(cacheKey));
-        return;
-      }
-
-      // Dynamic 3 angles based on context
-      const angles = isIntro && sentencesInPara <= 1
-        ? [
-          'hook the reader with a surprising fact, question, or relatable situation about this topic',
-          'state the writer\'s main opinion or stance on this topic clearly',
-          'mention 2–3 aspects the essay will cover (a brief signpost sentence)',
-        ]
-        : isNewPara
-          ? [
-            'open with a clear topic sentence that introduces a NEW idea not covered in previous paragraphs',
-            'open with a contrasting idea that challenges something from the previous paragraph',
-            'open with a question or observation that leads into a new angle on the topic',
-          ]
-          : isParaLong
-            ? [
-              'wrap up this paragraph with a sentence that ties the ideas together',
-              'write a transition sentence that signals a new idea is coming next',
-              `push the last point further — the last sentence said: "${lastSentence}" — add a specific consequence or real-world example`,
-            ]
-            : [
-              `support the last sentence ("${lastSentence}") with a specific fact, statistic, or example`,
-              `explain WHY the last point matters — give a reason or consequence`,
-              `add a personal feeling, experience, or opinion that connects to the last sentence`,
-            ];
-
-      // Level rule for active level only
-      const lvlCode = (lvlSel.value.match(/^[ABC]/) || ['B'])[0];
-      const levelRule = lvlCode === 'A'
-        ? 'Max 8–10 words, basic vocabulary, "and/but/so" connectors only'
-        : lvlCode === 'C'
-          ? '15–25 words, rich vocabulary, complex structures welcome'
-          : '12–18 words, varied vocab, "because/when/although/however" are fine';
-
-      const r = await callAI(
-        `You are an English writing coach helping a user write a well-structured essay.
-
-Topic: "${topic() || 'not specified'}"
-${ctx()}
-Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
-
-LANGUAGE RULE: Write the "vi" field in natural Vietnamese. Write all other text in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
-
-${prevSummary ? prevSummary + '\n' : ''}Current paragraph (${sentencesInPara} sentence${sentencesInPara !== 1 ? 's' : ''} so far):
-"${currentPara.trim()}"
-
-Generate exactly 3 next sentences, each with a DIFFERENT purpose:
-- Sentence 1: ${angles[0]}
-- Sentence 2: ${angles[1]}
-- Sentence 3: ${angles[2]}
-
-Rules for ALL sentences:
-1. Do NOT repeat or restate anything already written above
-2. STRICTLY match the user's level: ${levelRule}
-3. Sound natural — NOT textbook-formal
-4. NO em dash (—). Use comma or "and/but" instead.
-5. Vietnamese translation: natural spoken Vietnamese with appropriate pronouns
-
-Return ONLY a valid JSON array, no other text:
-[
-  {"en": "Sentence 1.", "vi": "Bản dịch tự nhiên."},
-  {"en": "Sentence 2.", "vi": "Bản dịch tự nhiên."},
-  {"en": "Sentence 3.", "vi": "Bản dịch tự nhiên."}
-]`,
-        'btn-suggest'
-      );
-      if (!r) return;
-      try {
-        const arr = JSON.parse(strip(r));
-        _suggestCache.set(cacheKey, arr);
-        openPanel(t('panel-suggest'), '', arr);
-      } catch {
-        openPanel(t('panel-suggest'), r, null);
-      }
-    }
 
     async function callImprove() {
       const text = editor.innerText.trim();
@@ -225,12 +69,19 @@ Return ONLY a valid JSON array, no other text:
 
       setPanelTitle('panel-improve');
 
-      const improveLevel = (lvlSel.value.match(/^[ABC]/) || ['B'])[0];
+      const { lvlCode: improveLevel, lvlStd, toneStd } = typeof getStandards === 'function' ? getStandards() : { lvlCode: (lvlSel.value.match(/^[ABC]/) || ['B'])[0], lvlStd: null, toneStd: null };
       const improveRule = improveLevel === 'A'
-        ? 'Fix unnatural phrasing → more natural simple expressions; add ONE basic connector (e.g. "and", "so", "because") where missing; correct word order issues'
+        ? 'Fix unnatural phrasing → more natural simple expressions; add a basic connector where missing; correct word order issues'
         : improveLevel === 'C'
           ? 'Elevate to sophisticated vocabulary; vary sentence structures; add discourse markers; improve cohesion and coherence'
-          : 'Replace repetitive/weak words with more precise vocabulary; combine short choppy sentences into smoother ones; add transitional phrases ("In addition", "However", "As a result")';
+          : 'Replace repetitive/weak words with more precise vocabulary; combine short choppy sentences; add transitional phrases';
+      const styleRules = [
+        'NEVER use em dash (—) — use comma or "and/but" instead',
+        lvlStd ? `Sentences: ${lvlStd.sentences}` : '',
+        lvlStd ? `Connectors: use ${lvlStd.connectors}` : '',
+        toneStd && !toneStd.contractions ? 'No contractions' : '',
+        toneStd && !toneStd.firstPerson ? 'No first person ("I")' : '',
+      ].filter(Boolean).join('; ');
 
       const r = await callAI(
         `You are an expert English editor and ESL writing coach. IMPROVE the user's writing — do not rewrite or replace their ideas.
@@ -251,22 +102,27 @@ LANGUAGE RULE: Write ALL headings, explanations, and tips in ${uiLang === 'en' ?
 **KEEP:** Every idea, fact, detail, narrator voice, emotional tone. Do NOT add or remove content.
 **IMPROVE (level ${improveLevel}):** ${improveRule}
 
+**STYLE RULES (must follow — shared standard with Sample and Review):**
+${styleRules}
+
 **RULES:**
 - NEVER invent new content
-- NEVER use em dash (—)
 - NEVER change word count by more than 30% vs ORIGINAL
 - If improved once, focus on a DIFFERENT aspect
 - Bold (**word**) ONLY words/phrases changed from current version
+- You MUST output ALL THREE sections below in order: the improved text between %%S%% and %%E%%, then the changes section, then the tips section. Do not stop after the improved text.
+
+Output format — follow EXACTLY:
 
 %%S%%
-(Improved text only. Bold changed words. No headings.)
+(Improved text here. Bold changed words. No headings.)
 %%E%%
 
 ## ✏️ ${uiLang === 'en' ? 'Changes made' : 'Thay đổi'}
-*(${uiLang === 'en' ? 'original → improved — short reason' : 'gốc → cải thiện — lý do ngắn'})*
+*(${uiLang === 'en' ? 'List each change: original → improved — short reason why' : 'Liệt kê từng thay đổi: gốc → cải thiện — lý do ngắn'})*
 
 ## 💡 ${uiLang === 'en' ? 'Practice tips' : 'Mẹo luyện tập'}
-*(${uiLang === 'en' ? '1–2 practical tips' : '1–2 mẹo thực dụng'})*`,
+*(${uiLang === 'en' ? '1–2 practical tips based on the changes above' : '1–2 mẹo thực dụng dựa trên những thay đổi trên'})*`,
         'btn-improve'
       );
       if (!r) return;
@@ -325,8 +181,13 @@ LANGUAGE RULE: Write ALL headings, explanations, and tips in ${uiLang === 'en' ?
 
         confirmBar.querySelector('.improve-yes').onclick = () => {
           const plain = improvedText.replace(/\*\*(.*?)\*\*/g, '$1');
-          editor.innerText = plain;
+          // Convert plain text paragraphs to HTML — contenteditable uses <div> per paragraph
+          const paras = plain.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+          editor.innerHTML = paras.length > 1
+            ? paras.map(p => `<div>${p.replace(/\n/g, '<br>')}</div>`).join('')
+            : plain.replace(/\n/g, '<br>');
           editor.dispatchEvent(new Event('input'));
+          if (typeof writingSource !== 'undefined') writingSource = 'improve';
           confirmBar.classList.remove('show');
           btn.style.display = '';
           closePanel();
@@ -351,11 +212,27 @@ LANGUAGE RULE: Write ALL headings, explanations, and tips in ${uiLang === 'en' ?
       const wc = text.trim().split(/\s+/).filter(Boolean).length;
       const vi = uiLang !== 'en';
 
+      // Guard: reject gibberish / too-short input before calling AI
+      if (wc < 8) {
+        return toast(vi ? 'Viết ít nhất 8 từ để nhận nhận xét.' : 'Write at least 8 words to get feedback.', '');
+      }
+      // Detect gibberish: ratio of real word characters vs total is too low
+      const alphaRatio = (text.match(/[a-zA-ZÀ-ỹ]/g) || []).length / text.length;
+      if (alphaRatio < 0.5) {
+        return toast(vi ? 'Nội dung không hợp lệ. Hãy viết bằng tiếng Anh.' : 'Text does not look like real writing. Please write in English.', '');
+      }
+      // Detect repeated characters / keyboard mashing (e.g. "asdfasdf", "aaaaaaa")
+      const uniqueWords = new Set(text.toLowerCase().match(/[a-z]{2,}/g) || []);
+      const totalWords = (text.toLowerCase().match(/[a-z]{2,}/g) || []).length;
+      if (totalWords > 3 && uniqueWords.size / totalWords < 0.25) {
+        return toast(vi ? 'Nội dung có vẻ không phải văn bản thật. Hãy viết một đoạn văn thực sự.' : 'Text looks like random input. Please write a real paragraph.', '');
+      }
+
       let reviewPrompt;
 
       if (wc < 60) {
         // short text — lightweight feedback proportional to length
-        reviewPrompt = `You are an expert ESL writing reviewer. The user wrote a short piece (${wc} word${wc === 1 ? '' : 's'}).
+        reviewPrompt = `You are a supportive but honest ESL writing teacher. The student wrote a short piece (${wc} word${wc === 1 ? '' : 's'}).
 
 Topic: "${tp || 'not specified'}"
 Text:
@@ -367,40 +244,70 @@ Interface language: ${vi ? 'Vietnamese' : 'English'}
 
 LANGUAGE RULE: Write ALL feedback in ${vi ? 'Vietnamese' : 'English'}.
 
-Give brief, honest feedback proportional to the text length. Use 2 short sections only:
+CALIBRATION RULE: Only praise what genuinely works. Only flag real problems. Do not invent strengths to be encouraging, and do not manufacture weaknesses to seem thorough. A short but well-written text deserves honest recognition. A weak text deserves clear, kind guidance.
+
+Give brief pedagogical feedback. Use 2 sections only:
 
 ## ${vi ? '✅ Điểm tốt' : '✅ What works'}
-*(${vi ? '1–2 điểm cụ thể, trích dẫn từ/cụm từ trong bài' : '1–2 specific points, quote words or phrases from the text'})*
+*(${vi ? 'Chỉ nêu nếu thực sự có — trích dẫn từ/câu cụ thể, giải thích tại sao hiệu quả' : 'Only if genuinely present — quote words or phrases, explain why they work'})*
 
-## ${vi ? '⚠️ Cần cải thiện' : '⚠️ What to improve'}
-*(${vi ? '1–2 điểm quan trọng nhất, có ví dụ cụ thể hoặc gợi ý viết lại' : '1–2 key issues with concrete suggestions or rewrites'})*
+## ${vi ? '💡 Gợi ý cải thiện' : '💡 How to improve'}
+*(${vi ? 'Chỉ nêu vấn đề thực sự — trích dẫn → viết lại → giải thích ngắn. Nếu không có vấn đề, nói thẳng bài viết tốt.' : 'Only real issues — quote → rewrite → brief reason. If there are none, say the writing is good.'})*`;
 
-Keep response short — do not pad or invent issues that aren't there.`;
       } else {
         // full review for substantial text
-        reviewPrompt = `You are an expert English writing reviewer. Give honest and helpful feedback on the user's writing.
+        const srcCtx = typeof writingSource !== 'undefined' && writingSource;
+        const srcInstruction = srcCtx === 'sample'
+          ? (vi
+            ? '\nLƯU Ý: Bài này được chèn từ bài mẫu AI. Đánh giá như bài học mẫu — chỉ ra điểm hay để học theo, gợi ý cách người học tự viết lại theo phong cách riêng.'
+            : '\nNOTE: This is an AI-generated sample essay the user is studying. Evaluate it as a model text — highlight what makes it effective and suggest how the learner could adapt it in their own voice.')
+          : srcCtx === 'improve'
+          ? (vi
+            ? '\nLƯU Ý: Bài này đã được AI nâng cấp. Tập trung vào những gì đã tốt, chỉ nêu những điểm còn có thể tinh chỉnh — không nhắc lại lỗi đã được sửa.'
+            : '\nNOTE: This text has been refined by AI. Focus on what works well, only flag what could still be improved — do not re-flag issues already addressed.')
+          : '';
+
+        reviewPrompt = `You are a supportive but rigorous English writing teacher and language pedagogy specialist.
+
+CALIBRATION RULES — follow strictly:
+1. Only praise what genuinely works — quote the specific sentence or phrase and explain WHY it is effective
+2. Only flag real problems — if a criterion is strong, skip it; do not manufacture weaknesses
+3. If the writing is excellent overall, say so clearly — do not soften with false caveats
+4. If the writing has serious problems, name them clearly but kindly — do not soften to avoid discouraging the student
+5. Feedback must be actionable — every suggestion must have a concrete example or rewrite
+6. Evaluate against the WRITING CONTEXT below — the style rules (connectors, contractions, first person, sentence length) are the agreed standard for this text. Do NOT flag something as a problem if it follows those rules. Do NOT praise deviating from those rules.
 
 Topic: "${tp || 'not specified'}"
 Text:
 """
 ${text}
 """
-${ctx()}
+${ctx()}${srcInstruction}
 Interface language: ${vi ? 'Vietnamese' : 'English'}
 
-LANGUAGE RULE: Write ALL feedback, section headings, explanations, and suggestions in ${vi ? 'Vietnamese' : 'English'}. Adjust tone to match the Audience context above.
+LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
 
-## ✅ ${vi ? 'Điểm làm tốt' : 'Strengths'}
-*(${vi ? '2–3 điểm — trích dẫn câu hoặc từ cụ thể → giải thích tại sao tốt, không khen chung chung' : '2–3 points — quote specific sentences or words → explain why they work well'})*
+---
 
-## ⚠️ ${vi ? 'Điểm cần cải thiện' : 'Areas to improve'}
-*(${vi ? '2–3 điểm quan trọng nhất — trích dẫn câu gốc → viết lại hay hơn → giải thích ngắn gọn' : '2–3 key issues — quote original → rewrite better → short explanation'})*
+## ✅ ${vi ? 'Điểm làm tốt' : 'What works well'}
+*(${vi
+  ? 'Chỉ nêu những điểm thực sự tốt — trích dẫn câu/từ cụ thể → giải thích tại sao hiệu quả về mặt ngôn ngữ hoặc sư phạm. Nếu không có điểm nổi bật, hãy nói thẳng và chuyển sang phần cải thiện.'
+  : 'Only genuinely strong points — quote specific sentence or phrase → explain why it is linguistically or pedagogically effective. If nothing stands out, say so honestly and move on.'})*
 
-## 🎯 ${vi ? 'Nội dung và mạch văn' : 'Content & flow'}
-*(${vi ? 'Bài có đủ ý không? Các câu có liên kết tự nhiên không? Có phù hợp với độc giả không? — 2–3 câu nhận xét thẳng thắn' : 'Does the essay cover the topic fully? Do sentences connect naturally? Is it appropriate for the audience? — 2–3 sentences'})*
+## ⚠️ ${vi ? 'Cần cải thiện' : 'Areas to improve'}
+*(${vi
+  ? 'Chỉ nêu vấn đề thực sự — trích dẫn câu gốc → viết lại hay hơn → giải thích ngắn gọn tại sao bản viết lại tốt hơn. Nếu bài không có vấn đề đáng kể, nói thẳng là bài viết đã tốt ở tiêu chí này.'
+  : 'Only real issues — quote original → rewrite → brief explanation of why the rewrite is better. If there are no significant issues, say so directly.'})*
 
-## 💡 ${vi ? 'Hai việc cụ thể nên làm ngay' : 'Two actions to take now'}
-*(${vi ? 'Mỗi việc 1 câu rõ ràng — ví dụ: "Thêm 1 câu mô tả cảm xúc khi..." hoặc "Thay từ X bằng từ Y vì..."' : '1 sentence each — specific and actionable'})*`;
+## 🎯 ${vi ? 'Nội dung & mạch văn' : 'Content & flow'}
+*(${vi
+  ? '2–3 câu thẳng thắn: Bài có đủ ý không? Các đoạn/câu có liên kết tự nhiên không? Có phù hợp với độc giả và văn phong đã chọn không? Chỉ nhận xét những gì thực sự đúng với bài này.'
+  : '2–3 honest sentences: Does the essay cover the topic adequately? Do paragraphs connect naturally? Is it consistent with the selected tone and audience? Only comment on what actually applies.'})*
+
+## 📊 ${vi ? 'Trình độ & định hướng' : 'Level & next step'}
+*(${vi
+  ? 'Ước tính trình độ CEFR thực tế của bài (A1–C2) — giải thích ngắn dựa trên bằng chứng cụ thể trong bài. Sau đó đề xuất 1 kỹ năng cụ thể để tiến lên trình độ cao hơn.'
+  : 'Estimate the actual CEFR level (A1–C2) — brief explanation based on specific evidence from the text. Then suggest 1 concrete skill to work on to reach the next level.'})*`;
       }
 
       const r = await callAI(reviewPrompt, 'btn-review');
@@ -419,7 +326,7 @@ LANGUAGE RULE: Write ALL feedback, section headings, explanations, and suggestio
         openPanel(t('panel-vocab'), d.vocab, null);
         return;
       }
-      const lsVocabKey = `vocab|${vocabKey}`;
+      const lsVocabKey = `vocab3|${vocabKey}`;
       try {
         const lsCached = localStorage.getItem(lsVocabKey);
         if (lsCached) {
@@ -441,19 +348,21 @@ Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 Rules:
 - Silently match ALL examples to the level above — never mention the level in the output
 - NO em dash (—). Use comma or and/but/so instead
+- NO markdown tables. Use the exact card format shown below.
 - Keep it practical: words the user can use TODAY in their writing
-- Show words IN ACTION, not just definitions
 - LANGUAGE RULE: Write ALL section headings, labels, explanations, and translations in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
-- For Phrasal Verbs, Idioms, and Fixed Expressions: ONLY include if they are genuinely relevant to the topic. If there are none, SKIP that section entirely — do not force examples.
+- For Phrasal Verbs, Idioms, and Fixed Expressions: ONLY include if genuinely relevant. If none, SKIP that section entirely.
 
 ---
 
 ## 🔑 ${uiLang === 'en' ? 'Key vocabulary' : 'Từ vựng cần biết'}
 
-*(${uiLang === 'en' ? '10–12 words/phrases — practical, level-appropriate, topic-relevant' : '10–12 từ/cụm từ — thực dụng, phù hợp trình độ, gắn chủ đề'})*
+${uiLang === 'en' ? '10–12 words/phrases — practical, level-appropriate, topic-relevant' : '10–12 từ/cụm từ — thực dụng, phù hợp trình độ, gắn chủ đề'}
 
-**word / phrase** *(part of speech)* — ${uiLang === 'en' ? 'meaning in English' : 'nghĩa tiếng Việt'}
-> *Example sentence using this word, related to "${tp || 'the topic'}".*
+Use this EXACT format for each word (no tables, no columns):
+
+**word** /IPA/ *(part of speech)* — ${uiLang === 'en' ? 'meaning in English' : 'nghĩa tiếng Việt'}
+> *Example sentence using this word.*
 
 *(repeat for each word)*
 
@@ -461,51 +370,41 @@ Rules:
 
 ## 🔗 ${uiLang === 'en' ? 'Useful connectors' : 'Từ nối hay dùng'}
 
-*(${uiLang === 'en' ? 'List 4–6 level-appropriate connectors with short examples' : 'Chỉ liệt kê 4–6 từ nối phù hợp trình độ, kèm ví dụ ngắn'})*
+${uiLang === 'en' ? 'List 4–6 level-appropriate connectors with short examples' : 'Chỉ liệt kê 4–6 từ nối phù hợp trình độ, kèm ví dụ ngắn'}
 
-- **and** — ${uiLang === 'en' ? 'add an idea' : 'thêm ý'}: *My dad is tall and strong.*
-- *(${uiLang === 'en' ? 'continue with level-appropriate connectors' : 'tiếp tục với các từ nối phù hợp trình độ'})*
-
----
-
-## 🔄 ${uiLang === 'en' ? 'Phrasal verbs' : 'Cụm động từ'} *(${uiLang === 'en' ? 'skip if none fit the topic' : 'bỏ qua nếu không liên quan'})*
-
-*(${uiLang === 'en' ? '3–5 phrasal verbs naturally connected to the topic' : '3–5 cụm động từ tự nhiên gắn với chủ đề'})*
-
-**phrasal verb** — ${uiLang === 'en' ? 'meaning' : 'nghĩa'}
-> *Example sentence using it in context.*
-
-*(repeat for each)*
+- **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *Example sentence.*
 
 ---
 
-## 💬 ${uiLang === 'en' ? 'Idioms & proverbs' : 'Thành ngữ & tục ngữ'} *(${uiLang === 'en' ? 'skip if none fit the topic' : 'bỏ qua nếu không liên quan'})*
+${uiLang === 'en'
+  ? `OPTIONAL SECTIONS — include ONLY if you can find at least 1 genuinely natural example directly connected to the topic "${tp || 'given'}". If you cannot, skip the section entirely — do not force unnatural examples.
 
-*(${uiLang === 'en' ? '2–3 idioms or proverbs that connect naturally to the topic — explain meaning, not just translate literally' : '2–3 thành ngữ hoặc tục ngữ gắn tự nhiên với chủ đề — giải thích ý nghĩa, không dịch từng chữ'})*
+## 🔄 Phrasal verbs
+*(Only if 1+ phrasal verbs fit naturally. Format: **verb** /IPA/ — meaning → example sentence.)*
 
-**idiom / proverb** — ${uiLang === 'en' ? 'what it really means' : 'ý nghĩa thực sự'}
-> *Example sentence showing how to use it naturally.*
+## 💬 Idioms & proverbs
+*(Only if 1+ idioms or proverbs connect naturally. Format: **idiom** — real meaning → example sentence.)*
 
-*(repeat for each)*
+## 📌 Fixed expressions & useful phrases
+*(Only if 1+ fixed expressions are genuinely used in this topic area. Format: **expression** — meaning/when to use → example sentence.)*`
+  : `CÁC PHẦN TÙY CHỌN — chỉ đưa vào nếu tìm được ít nhất 1 ví dụ thực sự tự nhiên và gắn trực tiếp với chủ đề "${tp || 'đã cho'}". Nếu không có, bỏ qua hoàn toàn — không cố viết ví dụ gượng ép.
 
----
+## 🔄 Cụm động từ
+*(Chỉ khi có 1+ cụm động từ phù hợp tự nhiên. Định dạng: **cụm động từ** /IPA/ — nghĩa → câu ví dụ.)*
 
-## 📌 ${uiLang === 'en' ? 'Fixed expressions & useful phrases' : 'Cụm từ cố định & diễn đạt hay'} *(${uiLang === 'en' ? 'skip if none fit the topic' : 'bỏ qua nếu không liên quan'})*
+## 💬 Thành ngữ & tục ngữ
+*(Chỉ khi có 1+ thành ngữ/tục ngữ gắn tự nhiên. Định dạng: **thành ngữ** — ý nghĩa thực → câu ví dụ.)*
 
-*(${uiLang === 'en' ? '3–5 fixed expressions, collocations, or set phrases common in this topic area' : '3–5 cụm từ cố định, kết hợp từ thông dụng, hoặc mẫu diễn đạt hay trong chủ đề này'})*
-
-**expression** — ${uiLang === 'en' ? 'meaning / when to use' : 'nghĩa / khi nào dùng'}
-> *Example sentence in context.*
-
-*(repeat for each)*
+## 📌 Cụm từ cố định & diễn đạt hay
+*(Chỉ khi có 1+ cụm từ thực sự dùng trong chủ đề này. Định dạng: **cụm từ** — nghĩa/khi dùng → câu ví dụ.)*`}
 
 ---
 
 ## ✍️ ${uiLang === 'en' ? '3 sample sentences to use now' : '3 câu mẫu có thể dùng ngay'}
 
-> *Sentence 1 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*
-> *Sentence 2 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*
-> *Sentence 3 — ${uiLang === 'en' ? 'level-appropriate, on-topic' : 'đúng trình độ, đúng chủ đề'}*`,
+> *Sentence 1*
+> *Sentence 2*
+> *Sentence 3*`,
         'btn-vocab',
         false,
         false,

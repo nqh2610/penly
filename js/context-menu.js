@@ -175,7 +175,6 @@
     function selCopy() { hideSelToolbar(); document.execCommand('copy'); }
     function selPaste() { hideSelToolbar(); ctxPaste(); }
     function selTTS() { hideSelToolbar(); ctxTTSPara(); }
-    function selSuggest() { selAction(callSuggest); }
     function selImprove() { selAction(callImprove); }
     function selParaphrase() { selAction(callParaphrase); }
     function selExplain() { selAction(callExplain); }

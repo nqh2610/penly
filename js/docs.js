@@ -5,6 +5,20 @@
       else openDoc(docs[0].id, false);
       renderDocList();
     }
+
+    function forceSaveNow() {
+      const d = docs.find(d => d.id === currentId); if (!d) return;
+      d.html = editor.innerHTML;
+      d.topic = topicInput.value.trim();
+      d.title = d.titleCustom ? titleInput.value.trim() : d.topic;
+      saveDocs();
+    }
+
+    // Save immediately before page unload (F5, close tab, navigate away)
+    window.addEventListener('beforeunload', forceSaveNow);
+    // Save when tab loses focus or is hidden
+    document.addEventListener('visibilitychange', () => { if (document.hidden) forceSaveNow(); });
+
     function saveDocs() {
       try {
         localStorage.setItem('wc_docs', JSON.stringify(

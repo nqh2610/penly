@@ -72,43 +72,78 @@
       const contractionRule = toneStd ? (toneStd.contractions ? 'contractions OK' : 'no contractions') : '';
       const firstPersonRule = toneStd ? (toneStd.firstPerson ? 'first person OK' : 'avoid "I" — write objectively') : '';
 
-      // Tone-specific structural guidance
-      const toneStructure = {
-        storytelling: `INTRO (3 parts): 1) Hook — vivid opening scene (where, when, who). 2) Introduce the topic/situation. 3) One sentence hinting at what the story will cover (the problem or journey ahead).
-BODY 1: The situation or problem that started everything — specific detail, not summary.
-BODY 2: The key event or turning point — what happened, what you felt, show don't tell.
-BODY 3: The result or change — what was different after, what you gained or lost.
-CONCLUSION: Reflect on what this taught you. Echo the opening scene or image.`,
-        casual: `INTRO (3 parts): 1) Hook — a relatable observation, question, or personal opinion that grabs attention. 2) Briefly introduce the topic. 3) Preview exactly 3 things the essay will cover ("I want to talk about X, Y, and Z" or implied naturally).
-BODY 1: First point from the intro preview — personal example or everyday situation.
-BODY 2: Second point from the intro preview — different angle, conversational.
-BODY 3: Third point from the intro preview — most interesting or surprising one.
-CONCLUSION: Overall feeling or friendly call-to-action. Refer back to the opening hook.`,
-        humorous: `INTRO (3 parts): 1) Hook — a funny observation, exaggeration, or self-deprecating remark. 2) Introduce the topic with a comic angle. 3) Hint at 2–3 funny angles the essay will explore.
-BODY 1: First funny angle — build the joke with a specific absurd detail or example.
-BODY 2: Second angle — escalate the humor, use contrast or unexpected comparison.
-BODY 3: Third angle — funniest or most surprising point, land the punchline.
-CONCLUSION: Light witty remark that ties back to the opening joke.`,
-        professional: `INTRO (3 parts): 1) Hook — a striking fact, statistic, or bold statement about the topic's importance. 2) State your clear position or thesis. 3) List exactly 3 points you will argue (explicit roadmap).
-BODY 1: Strongest argument — claim + evidence/data + implication.
-BODY 2: Second argument — different supporting reason + real-world example.
-BODY 3: Counter-argument acknowledged and refuted with evidence.
-CONCLUSION: Restate position, summarize 3 key points, forward-looking closing statement.`,
-        persuasive: `INTRO (3 parts): 1) Hook — bold statement or striking fact creating urgency. 2) State your position clearly. 3) Preview your 3 reasons explicitly.
-BODY 1: Most compelling reason — specific example, statistic, or consequence.
-BODY 2: Second reason — appeals to reader's values or interests.
-BODY 3: Strongest objection addressed and refuted.
-CONCLUSION: Reinforce position, summarize key reasons, direct call to action.`,
-        emotional: `INTRO (3 parts): 1) Hook — one vivid sensory detail or emotional moment (what you saw, heard, smelled). 2) Introduce the topic and its emotional significance. 3) Hint at the emotional journey the essay will take.
-BODY 1: First emotional layer — specific moment, show don't tell.
-BODY 2: Deepen the emotion — a memory, person, or detail that intensified the feeling.
-BODY 3: The shift or resolution — how feelings evolved, what you understood differently.
-CONCLUSION: Return to the opening image. End with a quiet, meaningful reflection.`,
-      }[tone] || `INTRO (3 parts): 1) Hook — an interesting question, surprising fact, or vivid image about the topic. 2) Introduce the topic clearly. 3) Preview the 3 main points the essay will cover.
-BODY 1: First main point from intro — explain and give a specific example.
-BODY 2: Second main point from intro — different angle or supporting reason.
-BODY 3: Third main point from intro — most important or memorable idea.
-CONCLUSION: Restate central idea, summarize 3 points, memorable closing thought.`;
+      // Body paragraph count by level — intro must preview exactly this many ideas
+      const bodyCount = lvl === 'A' ? 2 : lvl === 'C' ? 4 : 3;
+      const paraCount = 1 + bodyCount + 1; // intro + body + conclusion
+      const bodyLabels = Array.from({length: bodyCount}, (_, i) => `BODY ${i + 1}`);
+      const introPreview = `Preview exactly ${bodyCount} ideas the essay will cover (one per body paragraph)`;
+
+      // Build body lines per tone
+      const bodyLines = {
+        storytelling: [
+          'The situation or problem that started everything — specific detail, not summary.',
+          'The key event or turning point — what happened, what you felt, show don\'t tell.',
+          'The result or change — what was different after, what you gained or lost.',
+          'A deeper reflection — what this experience revealed about you or the world.',
+        ],
+        casual: [
+          'First point from intro preview — personal example or everyday situation.',
+          'Second point from intro preview — different angle, conversational.',
+          'Third point from intro preview — most interesting or surprising one.',
+          'Fourth point from intro preview — a bonus insight or unexpected connection.',
+        ],
+        humorous: [
+          'First funny angle — build the joke with a specific absurd detail or example.',
+          'Second angle — escalate the humor, use contrast or unexpected comparison.',
+          'Third angle — funniest or most surprising point, land the punchline.',
+          'Final twist — an unexpected reversal or self-aware meta-comment.',
+        ],
+        professional: [
+          'Strongest argument — claim + evidence/data + implication.',
+          'Second argument — different supporting reason + real-world example.',
+          'Third argument — further evidence or a different dimension of the issue.',
+          'Counter-argument acknowledged and refuted with evidence.',
+        ],
+        persuasive: [
+          'Most compelling reason — specific example, statistic, or consequence.',
+          'Second reason — appeals to reader\'s values or interests.',
+          'Third reason — addresses a common misconception or adds urgency.',
+          'Strongest objection addressed and refuted.',
+        ],
+        emotional: [
+          'First emotional layer — specific moment, show don\'t tell.',
+          'Deepen the emotion — a memory, person, or detail that intensified the feeling.',
+          'The shift or resolution — how feelings evolved, what you understood differently.',
+          'The lasting impact — how this changed your perspective or behaviour.',
+        ],
+      }[tone] || [
+        'First main point from intro — explain and give a specific example.',
+        'Second main point from intro — different angle or supporting reason.',
+        'Third main point from intro — most important or memorable idea.',
+        'Fourth point — additional insight or supporting evidence.',
+      ];
+
+      const toneIntro = {
+        storytelling: `1) Hook — vivid opening scene (where, when, who). 2) Introduce the situation. 3) ${introPreview}.`,
+        casual: `1) Hook — relatable observation, question, or personal opinion. 2) Briefly introduce the topic. 3) ${introPreview}.`,
+        humorous: `1) Hook — funny observation, exaggeration, or self-deprecating remark. 2) Introduce the topic with a comic angle. 3) ${introPreview}.`,
+        professional: `1) Hook — striking fact, statistic, or bold statement. 2) State your clear position/thesis. 3) ${introPreview}.`,
+        persuasive: `1) Hook — bold statement or striking fact creating urgency. 2) State your position clearly. 3) ${introPreview}.`,
+        emotional: `1) Hook — one vivid sensory detail or emotional moment. 2) Introduce the topic and its emotional significance. 3) ${introPreview}.`,
+      }[tone] || `1) Hook — interesting question, surprising fact, or vivid image. 2) Introduce the topic clearly. 3) ${introPreview}.`;
+
+      const toneConclusion = {
+        storytelling: 'Reflect on what this taught you. Echo the opening scene or image.',
+        casual: 'Overall feeling or friendly call-to-action. Refer back to the opening hook.',
+        humorous: 'Light witty remark that ties back to the opening joke.',
+        professional: 'Restate position, summarize all body points, forward-looking closing statement.',
+        persuasive: 'Reinforce position, summarize key reasons, direct call to action.',
+        emotional: 'Return to the opening image. End with a quiet, meaningful reflection.',
+      }[tone] || 'Restate central idea, summarize all body points, memorable closing thought.';
+
+      const toneStructure = `INTRO (3 parts): ${toneIntro}
+${bodyLabels.map((label, i) => `${label}: ${bodyLines[i]}`).join('\n')}
+CONCLUSION: ${toneConclusion}`;
 
       // Audience-specific language guidance
       const audDetail = {
@@ -117,6 +152,25 @@ CONCLUSION: Restate central idea, summarize 3 points, memorable closing thought.
         public: 'Write for a general adult audience. Clear and accessible. Avoid jargon. Polite and neutral.',
         pro: 'Write for educated professionals. Precise vocabulary. Evidence-based reasoning. Formal register without being stiff.',
       }[aud] || 'Write for a general audience. Clear, accessible, neutral.';
+
+      // Intro examples scaled to bodyCount
+      const introExamples = {
+        2: {
+          A: '"Every morning, I feel happy when I go to school. My school is a fun place. I like my teachers and my friends there."',
+          B: '"Have you ever walked into a place that felt like home? For me, that place is my school. It has shaped who I am through great teachers and close friendships."',
+          C: '"Few places leave as deep an impression as the school where one spends their formative years. My school shaped my character and my ambitions in two profound ways."',
+        },
+        3: {
+          A: '"Every morning, I feel happy when I go to school. My school is a fun place. I like my teachers, my friends, and the games we play at recess."',
+          B: '"Have you ever walked into a place that felt like a second home? For me, that place is my school. It has shaped who I am through great teachers, close friendships, and lessons I will never forget."',
+          C: '"Few places leave as deep an impression on a person as the school where they spent their formative years. My school was not just a building; it was where I discovered my curiosity, built lasting friendships, and learned that failure is often the best teacher."',
+        },
+        4: {
+          A: '"Every morning, I feel happy when I go to school. My school is a great place. I like my teachers, my friends, the games, and the things I learn every day."',
+          B: '"Have you ever been somewhere that changed you without you noticing? My school did exactly that — through inspiring teachers, real friendships, daily challenges, and small moments I will carry for life."',
+          C: '"Few institutions shape a person as profoundly as the school they attend in their youth. My own school left its mark on me through exceptional teaching, meaningful friendships, intellectual challenges, and an ethos of resilience that I carry to this day."',
+        },
+      }[bodyCount][lvl];
 
       return `You are an expert English writing teacher creating a model essay for a language learner.
 
@@ -129,34 +183,33 @@ LANGUAGE LEVEL: ${SAMPLE_LEVEL[lvl]}
   - ${contractionRule}; ${firstPersonRule}
 TONE & STYLE: ${SAMPLE_TONES[tone]}
 TOTAL LENGTH: approximately ${wordTarget} words in English
+STRUCTURE: ${paraCount} paragraphs total (1 intro + ${bodyCount} body + 1 conclusion)
 
 ESSAY STRUCTURE — follow this exactly:
 ${toneStructure}
 
-INTRO EXAMPLES by level (use as a model for quality and structure, NOT to copy):
-- A1/A2: "Every morning, I feel happy when I go to school. My school is a fun place. I like my teachers, my friends, and the games we play at recess."
-- B1/B2: "Have you ever walked into a place that felt like a second home? For me, that place is my school. It has shaped who I am through great teachers, close friendships, and lessons I will never forget."
-- C1/C2: "Few places leave as deep an impression on a person as the school where they spent their formative years. My school was not just a building where lessons were taught; it was where I discovered my curiosity, built lasting friendships, and learned that failure is often the best teacher."
+INTRO EXAMPLE for level ${lvl} with ${bodyCount} body paragraphs (model the quality and structure, do NOT copy):
+${introExamples}
 
 QUALITY RULES — every paragraph must follow these:
 1. ONE idea per paragraph — do not mix two topics in one paragraph.
-2. INTRO previews the 3 body ideas; each BODY paragraph covers exactly one of them.
-3. CONCLUSION refers back to the intro's central idea and summarizes all 3 body points.
+2. INTRO must preview exactly ${bodyCount} ideas — one per body paragraph. Each body paragraph covers exactly one previewed idea.
+3. CONCLUSION refers back to the intro's central idea and summarizes all ${bodyCount} body points.
 4. Hook: first sentence must pull the reader in — a question, surprising fact, or vivid image. NOT "In this essay I will..." Bad: "Dogs are good pets." Good: "The moment my dog nudged my hand on my worst day, I understood why people call them loyal."
 5. Show, don't tell: replace emotion labels with concrete details. Bad: "I was nervous." Good: "My hands wouldn't stop shaking."
-6. Transition: last sentence of each body paragraph must bridge to the next idea. Bad: "That is why cats are clean." Good: "Their cleanliness is just one reason — but it is their quiet independence that truly sets them apart."
+6. Transition: last sentence of each body paragraph must bridge to the next idea. Bad: "That is why cats are clean." Good: "Their cleanliness is just one reason, but it is their quiet independence that truly sets them apart."
 7. Rhythm: mix short and long sentences. Bad: 5 long sentences in a row. Good: "She waited. The room was silent, and every second felt like an hour."
 8. Clincher: last sentence of the conclusion must be memorable — an image, a question, or a truth. NOT a plain summary. Bad: "So, dogs are great pets." Good: "Maybe what we love most about dogs is what they remind us to be: present, loyal, and unafraid to show it."
 9. NEVER use em dash (—). Use a comma, "and", or "but" instead.
 10. Vary sentence openings — do not start 2 sentences in a row with the same word.
-11. NATURALNESS: every sentence must sound like something a real person would actually say or write. Be specific — no generic filler like "This topic is important." Each sentence must make sense on its own and connect directly to the topic.
+11. NATURALNESS: every sentence must sound like something a real person would actually say or write. Be specific — no generic filler like "This topic is important."
 
 Use EXACTLY this output format — replace each marker with real text, no extra commentary:
-${Array.from({length: 5}, (_, i) => `[P${i+1}]\n[V${i+1}]`).join('\n')}
+${Array.from({length: paraCount}, (_, i) => `[P${i+1}]\n[V${i+1}]`).join('\n')}
 
-Where [P1]–[P5] = English paragraphs, [V1]–[V5] = natural Vietnamese translations.
+Where [P1]–[P${paraCount}] = English paragraphs, [V1]–[V${paraCount}] = natural Vietnamese translations.
 
-TRANSLATION RULES for [V1]–[V5]:
+TRANSLATION RULES for [V1]–[V${paraCount}]:
 - Translate MEANING, not words — use natural Vietnamese equivalents, not word-for-word mapping
 - Match tone: humorous stays humorous, formal stays formal, emotional stays emotional
 - Use Vietnamese collocations and expressions — avoid literal translations that sound unnatural
@@ -333,8 +386,8 @@ Output the essay now:
       if (d && d.sampleKey === cacheKey) { delete d.sample; delete d.sampleKey; saveDocs(); }
       try { localStorage.removeItem(SAMPLE_LS_PREFIX + cacheKey); } catch (_) {}
 
-      // maxTokens: A=1000, B=1300, C=1600 (longer prompt needs more output space)
-      const maxTokens = lvl === 'A' ? 1000 : lvl === 'C' ? 1600 : 1300;
+      // maxTokens scales with paraCount: A=4 paras, B=5 paras, C=6 paras
+      const maxTokens = lvl === 'A' ? 1000 : lvl === 'C' ? 1800 : 1300;
       // Skip all gpt-oss models (reasoning models — think instead of write)
       const sampleModels = typeof MODEL_CHAIN !== 'undefined'
         ? MODEL_CHAIN.filter(m => !m.includes('gpt-oss'))

@@ -22,9 +22,9 @@
 
     // Đảm bảo lưu doc.topic độc lập với doc.title
     function onTopicInput(val) {
-      const doc = docs.find(d => d.id === currentDocId);
+      const doc = docs.find(d => d.id === currentId);
       if (doc) {
-        doc.topic = val; // Lưu riêng chủ đề
+        doc.topic = val;
         saveDocs();
       }
     }
@@ -113,10 +113,11 @@
     const _debouncedTopicSave = debounce(() => { saveDocs(); renderDocList(); }, 300);
 
     function onTitleChange() {
-      const doc = docs.find(d => d.id === currentDocId);
+      const doc = docs.find(d => d.id === currentId);
       if (doc) {
-        doc.title = document.getElementById('titleInput').value; // Chỉ đổi tiêu đề
-        saveDocs(); // Lưu lại (doc.topic vẫn giữ nguyên giá trị cũ)
+        doc.title = document.getElementById('titleInput').value;
+        doc.titleCustom = true;
+        saveDocs();
       }
     }
     const _debouncedTitleRender = debounce(() => renderDocList(), 300);

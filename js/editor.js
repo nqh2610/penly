@@ -5,7 +5,7 @@
       saveIcon.className = 'bi bi-arrow-repeat';
       saveIcon.style.color = '#f59e0b';
       saveStatus.textContent = t('saving');
-      saveTimer = setTimeout(() => saveDoc(), 700);
+      saveTimer = setTimeout(() => saveDoc(), 300);
       // hide AC when user types new content
       if (pendingAC) hideAC();
       acSeq++; // invalidate any in-flight AC request

@@ -1,12 +1,20 @@
     // ══ DOC MANAGEMENT ══
     function loadDocs() {
-      try { docs = JSON.parse(localStorage.getItem('wc_docs') || '[]'); } catch { docs = []; }
+      try {
+        const raw = localStorage.getItem('wc_docs') || '[]';
+        docs = JSON.parse(raw);
+        console.log('[loadDocs] loaded', docs.length, 'docs, raw length:', raw.length);
+      } catch(e) {
+        console.error('[loadDocs] parse error:', e);
+        docs = [];
+      }
       if (!docs.length) createDoc(false);
       else openDoc(docs[0].id, false);
       renderDocList();
     }
 
     function forceSaveNow() {
+      if (!docs.length || !currentId) return; // don't overwrite with empty state
       const d = docs.find(d => d.id === currentId); if (!d) return;
       d.html = editor.innerHTML;
       d.topic = topicInput.value.trim();
@@ -15,11 +23,13 @@
     }
 
     // Save immediately before page unload (F5, close tab, navigate away)
-    window.addEventListener('beforeunload', forceSaveNow);
-    // Save when tab loses focus or is hidden
+    // Note: beforeunload is blocked by Chrome permissions policy on some pages
+    // pagehide is more reliable and fires consistently
+    window.addEventListener('pagehide', forceSaveNow);
     document.addEventListener('visibilitychange', () => { if (document.hidden) forceSaveNow(); });
 
     function saveDocs() {
+      if (!docs.length) return; // never overwrite with empty array
       try {
         localStorage.setItem('wc_docs', JSON.stringify(
           docs.map(d => ({ ...d, html: d.id === currentId ? editor.innerHTML : d.html }))
@@ -122,9 +132,8 @@
         d.title = d.topic;
       }
       updateDocTitleDisplay();
-      _debouncedTopicSave();
+      saveDocs(); renderDocList();
     }
-    const _debouncedTopicSave = debounce(() => { saveDocs(); renderDocList(); }, 300);
 
     function onTitleChange() {
       const doc = docs.find(d => d.id === currentId);

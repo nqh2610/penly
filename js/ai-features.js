@@ -171,7 +171,7 @@
       if (!raw) return toast(t('no-text'));
       const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Grammar check' : 'Kiểm tra lỗi');
       const r = await callAI(
-        `You are a professional English proofreader. Check the user's text carefully based on their level.${viNote}
+        `You are a strict English proofreader. Fix ERRORS ONLY — do NOT improve style, word choice, or sentence structure.${viNote}
 
 user text:
 """
@@ -187,26 +187,30 @@ IMPORTANT — adjust expectations to the user's level:
 - B1/B2: mark grammar, collocation, punctuation and word-choice errors.
 - C1/C2: mark all errors including subtle word choice, register, and style inconsistencies.
 
-Check these error types:
-1. GRAMMAR: verb tense, subject-verb agreement, articles (a/an/the), prepositions, word form
-2. SPELLING: misspelled words, wrong homophones (their/there, your/you're, its/it's)
-3. VOCABULARY: clearly wrong word choice or unnatural collocation for their level
-4. PUNCTUATION: missing period at sentence end, missing apostrophe in contractions
-5. CAPITALIZATION: sentence start, proper nouns, pronoun "I"
+ONLY mark these as errors:
+1. GRAMMAR: wrong verb tense, subject-verb disagreement, wrong article (a/an/the), wrong preposition, wrong word form (e.g. "beautify" instead of "beautiful")
+2. SPELLING: genuinely misspelled words, wrong homophones (their/there, your/you're, its/it's)
+3. PUNCTUATION: missing period at sentence end, missing apostrophe in contractions
+4. CAPITALIZATION: sentence start, proper nouns, pronoun "I"
 
-RULES:
-- Wrap EACH error exactly as: <span class="ge" data-fix="CORRECT_TEXT" onclick="applyFix(this)">WRONG_TEXT</span>
-- data-fix = the corrected text only (no explanation)
-- For a missing punctuation: wrap the word before it, data-fix = word + punctuation
-- Do NOT mark correct informal English, valid style choices, or intentional repetition
-- Only mark when you are confident it is an error
-- Zero errors → return the text exactly as-is
+STRICT RULES — failure to follow these makes the output useless:
+- NEVER mark a word as wrong if the fix is the same word
+- NEVER change correct words to longer or fancier alternatives — that is editing, not proofreading
+- NEVER mark informal but grammatically correct English as an error
+- NEVER mark style choices (short sentences, simple words, repetition) as errors
+- ONLY wrap when you are 100% certain it is a real error
+- If the fix word is identical to the original word, DO NOT wrap it — skip it entirely
+- Zero errors → return the text exactly as-is, character for character
 - Return ONLY the corrected HTML string. No explanation, no markdown, no code blocks.`,
         'btn-grammar', false, true
       );
       if (!r) return;
       setCooldown('btn-grammar');
-      const clean = strip(r);
+      let clean = strip(r);
+      // Remove spans where data-fix is identical to the wrapped text (AI hallucination)
+      clean = clean.replace(/<span class="ge" data-fix="([^"]*)"[^>]*>([^<]*)<\/span>/g, (match, fix, orig) => {
+        return fix.trim().toLowerCase() === orig.trim().toLowerCase() ? orig : match;
+      });
       editor.innerHTML = clean;
       const n = (clean.match(/<span class="ge"/g) || []).length;
       toast(n > 0 ? t('grammar-found', { n }) : t('grammar-clean'), n > 0 ? '' : 's');

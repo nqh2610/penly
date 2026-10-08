@@ -678,7 +678,6 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const title = vi ? `Từ điển: ${word}` : `Dictionary: ${word}`;
       openCtxPopover(title, null);
       const body = document.getElementById('ctxPopoverBody');
-      body.innerHTML = `<p style="color:var(--muted);font-style:italic;font-size:.83rem">${t('processing')}</p>`;
 
       const localIpa = (typeof IPA_DATA !== 'undefined' ? IPA_DATA[word] : null) || null;
       let dictData = null;

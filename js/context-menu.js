@@ -223,32 +223,38 @@
       const pop = document.getElementById('ctxPopover');
       const header = document.getElementById('ctxPopoverHeader');
       if (!pop || !header) return;
-      let ox = 0, oy = 0, sx = 0, sy = 0, dragging = false;
+      let ox = 0, oy = 0, sx = 0, sy = 0;
+      let isDragging = false;
 
       header.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
-        dragging = true;
+        isDragging = false;
         sx = e.clientX; sy = e.clientY;
         ox = parseInt(pop.style.left) || pop.getBoundingClientRect().left;
         oy = parseInt(pop.style.top) || pop.getBoundingClientRect().top;
         header.setPointerCapture(e.pointerId);
         e.preventDefault();
+        e.stopPropagation(); // prevent _closePopoverOutside from firing
       });
 
       header.addEventListener('pointermove', e => {
-        if (!dragging) return;
+        if (!header.hasPointerCapture(e.pointerId)) return;
+        const dx = e.clientX - sx, dy = e.clientY - sy;
+        if (!isDragging && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+        isDragging = true;
         const vw = window.innerWidth, vh = window.innerHeight;
         const pw = pop.offsetWidth, ph = pop.offsetHeight;
-        let nx = ox + (e.clientX - sx);
-        let ny = oy + (e.clientY - sy);
-        nx = Math.max(0, Math.min(nx, vw - pw));
-        ny = Math.max(0, Math.min(ny, vh - ph));
+        let nx = Math.max(0, Math.min(ox + dx, vw - pw));
+        let ny = Math.max(0, Math.min(oy + dy, vh - ph));
         pop.style.left = nx + 'px';
         pop.style.top = ny + 'px';
       });
 
-      header.addEventListener('pointerup', () => { dragging = false; });
-      header.addEventListener('pointercancel', () => { dragging = false; });
+      header.addEventListener('pointerup', e => {
+        if (isDragging) e.stopPropagation();
+        isDragging = false;
+      });
+      header.addEventListener('pointercancel', () => { isDragging = false; });
     })();
 
     // Selection toolbar action helpers — hide toolbar then run action

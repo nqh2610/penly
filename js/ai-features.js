@@ -446,7 +446,7 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
         }
       } catch (_) {}
 
-      const r = await callAI(
+      const vocabPrompt =
         `You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for this user.
 
 ${tp ? `Topic: "${tp}"` : ''}
@@ -518,17 +518,32 @@ ${uiLang === 'en'
 *(Always write these 3 sentences in English — they are English writing examples for the student.)*
 > *Sentence 1*
 > *Sentence 2*
-> *Sentence 3*`,
-        'btn-vocab',
-        false,
-        false,
-        1800
-      );
+> *Sentence 3*`;
+
+      const btnEl = document.getElementById('btn-vocab');
+      const panelTitle = t('panel-vocab');
+
+      setBusy('btn-vocab', true, true, panelTitle);
+
+      async function runVocab() {
+        return await callAI(vocabPrompt, null, true, true, 1800);
+      }
+
+      const vocabBgPromise = runVocab();
+      const r = await vocabBgPromise;
+
+      if (btnEl) btnEl.classList.remove('loading');
+      setBusy('btn-vocab', false, false);
+
       if (r) {
         setCooldown('btn-vocab');
         if (d) { d.vocab = r; d.vocabKey = vocabKey; saveDocs(); }
         try { localStorage.setItem(lsVocabKey, r); } catch (_) {}
-        openPanel(t('panel-vocab'), r, null);
+        if (document.getElementById('resultPanel').classList.contains('open')) {
+          openPanel(panelTitle, r, null);
+        } else {
+          toast(uiLang === 'en' ? '✅ Vocabulary ready! Tap to view.' : '✅ Từ vựng đã xong! Nhấn để xem.', 's', () => openPanel(panelTitle, r, null));
+        }
       }
     }
 

@@ -7,7 +7,9 @@
     function openCtxPopover(title, md) {
       const pop = document.getElementById('ctxPopover');
       document.getElementById('ctxPopoverTitle').textContent = title;
-      document.getElementById('ctxPopoverBody').innerHTML = md ? marked.parse(md) : '<p style="color:var(--muted);font-style:italic;font-size:.83rem">Đang xử lý…</p>';
+      document.getElementById('ctxPopoverBody').innerHTML = md ? marked.parse(md) : `<div class="ctx-loading-wrap">
+        <div class="ai-loading-dots"><span></span><span></span><span></span></div>
+      </div>`;
       // Position near saved selection
       const vw = window.innerWidth, vh = window.innerHeight;
       const pw = Math.min(380, vw * 0.92);

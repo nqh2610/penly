@@ -237,6 +237,8 @@ STRICT RULES — failure to follow these makes the output useless:
       if (!r) return;
       setCooldown('btn-grammar');
       let clean = strip(r);
+      // Strip triple-quote delimiters AI sometimes echoes back
+      clean = clean.replace(/^"""\s*/m, '').replace(/\s*"""$/m, '').trim();
       // Remove spans where data-fix is identical to the wrapped text (AI hallucination)
       clean = clean.replace(/<span class="ge" data-fix="([^"]*)"[^>]*>([^<]*)<\/span>/g, (match, fix, orig) => {
         return fix.trim().toLowerCase() === orig.trim().toLowerCase() ? orig : match;

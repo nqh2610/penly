@@ -1,5 +1,33 @@
     // callSample is defined in outline.js
 
+    // ── TEXT PREPARATION ──
+    // Strips Vietnamese-heavy content and trims to a char limit for AI calls.
+    // Returns { text, warned } — warns user once if text was trimmed or mixed-language.
+    function _prepText(raw, maxChars, btnLabel) {
+      const vi = uiLang !== 'en';
+      let text = raw.trim();
+
+      // Detect Vietnamese ratio — count Vietnamese diacritics
+      const viChars = (text.match(/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g) || []).length;
+      const viRatio = viChars / Math.max(text.length, 1);
+      if (viRatio > 0.15) {
+        toast(vi
+          ? `⚠️ ${btnLabel}: Chức năng này dành cho tiếng Anh. Kết quả có thể không chính xác nếu bài có nhiều tiếng Việt.`
+          : `⚠️ ${btnLabel}: This feature works best with English text.`, 'i');
+      }
+
+      // Trim to maxChars at a sentence boundary where possible
+      if (text.length > maxChars) {
+        const cut = text.lastIndexOf('.', maxChars);
+        text = cut > maxChars * 0.6 ? text.substring(0, cut + 1) : text.substring(0, maxChars);
+        toast(vi
+          ? `📄 ${btnLabel}: Bài dài — chỉ phân tích ${maxChars} ký tự đầu để đảm bảo tốc độ.`
+          : `📄 ${btnLabel}: Long text — analysing first ${maxChars} chars for speed.`, 'i');
+      }
+
+      return text;
+    }
+
     // ── TOPIC VALIDATION ──
     const _btnCooldown = {};      // btnId -> timestamp
     const _topicValidCache = {};  // topic key -> true/false
@@ -102,8 +130,9 @@
 
     async function callGrammar() {
       if (!await guardTopic('btn-grammar')) return;
-      const text = editor.innerText.trim();
-      if (!text) return toast(t('no-text'));
+      const raw = editor.innerText.trim();
+      if (!raw) return toast(t('no-text'));
+      const text = _prepText(raw, 1500, uiLang === 'en' ? 'Grammar check' : 'Kiểm tra lỗi');
       const r = await callAI(
         `You are a professional English proofreader. Check the user's text carefully based on their level.
 
@@ -155,8 +184,9 @@ RULES:
 
     async function callImprove() {
       if (!await guardTopic('btn-improve')) return;
-      const text = editor.innerText.trim();
-      if (!text) return toast(t('no-text'));
+      const raw = editor.innerText.trim();
+      if (!raw) return toast(t('no-text'));
+      const text = _prepText(raw, 1200, uiLang === 'en' ? 'Improve' : 'Nâng cấp');
 
       // lưu bản gốc lần đầu; reset nếu user đã sửa đáng kể so với bản gốc
       if (!improveOriginalText) {
@@ -313,8 +343,9 @@ Output format — follow EXACTLY:
 
     async function callReview() {
       if (!await guardTopic('btn-review')) return;
-      const text = editor.innerText.trim();
-      if (!text) return toast(t('no-text-review'));
+      const raw = editor.innerText.trim();
+      if (!raw) return toast(t('no-text-review'));
+      const text = _prepText(raw, 1500, uiLang === 'en' ? 'Review' : 'Nhận xét');
       setPanelTitle('panel-review');
       const tp = topic();
       const wc = text.trim().split(/\s+/).filter(Boolean).length;
@@ -556,8 +587,13 @@ ${uiLang === 'en'
       // Always translate to Vietnamese — this app is for Vietnamese learners of English
       const targetLang = 'Vietnamese';
 
-      // Count source paragraphs to reconstruct structure
-      const srcParas = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+      // Count source paragraphs, cap at 12 to keep tokens manageable
+      const vi = uiLang !== 'en';
+      let srcParas = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+      if (srcParas.length > 12) {
+        srcParas = srcParas.slice(0, 12);
+        toast(vi ? '📄 Dịch: Chỉ dịch 12 đoạn đầu để đảm bảo tốc độ.' : '📄 Translate: Only first 12 paragraphs translated for speed.', 'i');
+      }
 
       const r = await callAI(
         `Translate the following English text to ${targetLang}. ${srcParas.length} paragraph(s) — output exactly ${srcParas.length} line(s), one per paragraph.

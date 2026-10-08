@@ -1,4 +1,4 @@
-const CACHE = 'writing-coach-v79';
+const CACHE = 'writing-coach-v80';
 const ASSETS = [
   './index.html',
   './styles.css',

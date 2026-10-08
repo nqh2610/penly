@@ -592,12 +592,12 @@
   </div>
 
   <!-- CONTEXT MENU POPOVER -->
-  <div id="ctxPopover" style="display:none;position:fixed;z-index:9990;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:min(92vw,380px);max-height:min(70vh,480px);overflow-y:auto;padding:0;">
-    <div id="ctxPopoverHeader" style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem .5rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;cursor:move;user-select:none">
+  <div id="ctxPopover" style="display:none;position:fixed;z-index:9990;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:min(92vw,380px);max-height:min(70vh,480px);overflow:hidden;padding:0;display:none;flex-direction:column;">
+    <div id="ctxPopoverHeader" style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem .5rem;border-bottom:1px solid var(--border);background:var(--surface);cursor:move;user-select:none;flex-shrink:0;touch-action:none;">
       <span id="ctxPopoverTitle" style="font-size:.9rem;font-weight:700;color:var(--text)"></span>
       <button onclick="closeCtxPopover()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.1rem;padding:.1rem .3rem;border-radius:6px;line-height:1">&times;</button>
     </div>
-    <div id="ctxPopoverBody" style="padding:.8rem 1rem;font-size:.88rem;line-height:1.6;color:var(--text)"></div>
+    <div id="ctxPopoverBody" style="padding:.8rem 1rem;font-size:.88rem;line-height:1.6;color:var(--text);overflow-y:auto;flex:1"></div>
   </div>
 
   <!-- TOPIC CLARIFY DIALOG -->

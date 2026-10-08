@@ -12,7 +12,7 @@
       const vw = window.innerWidth, vh = window.innerHeight;
       const pw = Math.min(380, vw * 0.92);
       pop.style.width = pw + 'px';
-      pop.style.display = 'block';
+      pop.style.display = 'flex';
       let left = 0, top = 0;
       if (_ctxPopoverSel) {
         try {

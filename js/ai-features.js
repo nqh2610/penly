@@ -686,10 +686,12 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
         if (res.ok) dictData = await res.json();
       } catch (e) { console.error('Dict API error:', e); }
 
-      body.innerHTML = '';
-
-      // helper to append to popover body
-      const app = el => body.appendChild(el);
+      // helper to append to popover body — clears dots on first append
+      let _bodyCleared = false;
+      const app = el => {
+        if (!_bodyCleared) { body.innerHTML = ''; _bodyCleared = true; }
+        body.appendChild(el);
+      };
 
       // header: word + IPA + speak button
       const header = document.createElement('div');

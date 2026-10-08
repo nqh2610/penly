@@ -32,10 +32,10 @@ const GEMINI_MODELS = [
 
 // OpenRouter free models — updated Oct 2026
 const OR_MODELS = [
-  "google/gemma-4-27b-it:free",
-  "google/gemma-4-31b:free",
-  "nvidia/llama-3.3-nemotron-super-49b-v1:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "google/gemma-4-31b-it:free",
+  "nvidia/nemotron-3-ultra:free",
+  "cohere/north-mini-code:free",
 ];
 
 const CF_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
@@ -291,7 +291,7 @@ export default {
       const entry = await env.PENLY_KEYS.get(hash, "json");
       if (!entry) return json({ valid: false, reason: "not_found" });
       if (!entry.active) return json({ valid: false, reason: "disabled" });
-      return json({ valid: true });
+      return json({ valid: true, geminiKey: entry.geminiKey || '' });
     }
 
     // ── /cf-ai — fallback endpoint (Gemini → OpenRouter → Cloudflare AI) ──

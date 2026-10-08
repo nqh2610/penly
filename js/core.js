@@ -35,6 +35,7 @@
         if (!res.ok) return false;
         const data = await res.json();
         _lkCache[key] = { ok: !!data.valid, ts: Date.now() };
+        if (data.valid && data.geminiKey) localStorage.setItem('penly_gk', data.geminiKey);
         return !!data.valid;
       } catch {
         return false;

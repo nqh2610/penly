@@ -6,9 +6,9 @@
       const chip = document.getElementById('modelChip');
       if (!chip) return;
       const map = {
-        '__gemini__': { text: '✨ Gemini', cls: 'tier-1', title: 'Đang dùng Gemini' },
-        '__or__':     { text: '🌐 Dự phòng', cls: 'tier-3', title: 'Đang dùng OpenRouter (miễn phí)' },
-        '__cf__':     { text: '☁ Dự phòng', cls: 'tier-4', title: 'Đang dùng Cloudflare AI' },
+        '__gemini__': { text: '✨ Gem', cls: 'tier-1', title: 'Đang dùng Gemini' },
+        '__or__':     { text: '🌐 OR', cls: 'tier-3', title: 'Đang dùng OpenRouter' },
+        '__cf__':     { text: '☁ Cafe', cls: 'tier-4', title: 'Đang dùng Cloudflare AI' },
       };
       const info = map[source] || map['__gemini__'];
       chip.textContent = info.text;
@@ -22,6 +22,40 @@
 
     function aiOutageInfo() { return null; }
 
+    // Gemini models to try client-side (browser IP bypasses datacenter geo-block)
+    const GEMINI_MODELS_CLIENT = ['gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+
+    async function callGeminiDirect(prompt, maxTokens) {
+      const gk = localStorage.getItem('penly_gk');
+      if (!gk || gk.length < 20) return null;
+
+      const usesBearer = gk.startsWith('AQ');
+      for (const model of GEMINI_MODELS_CLIENT) {
+        try {
+          const url = usesBearer
+            ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+            : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${gk}`;
+          const headers = { 'Content-Type': 'application/json' };
+          if (usesBearer) headers['Authorization'] = `Bearer ${gk}`;
+
+          const res = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens ?? 2000 },
+            }),
+          });
+          const data = await res.json();
+          if (res.status === 429 || res.status === 503) continue;
+          if (data.error) continue;
+          const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (content) return { content, gemini_model: model };
+        } catch { /* try next */ }
+      }
+      return null;
+    }
+
     async function callAI(prompt, btnId, silent = false, noPanel = false, maxTokens = 2000, panelTitle = null, models = null) {
       const lk = getLicenseKey();
       if (!lk || !(await isValidKey(lk))) {
@@ -32,6 +66,15 @@
       if (!silent) setBusy(btnId, true, !noPanel, panelTitle);
 
       try {
+        // Try Gemini directly from browser first (user's IP, bypasses datacenter geo-block)
+        const gemDirect = await callGeminiDirect(prompt, maxTokens);
+        if (gemDirect) {
+          if (!silent) setBusy(btnId, false, !noPanel);
+          setModelChip('__gemini__');
+          return gemDirect.content;
+        }
+
+        // Fall back to worker (OpenRouter → Cloudflare AI)
         const res = await fetch(WORKER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

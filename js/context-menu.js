@@ -218,35 +218,49 @@
       if (!editor.contains(e.target) && !getSelToolbar()?.contains(e.target)) hideSelToolbar();
     });
 
-    // ── POPOVER DRAG ──
-    (function () {
+    // ── POPOVER DRAG (mouse + touch) ──
+    function initPopoverDrag() {
       const pop = document.getElementById('ctxPopover');
       const header = document.getElementById('ctxPopoverHeader');
       if (!pop || !header) return;
       let ox = 0, oy = 0, sx = 0, sy = 0, active = false;
 
-      header.addEventListener('mousedown', e => {
-        if (e.button !== 0) return;
+      function startDrag(cx, cy) {
         active = true;
-        sx = e.clientX; sy = e.clientY;
+        sx = cx; sy = cy;
         ox = parseFloat(pop.style.left) || pop.getBoundingClientRect().left;
         oy = parseFloat(pop.style.top) || pop.getBoundingClientRect().top;
-        e.preventDefault();
-        e.stopPropagation();
-      });
-
-      document.addEventListener('mousemove', e => {
+      }
+      function moveDrag(cx, cy) {
         if (!active) return;
         const vw = window.innerWidth, vh = window.innerHeight;
         const pw = pop.offsetWidth, ph = pop.offsetHeight;
-        let nx = Math.max(0, Math.min(ox + e.clientX - sx, vw - pw));
-        let ny = Math.max(0, Math.min(oy + e.clientY - sy, vh - ph));
-        pop.style.left = nx + 'px';
-        pop.style.top = ny + 'px';
-      });
+        pop.style.left = Math.max(0, Math.min(ox + cx - sx, vw - pw)) + 'px';
+        pop.style.top = Math.max(0, Math.min(oy + cy - sy, vh - ph)) + 'px';
+      }
 
+      header.addEventListener('mousedown', e => {
+        if (e.button !== 0) return;
+        startDrag(e.clientX, e.clientY);
+        e.preventDefault(); e.stopPropagation();
+      });
+      document.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
       document.addEventListener('mouseup', () => { active = false; });
-    })();
+
+      header.addEventListener('touchstart', e => {
+        const t = e.touches[0];
+        startDrag(t.clientX, t.clientY);
+        e.stopPropagation();
+      }, { passive: true });
+      document.addEventListener('touchmove', e => {
+        if (!active) return;
+        const t = e.touches[0];
+        moveDrag(t.clientX, t.clientY);
+        e.preventDefault();
+      }, { passive: false });
+      document.addEventListener('touchend', () => { active = false; });
+    }
+    document.addEventListener('DOMContentLoaded', initPopoverDrag);
 
     // Selection toolbar action helpers — hide toolbar then run action
     function selAction(fn) { hideSelToolbar(); fn(); }

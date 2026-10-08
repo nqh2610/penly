@@ -3,6 +3,14 @@
     // ── TEXT PREPARATION ──
     const VI_CHARS = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g;
 
+    // Strip grammar error spans from editor, returning plain text
+    function _cleanEditorText() {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = editor.innerHTML;
+      tmp.querySelectorAll('span.ge').forEach(s => s.replaceWith(document.createTextNode(s.textContent)));
+      return tmp.innerText || tmp.textContent || '';
+    }
+
     // Returns fraction of Vietnamese diacritic characters in a string
     function _viRatio(s) {
       return ((s.match(VI_CHARS) || []).length) / Math.max(s.length, 1);
@@ -167,11 +175,30 @@
 
     async function callGrammar() {
       if (!await guardTopic('btn-grammar')) return;
-      const raw = editor.innerText.trim();
+      const raw = _cleanEditorText().trim();
       if (!raw) return toast(t('no-text'));
       const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Grammar check' : 'Kiểm tra lỗi');
+      const { toneWord, toneStd } = typeof getStandards === 'function' ? getStandards() : { toneWord: 'casual', toneStd: { contractions: true, firstPerson: true } };
+      const isCasual = ['casual', 'friendly', 'bạn bè', 'tự nhiên'].includes(toneWord.toLowerCase());
+      const toneRules = [
+        toneStd.contractions ? '- Contractions (it\'s, don\'t, I\'m) are CORRECT for this tone — do NOT mark them as errors' : '- No contractions expected — mark missing apostrophes in contractions',
+        isCasual ? '- Casual/informal words (gonna, wanna, kinda, coz, yeah, hey) are INTENTIONAL for this tone — do NOT mark them as errors' : '',
+        '- Sentences starting with "Because", "And", "But", "So" are grammatically acceptable in modern English — do NOT mark them as errors',
+        '- Both British and American spelling are acceptable (colour/color, realise/realize) — do NOT flag either as wrong',
+        '- Proper nouns (names of people, places, brands) in any language are NEVER errors — do NOT mark them',
+      ].filter(Boolean).join('\n');
+
+      // Detect capitalized words not at sentence start — likely proper nouns
+      const properNouns = [...new Set(
+        (text.match(/(?<=[.!?]\s+|\s)[A-Z][a-záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ]{1,}(?:\s[A-Z][a-z]{1,})?/g) || [])
+        .filter(w => !['I','The','A','An','In','On','At','To','Of','For','And','But','Or','So','Yet','Nor','Because','When','If','That','This','These','Those','He','She','It','We','They','My','Your','His','Her','Its','Our','Their'].includes(w))
+      )];
+      const properNounNote = properNouns.length
+        ? `\nPROPER NOUNS in this text — treat ALL of these as correct, never mark them: ${properNouns.join(', ')}`
+        : '';
+
       const r = await callAI(
-        `You are a strict English proofreader. Fix ERRORS ONLY — do NOT improve style, word choice, or sentence structure.${viNote}
+        `You are a strict English proofreader. Fix ERRORS ONLY — do NOT improve style, word choice, or sentence structure.${viNote}${properNounNote}
 
 user text:
 """
@@ -182,24 +209,27 @@ Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 
 LANGUAGE RULE: Write ALL explanations, labels, and feedback in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
 
+TONE & STYLE RULES — based on the user's selected tone (${toneWord}):
+${toneRules}
+
 IMPORTANT — adjust expectations to the user's level:
 - A1/A2: only mark clear errors (wrong verb form, wrong pronoun, obvious misspelling). Do NOT penalize simple sentence structure or basic vocabulary — that is appropriate for their level.
-- B1/B2: mark grammar, collocation, punctuation and word-choice errors.
-- C1/C2: mark all errors including subtle word choice, register, and style inconsistencies.
+- B1/B2: mark grammar and punctuation errors only.
+- C1/C2: mark all errors including subtle word choice and register inconsistencies.
 
 ONLY mark these as errors:
 1. GRAMMAR: wrong verb tense, subject-verb disagreement, wrong article (a/an/the), wrong preposition, wrong word form (e.g. "beautify" instead of "beautiful")
 2. SPELLING: genuinely misspelled words, wrong homophones (their/there, your/you're, its/it's)
-3. PUNCTUATION: missing period at sentence end, missing apostrophe in contractions
+3. PUNCTUATION: missing period at sentence end, missing apostrophe in contractions (only if tone requires it)
 4. CAPITALIZATION: sentence start, proper nouns, pronoun "I"
 
 STRICT RULES — failure to follow these makes the output useless:
 - NEVER mark a word as wrong if the fix is the same word
 - NEVER change correct words to longer or fancier alternatives — that is editing, not proofreading
-- NEVER mark informal but grammatically correct English as an error
 - NEVER mark style choices (short sentences, simple words, repetition) as errors
 - ONLY wrap when you are 100% certain it is a real error
-- If the fix word is identical to the original word, DO NOT wrap it — skip it entirely
+- Wrap EACH error exactly as: <span class="ge" data-fix="CORRECT_TEXT" onclick="applyFix(this)">WRONG_TEXT</span>
+- data-fix = the corrected text only (no explanation)
 - Zero errors → return the text exactly as-is, character for character
 - Return ONLY the corrected HTML string. No explanation, no markdown, no code blocks.`,
         'btn-grammar', false, true
@@ -211,21 +241,66 @@ STRICT RULES — failure to follow these makes the output useless:
       clean = clean.replace(/<span class="ge" data-fix="([^"]*)"[^>]*>([^<]*)<\/span>/g, (match, fix, orig) => {
         return fix.trim().toLowerCase() === orig.trim().toLowerCase() ? orig : match;
       });
+      // Save original HTML for undo before overwriting
+      const _grammarUndo = editor.innerHTML;
       editor.innerHTML = clean;
       const n = (clean.match(/<span class="ge"/g) || []).length;
-      toast(n > 0 ? t('grammar-found', { n }) : t('grammar-clean'), n > 0 ? '' : 's');
+      if (n > 0) {
+        const vi = uiLang !== 'en';
+        // Show action bar with Fix all / Dismiss all / Undo
+        const wrap = document.createElement('div');
+        wrap.className = 'ti grammar-action-bar';
+        wrap.innerHTML =
+          `<span>${t('grammar-found', { n })}</span>` +
+          `<button onclick="fixAllErrors()">${vi ? 'Sửa tất cả' : 'Fix all'}</button>` +
+          `<button onclick="dismissAllErrors()">${vi ? 'Bỏ qua' : 'Dismiss'}</button>` +
+          `<button class="undo-btn" onclick="(function(){` +
+            `editor.innerHTML=${JSON.stringify(_grammarUndo)};` +
+            `editor.dispatchEvent(new Event('input'));` +
+            `this.closest('.grammar-action-bar').remove();` +
+            `toast('${vi ? 'Đã hoàn tác.' : 'Reverted.'}','s');` +
+          `}).call(this)">${vi ? 'Hoàn tác' : 'Undo'}</button>`;
+        document.getElementById('toastWrap').appendChild(wrap);
+        setTimeout(() => wrap.remove(), 8000);
+      } else {
+        toast(t('grammar-clean'), 's');
+      }
     }
 
     window.applyFix = el => {
       tooltip.style.display = 'none';
       el.parentNode.replaceChild(document.createTextNode(el.getAttribute('data-fix')), el);
-      editor.dispatchEvent(new Event('input')); toast(t('toast-fixed'), 's');
+      editor.dispatchEvent(new Event('input'));
+      // Update count in action bar if present
+      const bar = document.querySelector('.grammar-action-bar');
+      if (bar) {
+        const remaining = editor.querySelectorAll('span.ge').length;
+        if (remaining === 0) { bar.remove(); toast(uiLang === 'en' ? 'All errors fixed!' : 'Đã sửa hết lỗi!', 's'); }
+        else bar.querySelector('span').textContent = (uiLang !== 'en' ? `${remaining} lỗi còn lại` : `${remaining} error${remaining > 1 ? 's' : ''} remaining`);
+      }
+    };
+
+    window.fixAllErrors = () => {
+      editor.querySelectorAll('span.ge').forEach(s => {
+        s.parentNode.replaceChild(document.createTextNode(s.getAttribute('data-fix')), s);
+      });
+      editor.dispatchEvent(new Event('input'));
+      document.querySelector('.grammar-action-bar')?.remove();
+      toast(uiLang === 'en' ? 'All errors fixed!' : 'Đã sửa tất cả lỗi!', 's');
+    };
+
+    window.dismissAllErrors = () => {
+      editor.querySelectorAll('span.ge').forEach(s => {
+        s.parentNode.replaceChild(document.createTextNode(s.textContent), s);
+      });
+      editor.dispatchEvent(new Event('input'));
+      document.querySelector('.grammar-action-bar')?.remove();
     };
 
 
     async function callImprove() {
       if (!await guardTopic('btn-improve')) return;
-      const raw = editor.innerText.trim();
+      const raw = _cleanEditorText().trim();
       if (!raw) return toast(t('no-text'));
       const { text, viNote } = _prepText(raw, 1200, uiLang === 'en' ? 'Improve' : 'Nâng cấp');
 
@@ -384,7 +459,7 @@ Output format — follow EXACTLY:
 
     async function callReview() {
       if (!await guardTopic('btn-review')) return;
-      const raw = editor.innerText.trim();
+      const raw = _cleanEditorText().trim();
       if (!raw) return toast(t('no-text-review'));
       const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Review' : 'Nhận xét');
       setPanelTitle('panel-review');

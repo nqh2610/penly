@@ -218,6 +218,39 @@
       if (!editor.contains(e.target) && !getSelToolbar()?.contains(e.target)) hideSelToolbar();
     });
 
+    // ── POPOVER DRAG ──
+    (function () {
+      const pop = document.getElementById('ctxPopover');
+      const header = document.getElementById('ctxPopoverHeader');
+      if (!pop || !header) return;
+      let ox = 0, oy = 0, sx = 0, sy = 0, dragging = false;
+
+      header.addEventListener('pointerdown', e => {
+        if (e.button !== 0) return;
+        dragging = true;
+        sx = e.clientX; sy = e.clientY;
+        ox = parseInt(pop.style.left) || pop.getBoundingClientRect().left;
+        oy = parseInt(pop.style.top) || pop.getBoundingClientRect().top;
+        header.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
+
+      header.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const pw = pop.offsetWidth, ph = pop.offsetHeight;
+        let nx = ox + (e.clientX - sx);
+        let ny = oy + (e.clientY - sy);
+        nx = Math.max(0, Math.min(nx, vw - pw));
+        ny = Math.max(0, Math.min(ny, vh - ph));
+        pop.style.left = nx + 'px';
+        pop.style.top = ny + 'px';
+      });
+
+      header.addEventListener('pointerup', () => { dragging = false; });
+      header.addEventListener('pointercancel', () => { dragging = false; });
+    })();
+
     // Selection toolbar action helpers — hide toolbar then run action
     function selAction(fn) { hideSelToolbar(); fn(); }
     function selCut() { hideSelToolbar(); document.execCommand('cut'); }

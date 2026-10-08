@@ -3,45 +3,34 @@
  * Deploy lên Cloudflare Workers
  *
  * Bindings cần setup trong Cloudflare dashboard:
- *   PENLY_KEYS     — KV namespace (lưu Penly key hash → { name, groqKey, geminiKey, active, created })
+ *   PENLY_KEYS     — KV namespace (lưu Penly key hash → { name, geminiKey, active, created })
  *   AI             — Workers AI binding (fallback khi tất cả hết quota)
  *
  * Secrets (wrangler secret put):
  *   ADMIN_PASSWORD  — mật khẩu bảo vệ trang admin
  *   OPENROUTER_KEY  — OpenRouter API key (shared fallback)
  *
- * Fallback chain per request:
- *   1. Groq (user's groqKey) — fast, high RPM
- *   2. Gemini 2.0 Flash (user's geminiKey) — 1500 req/day, 1M tokens/day
- *   3. Gemini 1.5 Flash (user's geminiKey) — extra 1500 req/day backup
- *   4. OpenRouter free models (shared OPENROUTER_KEY)
- *   5. Cloudflare Workers AI (shared, last resort)
+ * Provider chain per request:
+ *   1. Gemini (user's geminiKey) — 1M tokens/day free, stable -latest aliases
+ *   2. OpenRouter free models (shared OPENROUTER_KEY)
+ *   3. Cloudflare Workers AI (shared, last resort)
  */
 
-const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const GEMINI_URL_KEY = (model, key) =>
+const GEMINI_URL = (model, key) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-const GEMINI_URL_BEARER = (model) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-const ALLOWED_MODELS = new Set([
-  "openai/gpt-oss-120b",
-  "openai/gpt-oss-20b",
-]);
-const GROQ_MODEL_PRIMARY = "openai/gpt-oss-120b";
-
-// Gemini models tried in order (both use the same user geminiKey)
+// Stable "-latest" aliases — Google auto-updates these to the newest stable version
 const GEMINI_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
+  "gemini-2.0-flash-latest",
+  "gemini-1.5-flash-latest",
 ];
 
-// OpenRouter free models — tried in order when Groq + Gemini exhausted
+// OpenRouter free models — fallback when Gemini exhausted
 const OR_MODELS = [
   "qwen/qwen3-8b:free",
-  "google/gemma-4-31b-it:free",
-  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-3-27b-it:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
 ];
 
 const CF_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
@@ -108,14 +97,14 @@ async function handleAdmin(request, env, url) {
     let body;
     try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
-    const { name, groqKey, geminiKey } = body;
-    if (!name || !groqKey) return json({ error: "name and groqKey required" }, 400);
+    const { name, geminiKey } = body;
+    if (!name) return json({ error: "name required" }, 400);
 
     const penlyKey = genPenlyKey();
     const hash = await sha256(penlyKey.trim().toUpperCase());
 
     await env.PENLY_KEYS.put(hash, JSON.stringify({
-      name, groqKey, geminiKey: geminiKey || '', active: true,
+      name, geminiKey: geminiKey || '', active: true,
       created: new Date().toISOString(),
       penlyKey,
     }));
@@ -147,21 +136,15 @@ async function handleAdmin(request, env, url) {
   return json({ error: "Not found" }, 404);
 }
 
-// ── Gemini fallback (user's own key — 1500 req/day free) ────────────────────
+// ── Gemini (user's own key — 1M tokens/day free) ────────────────────────────
 async function callGemini(geminiKey, prompt, temperature, max_tokens) {
   if (!geminiKey || geminiKey.length < 20) return null;
 
-  // New-format keys (AQ...) use Bearer auth; legacy keys (AIza...) use ?key= param
-  const usesBearer = !geminiKey.startsWith('AIza');
-
   for (const model of GEMINI_MODELS) {
     try {
-      const url = usesBearer ? GEMINI_URL_BEARER(model) : GEMINI_URL_KEY(model, geminiKey);
-      const headers = { "Content-Type": "application/json" };
-      if (usesBearer) headers["Authorization"] = `Bearer ${geminiKey}`;
-      const res = await fetch(url, {
+      const res = await fetch(GEMINI_URL(model, geminiKey), {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -171,11 +154,11 @@ async function callGemini(geminiKey, prompt, temperature, max_tokens) {
         }),
       });
       const data = await res.json();
-      // Quota/rate errors — try next model
-      if (res.status === 429 || res.status === 503 || data.error) {
-        const errCode = data.error?.code;
-        if (errCode === 429 || errCode === 503 || res.status === 429 || res.status === 503) continue;
-        console.info(`[gemini] ${model} error ${errCode}: ${data.error?.message?.slice(0, 100)}`);
+      if (res.status === 429 || res.status === 503) continue;
+      if (data.error) {
+        const code = data.error?.code;
+        if (code === 429 || code === 503) continue;
+        console.info(`[gemini] ${model} error ${code}: ${data.error?.message?.slice(0, 100)}`);
         return null;
       }
       const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -330,7 +313,7 @@ export default {
     let body;
     try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
-    const { penly_key, prompt, temperature, max_tokens, model } = body;
+    const { penly_key, prompt, temperature, max_tokens } = body;
 
     if (!penly_key || !/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(penly_key.trim().toUpperCase())) {
       return json({ error: "Invalid license key format" }, 401);
@@ -341,46 +324,17 @@ export default {
 
     if (!entry) return json({ error: "License key not found or inactive" }, 401);
     if (!entry.active) return json({ error: "License key is disabled" }, 401);
-    if (!entry.groqKey) return json({ error: "Server misconfigured" }, 500);
 
-    const chosenModel = (model && ALLOWED_MODELS.has(model)) ? model : GROQ_MODEL_PRIMARY;
-
-    try {
-      const groqRes = await fetch(GROQ_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${entry.groqKey}`,
-        },
-        body: JSON.stringify({
-          model: chosenModel,
-          messages: [{ role: "user", content: prompt }],
-          temperature: temperature ?? 0.7,
-          max_tokens: max_tokens ?? 3000,
-        }),
-      });
-
-      const data = await groqRes.json();
-
-      const msg = data.choices?.[0]?.message;
-      const content = msg?.content || msg?.reasoning;
-      if (content) {
-        return json({ content });
-      }
-
-      const errMsg = data.error?.message || "Unknown error from AI";
-      const shouldFallback = groqRes.status === 429
-        || groqRes.status === 404
-        || errMsg.toLowerCase().includes("rate limit")
-        || errMsg.toLowerCase().includes("does not exist")
-        || errMsg.toLowerCase().includes("not found")
-        || errMsg.toLowerCase().includes("do not have access")
-        || errMsg.toLowerCase().includes("model_not_found");
-
-      return json({ error: errMsg, rate_limited: shouldFallback }, 502);
-
-    } catch (e) {
-      return json({ error: "Failed to reach AI service" }, 502);
+    // Primary: Gemini (user's own key — 1M tokens/day free)
+    if (entry.geminiKey) {
+      const gemResult = await callGemini(entry.geminiKey, prompt, temperature, max_tokens);
+      if (gemResult) return json(gemResult);
     }
+
+    // Fallback chain: OpenRouter → Cloudflare AI
+    const result = await callFallbackChain(env, prompt, temperature, max_tokens);
+    if (result) return json(result);
+
+    return json({ error: "All AI providers exhausted", rate_limited: true }, 502);
   },
 };

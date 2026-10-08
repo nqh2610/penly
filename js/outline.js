@@ -414,39 +414,24 @@ Output the essay now:
       // maxTokens scales with paraCount: A=4 paras, B=5 paras, C=6 paras
       const maxTokens = lvl === 'A' ? 1000 : lvl === 'C' ? 1800 : 1300;
 
-      // Prefer non-reasoning models — gpt-oss thinks out loud and leaks planning text into output
-      // Put gpt-oss last so they're only used when all others are unavailable
-      const nonReasoning = typeof MODEL_CHAIN !== 'undefined'
-        ? MODEL_CHAIN.filter(m => !m.includes('gpt-oss'))
-        : [];
-      const reasoning = typeof MODEL_CHAIN !== 'undefined'
-        ? MODEL_CHAIN.filter(m => m.includes('gpt-oss'))
-        : [];
-      const sampleModels = nonReasoning.length
-        ? [...nonReasoning, ...reasoning]
-        : null; // null = use full MODEL_CHAIN (all gpt-oss)
-
       setBusy('btn-outline', true, true, uiLang === 'en' ? 'Sample Essay' : 'Bài Mẫu');
 
-      const raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, sampleModels);
+      const raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens);
       setBusy('btn-outline', false, false);
 
       if (!raw) {
-        const outage = aiOutageInfo();
-        const msg = outage
-          ? (uiLang === 'en' ? `AI is busy. Try again in ~${outage.minutes} min.` : `AI đang bận. Thử lại sau ~${outage.minutes} phút.`)
-          : (uiLang === 'en' ? 'Could not generate sample. Please try again.' : 'Chưa tạo được bài mẫu. Vui lòng thử lại.');
+        const msg = uiLang === 'en' ? 'Could not generate sample. Please try again.' : 'Chưa tạo được bài mẫu. Vui lòng thử lại.';
         document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.85rem">${escHtml(msg)}</p>`;
         return;
       }
 
       const paras = parseSampleResponse(raw);
       if (!paras.length) {
-        // parse failed (likely gpt-oss leaked thinking text) — retry once
+        // parse failed — retry once
         sampleLsSet(cacheKey, null);
         try { localStorage.removeItem(SAMPLE_LS_PREFIX + cacheKey); } catch (_) {}
         setBusy('btn-outline', true, true, uiLang === 'en' ? 'Sample Essay (retry…)' : 'Bài Mẫu (thử lại…)');
-        const raw2 = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens, null, sampleModels);
+        const raw2 = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens);
         setBusy('btn-outline', false, false);
         const paras2 = raw2 ? parseSampleResponse(raw2) : [];
         if (!paras2.length) {

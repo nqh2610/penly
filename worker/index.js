@@ -223,11 +223,7 @@ export default {
     if (!entry) return json({ error: "License key not found or inactive" }, 401);
     if (!entry.active) return json({ error: "License key is disabled" }, 401);
 
-    // OpenRouter (primary)
-    const orResult = await callOpenRouter(env, prompt, temperature, max_tokens);
-    if (orResult) return json(orResult);
-
-    // Cloudflare AI (last resort)
+    // Cloudflare AI (primary — fast)
     try {
       const result = await env.AI.run(CF_AI_MODEL, {
         messages: [{ role: "user", content: prompt }],
@@ -239,6 +235,10 @@ export default {
     } catch (e) {
       console.info(`[cf-ai] failed: ${e.message}`);
     }
+
+    // OpenRouter (fallback)
+    const orResult = await callOpenRouter(env, prompt, temperature, max_tokens);
+    if (orResult) return json(orResult);
 
     return json({ error: "All AI providers exhausted", rate_limited: true }, 502);
   },

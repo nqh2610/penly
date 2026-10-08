@@ -77,6 +77,13 @@
         );
         toRemove.forEach(k => localStorage.removeItem(k));
       } catch (_) {}
+      // Clear sample from all docs
+      try {
+        if (typeof docs !== 'undefined') {
+          docs.forEach(d => { delete d.sample; delete d.sampleKey; });
+          if (typeof saveDocs === 'function') saveDocs();
+        }
+      } catch (_) {}
       // Clear SW caches and unregister
       try {
         const keys = await caches.keys();

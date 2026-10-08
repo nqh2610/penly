@@ -1,31 +1,68 @@
     // callSample is defined in outline.js
 
     // ── TEXT PREPARATION ──
-    // Strips Vietnamese-heavy content and trims to a char limit for AI calls.
-    // Returns { text, warned } — warns user once if text was trimmed or mixed-language.
-    function _prepText(raw, maxChars, btnLabel) {
-      const vi = uiLang !== 'en';
-      let text = raw.trim();
+    const VI_CHARS = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g;
 
-      // Detect Vietnamese ratio — count Vietnamese diacritics
-      const viChars = (text.match(/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g) || []).length;
-      const viRatio = viChars / Math.max(text.length, 1);
-      if (viRatio > 0.15) {
-        toast(vi
-          ? `⚠️ ${btnLabel}: Chức năng này dành cho tiếng Anh. Kết quả có thể không chính xác nếu bài có nhiều tiếng Việt.`
-          : `⚠️ ${btnLabel}: This feature works best with English text.`, 'i');
+    // Returns fraction of Vietnamese diacritic characters in a string
+    function _viRatio(s) {
+      return ((s.match(VI_CHARS) || []).length) / Math.max(s.length, 1);
+    }
+
+    // Returns true if a sentence is predominantly Vietnamese (>40% vi chars)
+    function _isViSentence(s) {
+      return _viRatio(s) > 0.08 && (s.match(VI_CHARS) || []).length >= 3;
+    }
+
+    // Strips Vietnamese-heavy sentences from text.
+    // Returns { text, stripped } where stripped=true means something was removed.
+    function _stripVietnamese(raw) {
+      const sentences = raw.split(/(?<=[.!?])\s+/);
+      const kept = sentences.filter(s => !_isViSentence(s));
+      if (kept.length === sentences.length) return { text: raw, stripped: false };
+      return { text: kept.join(' ').trim(), stripped: true };
+    }
+
+    // Returns an instruction string to inject into prompts when text has Vietnamese.
+    // level: 'low' (<20% vi) → just an instruction; 'high' (≥20%) → after strip
+    function _viInstruction(level) {
+      if (level === 'high') return '\nNOTE: Some Vietnamese sentences were removed before sending. Process only the English text above.';
+      return '\nNOTE: The text may contain occasional Vietnamese words or phrases. Ignore them — process only the English parts.';
+    }
+
+    // Prepares text for AI: detect Vi ratio → strip if heavy → trim to maxChars.
+    // Returns { text, viNote } — viNote is an instruction string to append to the prompt.
+    function _prepText(raw, maxChars, btnLabel) {
+      const isVi = uiLang !== 'en';
+      let text = raw.trim();
+      let viNote = '';
+
+      const ratio = _viRatio(text);
+
+      if (ratio >= 0.20) {
+        // Heavy Vietnamese — strip Vietnamese sentences (B)
+        const { text: stripped, stripped: didStrip } = _stripVietnamese(text);
+        if (didStrip) {
+          text = stripped;
+          viNote = _viInstruction('high');
+          toast(isVi
+            ? `⚠️ ${btnLabel}: Đã bỏ qua các câu tiếng Việt — chỉ xử lý phần tiếng Anh.`
+            : `⚠️ ${btnLabel}: Vietnamese sentences removed — processing English only.`, 'i');
+        }
+      } else if (ratio > 0.05) {
+        // Light Vietnamese — keep text, inject instruction (C)
+        viNote = _viInstruction('low');
       }
 
       // Trim to maxChars at a sentence boundary where possible
       if (text.length > maxChars) {
         const cut = text.lastIndexOf('.', maxChars);
         text = cut > maxChars * 0.6 ? text.substring(0, cut + 1) : text.substring(0, maxChars);
-        toast(vi
+        toast(isVi
           ? `📄 ${btnLabel}: Bài dài — chỉ phân tích ${maxChars} ký tự đầu để đảm bảo tốc độ.`
           : `📄 ${btnLabel}: Long text — analysing first ${maxChars} chars for speed.`, 'i');
       }
 
-      return text;
+      return { text, viNote };
     }
 
     // ── TOPIC VALIDATION ──
@@ -132,9 +169,9 @@
       if (!await guardTopic('btn-grammar')) return;
       const raw = editor.innerText.trim();
       if (!raw) return toast(t('no-text'));
-      const text = _prepText(raw, 1500, uiLang === 'en' ? 'Grammar check' : 'Kiểm tra lỗi');
+      const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Grammar check' : 'Kiểm tra lỗi');
       const r = await callAI(
-        `You are a professional English proofreader. Check the user's text carefully based on their level.
+        `You are a professional English proofreader. Check the user's text carefully based on their level.${viNote}
 
 user text:
 """
@@ -186,7 +223,7 @@ RULES:
       if (!await guardTopic('btn-improve')) return;
       const raw = editor.innerText.trim();
       if (!raw) return toast(t('no-text'));
-      const text = _prepText(raw, 1200, uiLang === 'en' ? 'Improve' : 'Nâng cấp');
+      const { text, viNote } = _prepText(raw, 1200, uiLang === 'en' ? 'Improve' : 'Nâng cấp');
 
       // lưu bản gốc lần đầu; reset nếu user đã sửa đáng kể so với bản gốc
       if (!improveOriginalText) {
@@ -217,7 +254,7 @@ RULES:
       ].filter(Boolean).join('; ');
 
       const r = await callAI(
-        `You are an expert English editor and ESL writing coach. IMPROVE the user's writing — do not rewrite or replace their ideas.
+        `You are an expert English editor and ESL writing coach. IMPROVE the user's writing — do not rewrite or replace their ideas.${viNote}
 
 user's ORIGINAL text:
 """
@@ -345,7 +382,7 @@ Output format — follow EXACTLY:
       if (!await guardTopic('btn-review')) return;
       const raw = editor.innerText.trim();
       if (!raw) return toast(t('no-text-review'));
-      const text = _prepText(raw, 1500, uiLang === 'en' ? 'Review' : 'Nhận xét');
+      const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Review' : 'Nhận xét');
       setPanelTitle('panel-review');
       const tp = topic();
       const wc = text.trim().split(/\s+/).filter(Boolean).length;
@@ -371,7 +408,7 @@ Output format — follow EXACTLY:
 
       if (wc < 60) {
         // short text — lightweight feedback proportional to length
-        reviewPrompt = `You are a supportive but honest ESL writing teacher. The student wrote a short piece (${wc} word${wc === 1 ? '' : 's'}).
+        reviewPrompt = `You are a supportive but honest ESL writing teacher. The student wrote a short piece (${wc} word${wc === 1 ? '' : 's'}).${viNote}
 
 Topic: "${tp || 'not specified'}"
 Text:
@@ -406,7 +443,7 @@ Give brief pedagogical feedback. Use 2 sections only:
             : '\nNOTE: This text has been refined by AI. Focus on what works well, only flag what could still be improved — do not re-flag issues already addressed.')
           : '';
 
-        reviewPrompt = `You are a supportive but rigorous English writing teacher and language pedagogy specialist.
+        reviewPrompt = `You are a supportive but rigorous English writing teacher and language pedagogy specialist.${viNote}
 
 CALIBRATION RULES — follow strictly:
 1. Only praise what genuinely works — quote the specific sentence or phrase and explain WHY it is effective

@@ -1,5 +1,5 @@
     // ── API ──
-    // Worker handles all model selection internally (Gemini → OpenRouter → CF AI)
+    // Worker handles all model selection internally (OR → CF AI)
     // No model chain or cooldown needed on the client side
 
     function setModelChip(source) {
@@ -20,6 +20,72 @@
     const MODEL_CHAIN = [];
 
     function aiOutageInfo() { return null; }
+
+    // ── Loading UX ──
+    let _busyTimer = null;
+    let _progressTimer = null;
+    let _progressVal = 0;
+
+    const BUSY_MSGS_VI = [
+      'Đang xử lý…', 'Đang phân tích…', 'Đang viết…',
+      'Sắp xong rồi…', 'Đang hoàn thiện…', 'Chờ xíu nhé…',
+    ];
+    const BUSY_MSGS_EN = [
+      'Processing…', 'Analysing…', 'Writing…',
+      'Almost there…', 'Finishing up…', 'Just a moment…',
+    ];
+
+    function _startLoadingAnim(panelTitle) {
+      _stopLoadingAnim();
+      const msgs = uiLang === 'en' ? BUSY_MSGS_EN : BUSY_MSGS_VI;
+      let idx = 0;
+      _progressVal = 0;
+
+      // Fake progress bar
+      const lbar = document.getElementById('lbar');
+      if (lbar) {
+        lbar.style.width = '0%';
+        lbar.style.transition = 'none';
+      }
+
+      // Rotating status text in pContent
+      function updateMsg() {
+        const pContent = document.getElementById('pContent');
+        if (!pContent) return;
+        const dots = ['', '.', '..', '...'][idx % 4 === 0 ? 0 : idx % 4];
+        pContent.innerHTML = `<div class="ai-loading-wrap">
+          <div class="ai-loading-dots"><span></span><span></span><span></span></div>
+          <p class="ai-loading-msg">${msgs[Math.floor(idx / 2) % msgs.length]}</p>
+        </div>`;
+        idx++;
+      }
+
+      // Fake progress: quickly to 30%, slowly to 85%, stall there
+      function updateProgress() {
+        const lbar = document.getElementById('lbar');
+        if (!lbar) return;
+        if (_progressVal < 30) _progressVal += 3;
+        else if (_progressVal < 60) _progressVal += 1.2;
+        else if (_progressVal < 85) _progressVal += 0.4;
+        lbar.style.transition = 'width 0.4s ease';
+        lbar.style.width = _progressVal + '%';
+      }
+
+      updateMsg();
+      updateProgress();
+      _busyTimer = setInterval(() => { updateMsg(); updateProgress(); }, 2000);
+    }
+
+    function _stopLoadingAnim() {
+      if (_busyTimer) { clearInterval(_busyTimer); _busyTimer = null; }
+      // Complete the progress bar
+      const lbar = document.getElementById('lbar');
+      if (lbar) {
+        lbar.style.transition = 'width 0.3s ease';
+        lbar.style.width = '100%';
+        setTimeout(() => { lbar.style.width = '0%'; lbar.style.transition = 'none'; }, 400);
+      }
+    }
 
     async function callAI(prompt, btnId, silent = false, noPanel = false, maxTokens = 2000, panelTitle = null, models = null) {
       const lk = getLicenseKey();
@@ -123,11 +189,12 @@
       document.getElementById('lbar').classList.toggle('hidden', !on);
       if (on && openPanel) {
         document.getElementById('pCards').style.display = 'none';
-        document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.83rem;font-style:italic">${t('processing')}</p>`;
         if (panelTitle) document.getElementById('panelTitle').textContent = panelTitle;
         document.getElementById('resultPanel').classList.add('open');
         document.getElementById('editorPane').classList.add('shifted');
+        _startLoadingAnim(panelTitle);
       }
+      if (!on) _stopLoadingAnim();
     }
 
     // ── RESIZE PANEL ──

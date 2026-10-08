@@ -161,12 +161,16 @@
       geSheetTarget = null;
     }
 
-    function toast(msg, type = '') {
+    function toast(msg, type = '', onClick = null) {
       const d = document.createElement('div');
       d.className = 'ti' + (type ? ' ' + type : '');
       d.textContent = msg;
+      if (onClick) {
+        d.style.cursor = 'pointer';
+        d.addEventListener('click', () => { onClick(); d.remove(); });
+      }
       document.getElementById('toastWrap').appendChild(d);
-      setTimeout(() => d.remove(), 2900);
+      setTimeout(() => d.remove(), onClick ? 5000 : 2900);
     }
 
     // ── PWA Service Worker ──

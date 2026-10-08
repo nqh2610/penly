@@ -384,6 +384,8 @@ Output the essay now:
       } catch (_) {}
     }
 
+    let _sampleBgPromise = null; // track background sample run
+
     async function callSample() {
       const tp = topic();
       if (!tp) return toast(uiLang === 'en' ? 'Enter a topic first.' : 'Nhập chủ đề trước.');
@@ -394,60 +396,73 @@ Output the essay now:
       const lang = uiLang === 'en' ? 'en' : 'vi';
       const cacheKey = `${normTp}|${lvl}|${tone}|${aud}|${lang}`;
 
-      // 1. Doc-level cache — validate before using
+      // 1. Doc-level cache
       const d = getDoc(currentId);
       if (d && d.sample && d.sampleKey === cacheKey && isSampleValid(d.sample)) {
         showSamplePanel(d.sample);
         return;
       }
-      // 2. localStorage cache — validate before using
+      // 2. localStorage cache
       const lsCached = sampleLsGet(cacheKey);
       if (lsCached && isSampleValid(lsCached)) {
         showSamplePanel(lsCached);
         if (d) { d.sample = lsCached; d.sampleKey = cacheKey; saveDocs(); }
         return;
       }
-      // Clear any invalid cache
+      // Clear invalid cache
       if (d && d.sampleKey === cacheKey) { delete d.sample; delete d.sampleKey; saveDocs(); }
       try { localStorage.removeItem(SAMPLE_LS_PREFIX + cacheKey); } catch (_) {}
 
-      // maxTokens scales with paraCount: A=4 paras, B=5 paras, C=6 paras
       const maxTokens = lvl === 'A' ? 1000 : lvl === 'C' ? 1800 : 1300;
+      const titleLabel = uiLang === 'en' ? 'Sample Essay' : 'Bài Mẫu';
 
-      setBusy('btn-outline', true, true, uiLang === 'en' ? 'Sample Essay' : 'Bài Mẫu');
+      // Show panel with loading state immediately
+      setBusy('btn-outline', true, true, titleLabel);
 
-      const raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens);
+      // Run in background — user can press other buttons, sample keeps running
+      const btnEl = document.getElementById('btn-outline');
+      if (btnEl) btnEl.classList.add('loading');
+
+      async function runSample() {
+        const raw = await callAI(buildSamplePrompt(tp, lvl, tone, aud), null, true, true, maxTokens);
+        if (!raw) return null;
+        let paras = parseSampleResponse(raw);
+        if (!paras.length) {
+          // retry once
+          const raw2 = await callAI(buildSamplePrompt(tp, lvl, tone, aud), null, true, true, maxTokens);
+          paras = raw2 ? parseSampleResponse(raw2) : [];
+        }
+        return paras.length ? paras : null;
+      }
+
+      _sampleBgPromise = runSample();
+      const paras = await _sampleBgPromise;
+      _sampleBgPromise = null;
+
+      if (btnEl) btnEl.classList.remove('loading');
       setBusy('btn-outline', false, false);
 
-      if (!raw) {
-        const msg = uiLang === 'en' ? 'Could not generate sample. Please try again.' : 'Chưa tạo được bài mẫu. Vui lòng thử lại.';
-        document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.85rem">${escHtml(msg)}</p>`;
-        return;
-      }
-
-      const paras = parseSampleResponse(raw);
-      if (!paras.length) {
-        // parse failed — retry once
-        sampleLsSet(cacheKey, null);
-        try { localStorage.removeItem(SAMPLE_LS_PREFIX + cacheKey); } catch (_) {}
-        setBusy('btn-outline', true, true, uiLang === 'en' ? 'Sample Essay (retry…)' : 'Bài Mẫu (thử lại…)');
-        const raw2 = await callAI(buildSamplePrompt(tp, lvl, tone, aud), 'btn-outline', true, true, maxTokens);
-        setBusy('btn-outline', false, false);
-        const paras2 = raw2 ? parseSampleResponse(raw2) : [];
-        if (!paras2.length) {
-          document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.85rem">${uiLang === 'en' ? 'Could not parse response. Please try again.' : 'Lỗi định dạng. Vui lòng thử lại.'}</p>`;
-          return;
+      if (!paras) {
+        // If panel still showing sample loading, show error
+        const pContent = document.getElementById('pContent');
+        if (pContent && document.getElementById('resultPanel').classList.contains('open')) {
+          pContent.innerHTML = `<p style="color:var(--muted);font-size:.85rem">${uiLang === 'en' ? 'Could not generate sample. Please try again.' : 'Chưa tạo được bài mẫu. Vui lòng thử lại.'}</p>`;
+        } else {
+          toast(uiLang === 'en' ? 'Sample failed. Try again.' : 'Tạo bài mẫu thất bại. Thử lại nhé.', 'd');
         }
-        sampleLsSet(cacheKey, paras2);
-        if (d) { d.sample = paras2; d.sampleKey = cacheKey; saveDocs(); }
-        showSamplePanel(paras2);
         return;
       }
 
-      // Cache and display
       sampleLsSet(cacheKey, paras);
       if (d) { d.sample = paras; d.sampleKey = cacheKey; saveDocs(); }
-      showSamplePanel(paras);
+
+      // If panel is open (user waited) — show directly
+      // If panel was closed (user did other things) — toast notification
+      if (document.getElementById('resultPanel').classList.contains('open')) {
+        showSamplePanel(paras);
+      } else {
+        toast(uiLang === 'en' ? '✅ Sample essay ready! Tap to view.' : '✅ Bài mẫu đã xong! Nhấn để xem.', 's', () => showSamplePanel(paras));
+      }
     }
 
     // Expose for onclick in HTML

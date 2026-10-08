@@ -6,11 +6,10 @@
       const chip = document.getElementById('modelChip');
       if (!chip) return;
       const map = {
-        '__gemini__': { text: '✨ Gem', cls: 'tier-1', title: 'Đang dùng Gemini' },
-        '__or__':     { text: '🌐 OR', cls: 'tier-3', title: 'Đang dùng OpenRouter' },
-        '__cf__':     { text: '☁ Cafe', cls: 'tier-4', title: 'Đang dùng Cloudflare AI' },
+        '__or__': { text: '🌐 OR', cls: 'tier-3', title: 'Đang dùng OpenRouter' },
+        '__cf__': { text: '☁ Cafe', cls: 'tier-4', title: 'Đang dùng Cloudflare AI' },
       };
-      const info = map[source] || map['__gemini__'];
+      const info = map[source] || map['__cf__'];
       chip.textContent = info.text;
       chip.className = 'model-chip ' + info.cls;
       chip.title = info.title;

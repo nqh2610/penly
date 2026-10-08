@@ -4,12 +4,39 @@
     let ctxFromPanel = false;
     let _ctxPopoverSel = null; // saved selection range for popover positioning
 
+    let _ctxLoadingTimer = null;
+
+    function _startCtxLoading() {
+      _stopCtxLoading();
+      const msgs = uiLang === 'en'
+        ? ['Processing…', 'Looking up…', 'Almost there…', 'Just a moment…']
+        : ['Đang xử lý…', 'Đang tra cứu…', 'Sắp xong rồi…', 'Chờ xíu nhé…'];
+      let idx = 0;
+      function update() {
+        const el = document.getElementById('ctxLoadingMsg');
+        if (el) { el.textContent = msgs[idx % msgs.length]; idx++; }
+      }
+      update();
+      _ctxLoadingTimer = setInterval(update, 2000);
+    }
+
+    function _stopCtxLoading() {
+      if (_ctxLoadingTimer) { clearInterval(_ctxLoadingTimer); _ctxLoadingTimer = null; }
+    }
+
     function openCtxPopover(title, md) {
       const pop = document.getElementById('ctxPopover');
       document.getElementById('ctxPopoverTitle').textContent = title;
-      document.getElementById('ctxPopoverBody').innerHTML = md ? marked.parse(md) : `<div class="ctx-loading-wrap">
-        <div class="ai-loading-dots"><span></span><span></span><span></span></div>
-      </div>`;
+      if (md) {
+        _stopCtxLoading();
+        document.getElementById('ctxPopoverBody').innerHTML = marked.parse(md);
+      } else {
+        document.getElementById('ctxPopoverBody').innerHTML = `<div class="ctx-loading-wrap">
+          <div class="ai-loading-dots"><span></span><span></span><span></span></div>
+          <p class="ai-loading-msg" id="ctxLoadingMsg"></p>
+        </div>`;
+        _startCtxLoading();
+      }
       // Position near saved selection
       const vw = window.innerWidth, vh = window.innerHeight;
       const pw = Math.min(380, vw * 0.92);
@@ -38,11 +65,13 @@
     }
 
     function updateCtxPopover(md) {
+      _stopCtxLoading();
       const body = document.getElementById('ctxPopoverBody');
       if (body) body.innerHTML = md ? marked.parse(md) : '';
     }
 
     function closeCtxPopover() {
+      _stopCtxLoading();
       document.getElementById('ctxPopover').style.display = 'none';
     }
 

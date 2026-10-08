@@ -1791,16 +1791,11 @@
 
     .ctx-loading-wrap {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem 1rem;
-    }
-      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2.5rem 1rem;
-      gap: 1rem;
+      padding: 1.5rem 1rem;
+      gap: .75rem;
     }
 
     .ai-loading-dots {
@@ -3248,13 +3243,6 @@
     }
 
     /* ── AI Loading dots (popover + panel) ── */
-    .ctx-loading-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 1.5rem;
-    }
-
     .ai-loading-wrap {
       display: flex;
       flex-direction: column;

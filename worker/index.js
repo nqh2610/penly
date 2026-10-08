@@ -19,10 +19,10 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 // Route Gemini through Cloudflare AI Gateway to bypass geo-restrictions
 // Requires CF_AIG_TOKEN secret (wrangler secret put CF_AIG_TOKEN)
-const GEMINI_URL = (model, key, aigToken) =>
-  aigToken
-    ? `https://gateway.ai.cloudflare.com/v1/a4a250a3862b08a270c13b231bbc8a56/penly-gateway/google-ai-studio/v1beta/models/${model}:generateContent?key=${key}`
-    : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+const GEMINI_URL_KEY = (model, key) =>
+  `https://gateway.ai.cloudflare.com/v1/a4a250a3862b08a270c13b231bbc8a56/penly-gateway/google-ai-studio/v1beta/models/${model}:generateContent?key=${key}`;
+const GEMINI_URL_BEARER = (model) =>
+  `https://gateway.ai.cloudflare.com/v1/a4a250a3862b08a270c13b231bbc8a56/penly-gateway/google-ai-studio/v1beta/models/${model}:generateContent`;
 
 // "gemini-flash-latest" is Google's official stable alias — auto-updated on every new release
 const GEMINI_MODELS = [
@@ -30,10 +30,11 @@ const GEMINI_MODELS = [
   "gemini-3.8-flash",   // explicit fallback if alias fails
 ];
 
-// OpenRouter free models — fallback when Gemini exhausted
+// OpenRouter free models — updated Oct 2026
 const OR_MODELS = [
-  "qwen/qwen3-8b:free",
-  "google/gemma-3-27b-it:free",
+  "google/gemma-4-27b-it:free",
+  "google/gemma-4-31b:free",
+  "nvidia/llama-3.3-nemotron-super-49b-v1:free",
   "meta-llama/llama-3.3-70b-instruct:free",
 ];
 
@@ -144,11 +145,16 @@ async function handleAdmin(request, env, url) {
 async function callGemini(geminiKey, prompt, temperature, max_tokens, aigToken) {
   if (!geminiKey || geminiKey.length < 20) return null;
 
+  // AQ... keys use Bearer auth; AIza... keys use ?key= param
+  const usesBearer = geminiKey.startsWith('AQ');
+
   for (const model of GEMINI_MODELS) {
     try {
+      const url = usesBearer ? GEMINI_URL_BEARER(model) : GEMINI_URL_KEY(model, geminiKey);
       const headers = { "Content-Type": "application/json" };
       if (aigToken) headers["cf-aig-authorization"] = `Bearer ${aigToken}`;
-      const res = await fetch(GEMINI_URL(model, geminiKey, aigToken), {
+      if (usesBearer) headers["Authorization"] = `Bearer ${geminiKey}`;
+      const res = await fetch(url, {
         method: "POST",
         headers,
         body: JSON.stringify({

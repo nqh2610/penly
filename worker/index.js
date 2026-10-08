@@ -17,8 +17,12 @@
  */
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const GEMINI_URL = (model, key) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+// Route Gemini through Cloudflare AI Gateway to bypass geo-restrictions
+// Requires CF_AIG_TOKEN secret (wrangler secret put CF_AIG_TOKEN)
+const GEMINI_URL = (model, key, aigToken) =>
+  aigToken
+    ? `https://gateway.ai.cloudflare.com/v1/a4a250a3862b08a270c13b231bbc8a56/penly-gateway/google-ai-studio/v1beta/models/${model}:generateContent?key=${key}`
+    : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
 // "gemini-flash-latest" is Google's official stable alias — auto-updated on every new release
 const GEMINI_MODELS = [
@@ -137,14 +141,16 @@ async function handleAdmin(request, env, url) {
 }
 
 // ── Gemini (user's own key — 1M tokens/day free) ────────────────────────────
-async function callGemini(geminiKey, prompt, temperature, max_tokens) {
+async function callGemini(geminiKey, prompt, temperature, max_tokens, aigToken) {
   if (!geminiKey || geminiKey.length < 20) return null;
 
   for (const model of GEMINI_MODELS) {
     try {
-      const res = await fetch(GEMINI_URL(model, geminiKey), {
+      const headers = { "Content-Type": "application/json" };
+      if (aigToken) headers["cf-aig-authorization"] = `Bearer ${aigToken}`;
+      const res = await fetch(GEMINI_URL(model, geminiKey, aigToken), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -154,23 +160,26 @@ async function callGemini(geminiKey, prompt, temperature, max_tokens) {
         }),
       });
       const data = await res.json();
+      console.info(`[gemini] ${model} status=${res.status} error=${JSON.stringify(data.error?.message || null)}`);
       if (res.status === 429 || res.status === 503) continue;
       if (data.error) {
         const code = data.error?.code;
         if (code === 429 || code === 503) continue;
-        console.info(`[gemini] ${model} error ${code}: ${data.error?.message?.slice(0, 100)}`);
+        console.info(`[gemini] ${model} fatal error ${code}: ${data.error?.message?.slice(0, 100)}`);
         return null;
       }
       const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (content) return { content, gemini_model: model };
-    } catch (_) {}
+    } catch (e) {
+      console.info(`[gemini] ${model} exception: ${e.message}`);
+    }
   }
   return null;
 }
 
 // ── OpenRouter fallback (shared key) ────────────────────────────────────────
 async function callOpenRouter(env, prompt, temperature, max_tokens) {
-  if (!env.OPENROUTER_KEY) return null;
+  if (!env.OPENROUTER_KEY) { console.info('[or] no OPENROUTER_KEY'); return null; }
 
   for (const model of OR_MODELS) {
     try {
@@ -191,8 +200,11 @@ async function callOpenRouter(env, prompt, temperature, max_tokens) {
       });
       const data = await res.json();
       const content = data.choices?.[0]?.message?.content;
+      console.info(`[or] ${model} status=${res.status} ok=${!!content}`);
       if (content) return { content, or_model: model };
-    } catch (_) {}
+    } catch (e) {
+      console.info(`[or] ${model} exception: ${e.message}`);
+    }
   }
   return null;
 }
@@ -294,7 +306,7 @@ export default {
 
       // Try user's Gemini key first (highest free quota)
       if (entry.geminiKey) {
-        const gemResult = await callGemini(entry.geminiKey, prompt, temperature, max_tokens);
+        const gemResult = await callGemini(entry.geminiKey, prompt, temperature, max_tokens, env.CF_AIG_TOKEN);
         if (gemResult) return json({ ...gemResult, cf_fallback: true });
       }
 
@@ -327,14 +339,19 @@ export default {
 
     // Primary: Gemini (user's own key — 1M tokens/day free)
     if (entry.geminiKey) {
-      const gemResult = await callGemini(entry.geminiKey, prompt, temperature, max_tokens);
+      console.info(`[main] trying Gemini, key length=${entry.geminiKey.length}`);
+      const gemResult = await callGemini(entry.geminiKey, prompt, temperature, max_tokens, env.CF_AIG_TOKEN);
       if (gemResult) return json(gemResult);
+      console.info('[main] Gemini exhausted, trying fallback');
+    } else {
+      console.info('[main] no geminiKey in entry, skipping Gemini');
     }
 
     // Fallback chain: OpenRouter → Cloudflare AI
     const result = await callFallbackChain(env, prompt, temperature, max_tokens);
     if (result) return json(result);
 
+    console.info('[main] all providers exhausted');
     return json({ error: "All AI providers exhausted", rate_limited: true }, 502);
   },
 };

@@ -205,10 +205,7 @@ tr:hover td{background:#f8fafc}
           <div class="field"><label>Tên học sinh</label>
             <input id="newName" type="text" placeholder="Nguyễn Văn A">
           </div>
-          <div class="field"><label>Groq API Key</label>
-            <input id="newGroqKey" type="text" placeholder="gsk_...">
-          </div>
-          <div class="field"><label>Gemini API Key <span style="color:var(--muted);font-weight:400">(tùy chọn)</span></label>
+          <div class="field"><label>Gemini API Key</label>
             <input id="newGeminiKey" type="text" placeholder="AIza...">
           </div>
           <button class="btn btn-primary" id="btnCreate" onclick="createKey()" style="flex-shrink:0">Tạo key</button>
@@ -280,13 +277,7 @@ tr:hover td{background:#f8fafc}
       <div class="field"><label>Tên học sinh</label>
         <input id="editName" type="text" placeholder="Nguyễn Văn A">
       </div>
-      <div class="field"><label>Groq API Key</label>
-        <div class="input-reveal">
-          <input id="editGroqKey" type="password" placeholder="gsk_...">
-          <button id="revealBtn" onclick="toggleReveal('editGroqKey','revealBtn')" title="Hiện/ẩn key">👁</button>
-        </div>
-      </div>
-      <div class="field"><label>Gemini API Key <span style="color:var(--muted);font-weight:400">(tùy chọn — để trống nếu không dùng)</span></label>
+      <div class="field"><label>Gemini API Key <span style="color:var(--muted);font-weight:400">(để trống nếu không dùng)</span></label>
         <div class="input-reveal">
           <input id="editGeminiKey" type="password" placeholder="AIza...">
           <button id="revealBtn2" onclick="toggleReveal('editGeminiKey','revealBtn2')" title="Hiện/ẩn key">👁</button>
@@ -456,15 +447,14 @@ function goPage(p) {
 
 async function createKey() {
   const name = document.getElementById('newName').value.trim();
-  const groqKey = document.getElementById('newGroqKey').value.trim();
   const geminiKey = document.getElementById('newGeminiKey').value.trim();
-  if (!name || !groqKey) { toast('Vui lòng nhập đủ tên và Groq key'); return; }
+  if (!name) { toast('Vui lòng nhập tên học sinh'); return; }
   const btn = document.getElementById('btnCreate');
   btn.disabled = true; btn.textContent = 'Đang tạo...';
   const res = await fetch(WORKER + '/admin/keys', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
-    body: JSON.stringify({ name, groqKey, geminiKey }),
+    body: JSON.stringify({ name, geminiKey }),
   });
   const data = await res.json();
   btn.disabled = false; btn.textContent = 'Tạo key';
@@ -473,7 +463,6 @@ async function createKey() {
     document.getElementById('newKeyVal').textContent = data.penlyKey;
     box.classList.add('show');
     document.getElementById('newName').value = '';
-    document.getElementById('newGroqKey').value = '';
     document.getElementById('newGeminiKey').value = '';
     toast('Tạo key thành công!');
     loadKeys();
@@ -509,9 +498,6 @@ function openEdit(hash) {
   if (!k) return;
   editHash = hash;
   document.getElementById('editName').value = k.name || '';
-  document.getElementById('editGroqKey').value = k.groqKey || '';
-  document.getElementById('editGroqKey').type = 'password';
-  document.getElementById('revealBtn').textContent = '👁';
   document.getElementById('editGeminiKey').value = k.geminiKey || '';
   document.getElementById('editGeminiKey').type = 'password';
   document.getElementById('revealBtn2').textContent = '👁';
@@ -534,15 +520,14 @@ function toggleReveal(inputId, btnId) {
 
 async function saveEdit() {
   const name = document.getElementById('editName').value.trim();
-  const groqKey = document.getElementById('editGroqKey').value.trim();
   const geminiKey = document.getElementById('editGeminiKey').value.trim();
-  if (!name || !groqKey) { toast('Vui lòng nhập đủ tên và Groq key'); return; }
+  if (!name) { toast('Vui lòng nhập tên học sinh'); return; }
   const btn = document.getElementById('btnSave');
   btn.disabled = true; btn.textContent = 'Đang lưu...';
   const res = await fetch(WORKER + '/admin/keys/' + editHash, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
-    body: JSON.stringify({ name, groqKey, geminiKey }),
+    body: JSON.stringify({ name, geminiKey }),
   });
   btn.disabled = false; btn.textContent = 'Lưu thay đổi';
   const data = await res.json();

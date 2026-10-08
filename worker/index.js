@@ -20,10 +20,11 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const GEMINI_URL = (model, key) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
-// Stable "-latest" aliases — Google auto-updates these to the newest stable version
+// Stable aliases — Google auto-updates these to the newest stable version
 const GEMINI_MODELS = [
-  "gemini-2.0-flash-latest",
-  "gemini-1.5-flash-latest",
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-3.5-flash",
 ];
 
 // OpenRouter free models — fallback when Gemini exhausted

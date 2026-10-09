@@ -795,9 +795,12 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const title = vi ? 'Diễn đạt lại' : 'Paraphrase';
       openCtxPopover(title, null);
       const r = await callAI(
-        `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced.
+        `You are an English writing coach. Rewrite the following text in 2 ways for an English learner:
+1) Everyday natural: how a native speaker would casually say it — simple words, natural flow, contractions ok
+2) Polished formal: how a skilled writer would phrase it — varied sentence structure, precise vocabulary, no clichés
+
 Return ONLY a JSON array, no explanation, no markdown:
-[{"en": "natural rewrite"}, {"en": "advanced rewrite"}]
+[{"en": "everyday natural version"}, {"en": "polished formal version"}]
 Text: "${text}"`,
         null, false, true, 300
       );
@@ -806,7 +809,7 @@ Text: "${text}"`,
           const raw = typeof r === 'string' ? r : JSON.stringify(r);
           const clean = raw.replace(/```json|```/g, '').trim();
           const items = JSON.parse(clean);
-          const labels = vi ? ['Tự nhiên hơn', 'Nâng cao hơn'] : ['More natural', 'More advanced'];
+          const labels = vi ? ['Tự nhiên hàng ngày', 'Văn phong trau chuốt'] : ['Everyday natural', 'Polished formal'];
           const html = items.map((item, i) => `
             <div style="margin-bottom:.9rem">
               <div style="font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em">${labels[i] || ''}</div>

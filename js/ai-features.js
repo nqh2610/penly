@@ -652,15 +652,15 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}. IMPORTANT: 
       }
 
       const vocabPrompt =
-        `You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for this user.
+        `You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for a student about to write on this topic.
 
 ${tp ? `Topic: "${tp}"` : ''}
-${text ? `user's text so far:\n"""\n${text.substring(0, 400)}\n"""` : ''}
 Level: ${lvlSel.value}
 
 Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 
 Rules:
+- Focus entirely on the TOPIC — suggest words, phrases, idioms the student will need to write about it
 - Silently match ALL examples to the level above — never mention the level in the output
 - NO em dash (—). Use comma or and/but/so instead
 - NO markdown tables. Use the exact card format shown below.

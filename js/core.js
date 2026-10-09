@@ -47,12 +47,23 @@
 
     async function checkLicenseGate() {
       const stored = getLicenseKey();
-      if (stored && await isValidKey(stored)) {
-        document.getElementById('licenseGate').classList.add('hidden');
+      const gate = document.getElementById('licenseGate');
+
+      // If key looks valid by format, let user in immediately — validate in background
+      if (stored && /^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(stored.trim().toUpperCase())) {
+        gate.classList.add('hidden');
+        // Background re-validation: kick out only if server explicitly says invalid
+        isValidKey(stored).then(ok => {
+          if (!ok) {
+            gate.classList.remove('hidden');
+            localStorage.removeItem(LK_STORE);
+          }
+        });
         return true;
       }
-      // show gate
-      document.getElementById('licenseGate').classList.remove('hidden');
+
+      // No key or bad format — show gate
+      gate.classList.remove('hidden');
       return false;
     }
 

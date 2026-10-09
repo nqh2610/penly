@@ -2978,7 +2978,7 @@
     #licenseGate {
       position: fixed;
       inset: 0;
-      z-index: 9999;
+      z-index: 10000;
       background: linear-gradient(145deg, #f0f4ff 0%, #f8f0ff 100%);
       display: flex;
       align-items: center;

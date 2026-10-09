@@ -672,10 +672,10 @@ ${uiLang === 'en'
 
 ## ✍️ ${uiLang === 'en' ? '3 sample sentences to use now' : '3 câu mẫu tiếng Anh có thể dùng ngay'}
 
-*(Always write these 3 sentences in English — they are English writing examples for the student.)*
-> *Sentence 1*
-> *Sentence 2*
-> *Sentence 3*`;
+*(Always write these 3 sentences in English. Each sentence must be SHORT (1 sentence only), INDEPENDENT (not connected to the others — no "also", "and", "additionally"), and directly usable on its own. Do NOT write a paragraph. Do NOT connect the sentences into a story. Format exactly:)*
+> *[One standalone sentence about the topic.]*
+> *[A different standalone sentence — different vocabulary, different angle.]*
+> *[A third standalone sentence — different again.]*`;
 
       const btnEl = document.getElementById('btn-vocab');
       const panelTitle = t('panel-vocab');

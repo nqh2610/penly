@@ -5,6 +5,13 @@
     let _ctxPopoverSel = null; // saved selection range for popover positioning
 
     let _ctxLoadingTimer = null;
+    let _ctxPopoverPinned = false;
+
+    function togglePopoverPin() {
+      _ctxPopoverPinned = !_ctxPopoverPinned;
+      const btn = document.getElementById('ctxPopoverPin');
+      if (btn) btn.style.opacity = _ctxPopoverPinned ? '1' : '.5';
+    }
 
     function _startCtxLoading() {
       _stopCtxLoading();
@@ -27,6 +34,10 @@
     function openCtxPopover(title, md) {
       const pop = document.getElementById('ctxPopover');
       document.getElementById('ctxPopoverTitle').textContent = title;
+      // reset pin on each new open
+      _ctxPopoverPinned = false;
+      const pinBtn = document.getElementById('ctxPopoverPin');
+      if (pinBtn) pinBtn.style.opacity = '.5';
       if (md) {
         _stopCtxLoading();
         document.getElementById('ctxPopoverBody').innerHTML = marked.parse(md);
@@ -72,12 +83,23 @@
 
     function closeCtxPopover() {
       _stopCtxLoading();
+      _ctxPopoverPinned = false;
       document.getElementById('ctxPopover').style.display = 'none';
     }
 
     function _closePopoverOutside(e) {
-      if (!document.getElementById('ctxPopover')?.contains(e.target)) closeCtxPopover();
-      else setTimeout(() => document.addEventListener('pointerdown', _closePopoverOutside, { once: true }), 50);
+      const pop = document.getElementById('ctxPopover');
+      if (!pop || pop.style.display === 'none') return;
+      // never close when clicking inside popover or inside editor
+      if (pop.contains(e.target) || editor.contains(e.target)) {
+        setTimeout(() => document.addEventListener('pointerdown', _closePopoverOutside, { once: true }), 50);
+        return;
+      }
+      if (_ctxPopoverPinned) {
+        setTimeout(() => document.addEventListener('pointerdown', _closePopoverOutside, { once: true }), 50);
+        return;
+      }
+      closeCtxPopover();
     }
 
     function showCtxMenu(x, y, panelMode = false) {

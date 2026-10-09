@@ -148,13 +148,13 @@
       document.getElementById('regenModalDesc').textContent = vi
         ? 'Nội dung hiện tại sẽ bị xóa và AI sẽ tạo bản mới hoàn toàn.'
         : 'The current result will be discarded and AI will generate a fresh version.';
-      document.getElementById('regenModalConfirm').querySelector('#regenModalBtnLabel').textContent = vi ? 'Tạo lại' : 'Regenerate';
-      document.querySelector('#regenModal .express-cancel').textContent = vi ? 'Hủy' : 'Cancel';
-      document.getElementById('regenModal').style.display = 'flex';
+      document.getElementById('regenModalBtnLabel').textContent = vi ? 'Tạo lại' : 'Regenerate';
+      document.getElementById('regenModalCancelBtn').textContent = vi ? 'Hủy' : 'Cancel';
+      document.getElementById('regenModal').classList.add('open');
     }
 
     function closeRegenModal() {
-      document.getElementById('regenModal').style.display = 'none';
+      document.getElementById('regenModal').classList.remove('open');
     }
 
     function confirmRegen() {
@@ -222,6 +222,10 @@
       const el = document.getElementById(id); if (!el) return;
       el.classList.toggle('loading', on);
       document.getElementById('lbar').classList.toggle('hidden', !on);
+      // hide ↻ while loading, restore after
+      const regenBtn = document.getElementById('regenBtn');
+      if (regenBtn && on) regenBtn.classList.add('hidden');
+      if (regenBtn && !on && _panelRegenFn) regenBtn.classList.remove('hidden');
       if (on && openPanel) {
         document.getElementById('pCards').style.display = 'none';
         if (panelTitle) document.getElementById('panelTitle').textContent = panelTitle;

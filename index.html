@@ -593,21 +593,19 @@
   </div>
 
   <!-- ── REGEN CONFIRM MODAL ── -->
-  <div class="express-modal" id="regenModal" onclick="if(event.target===this)closeRegenModal()">
-    <div class="express-box" style="max-width:320px;text-align:center">
-      <div style="font-size:1.5rem;margin-bottom:.5rem">↻</div>
-      <h3 id="regenModalTitle" style="font-size:1rem;margin-bottom:.4rem"></h3>
-      <p id="regenModalDesc" style="font-size:.83rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.5"></p>
-      <div class="express-actions">
-        <button class="express-cancel" onclick="closeRegenModal()"></button>
-        <button class="express-submit" id="regenModalConfirm" onclick="confirmRegen()">
+  <div class="regen-modal" id="regenModal" onclick="if(event.target===this)closeRegenModal()">
+    <div class="regen-modal-box">
+      <div class="regen-modal-icon"><i class="bi bi-arrow-clockwise"></i></div>
+      <div class="regen-modal-title" id="regenModalTitle"></div>
+      <div class="regen-modal-desc" id="regenModalDesc"></div>
+      <div class="regen-modal-actions">
+        <button class="regen-modal-cancel" onclick="closeRegenModal()" id="regenModalCancelBtn"></button>
+        <button class="regen-modal-confirm" id="regenModalConfirm" onclick="confirmRegen()">
           <i class="bi bi-arrow-clockwise"></i> <span id="regenModalBtnLabel"></span>
         </button>
       </div>
     </div>
   </div>
-
-  <!-- CONTEXT MENU POPOVER -->
   <div id="ctxPopover" style="display:none;position:fixed;z-index:9990;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:min(92vw,380px);max-height:min(70vh,480px);overflow:hidden;padding:0;display:none;flex-direction:column;">
     <div id="ctxPopoverHeader" style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem .5rem;border-bottom:1px solid var(--border);background:var(--surface);cursor:move;user-select:none;flex-shrink:0;touch-action:none;">
       <span id="ctxPopoverTitle" style="font-size:.9rem;font-weight:700;color:var(--text)"></span>

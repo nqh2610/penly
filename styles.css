@@ -1415,6 +1415,94 @@
       pointer-events: none
     }
 
+    /* ── REGEN CONFIRM MODAL ── */
+    .regen-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10100;
+      background: rgba(0,0,0,.4);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .regen-modal.open { display: flex }
+    .regen-modal-box {
+      background: var(--surface);
+      border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.18);
+      width: 100%;
+      max-width: 300px;
+      padding: 1.75rem 1.5rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .6rem;
+      animation: regen-modal-in .18s ease;
+    }
+    @keyframes regen-modal-in {
+      from { opacity:0; transform: scale(.92) translateY(8px) }
+      to   { opacity:1; transform: scale(1) translateY(0) }
+    }
+    .regen-modal-icon {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem;
+      color: var(--accent);
+      margin-bottom: .25rem;
+    }
+    .regen-modal-title {
+      font-size: .97rem;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+    }
+    .regen-modal-desc {
+      font-size: .8rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+    .regen-modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: .6rem;
+      width: 100%;
+    }
+    .regen-modal-cancel {
+      flex: 1;
+      padding: 8px 0;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .85rem;
+      font-weight: 500;
+      transition: background .12s;
+    }
+    .regen-modal-cancel:hover { background: var(--hover) }
+    .regen-modal-confirm {
+      flex: 1.4;
+      padding: 8px 0;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font-size: .85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background .12s;
+    }
+    .regen-modal-confirm:hover { background: var(--accent-h) }
+
     /* ── EDITOR ── */
     #editor {
       min-height: 300px;

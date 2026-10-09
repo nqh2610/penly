@@ -1,3 +1,14 @@
+    function closePwaGuideModal() {
+      document.getElementById('pwaGuideModal').classList.remove('open');
+    }
+
+    function showPwaGuideModal() {
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      document.getElementById('pwaGuideChrome').style.display = isIOS ? 'none' : 'block';
+      document.getElementById('pwaGuideIOS').style.display = isIOS ? 'block' : 'none';
+      document.getElementById('pwaGuideModal').classList.add('open');
+    }
+
     // ── PWA INSTALL BANNER ──
     (function () {
       // already installed as PWA — don't show
@@ -57,7 +68,7 @@
               lkInstallBtn.disabled = true;
             }
           } else {
-            toast('Bấm menu trình duyệt (⋮) → "Cài ứng dụng" hoặc "Thêm vào màn hình chính"', '');
+            showPwaGuideModal();
           }
         });
       }
@@ -69,7 +80,7 @@
           deferredPrompt = null;
           if (outcome === 'accepted') localStorage.setItem('pwa_dismissed', 'forever');
         } else {
-          toast('Bấm menu trình duyệt → "Thêm vào màn hình chính"', '');
+          showPwaGuideModal();
         }
         banner.classList.remove('show');
       });

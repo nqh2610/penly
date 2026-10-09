@@ -606,6 +606,35 @@
       </div>
     </div>
   </div>
+
+  <!-- ── PWA INSTALL GUIDE MODAL ── -->
+  <div class="regen-modal" id="pwaGuideModal" onclick="if(event.target===this)closePwaGuideModal()">
+    <div class="regen-modal-box" style="max-width:340px">
+      <div class="regen-modal-icon"><i class="bi bi-download"></i></div>
+      <div class="regen-modal-title">Cài Penly như ứng dụng</div>
+      <div class="regen-modal-desc" style="text-align:left;width:100%">
+        <div id="pwaGuideChrome" style="display:none">
+          <p style="margin:.3rem 0 .6rem;font-weight:600;color:var(--text)">Trên Chrome / Edge:</p>
+          <ol style="margin:0;padding-left:1.3rem;line-height:2">
+            <li>Nhìn lên thanh địa chỉ góc phải</li>
+            <li>Bấm icon <b>⊕</b> hoặc icon màn hình có mũi tên</li>
+            <li>Chọn <b>"Cài đặt"</b> hoặc <b>"Install"</b></li>
+          </ol>
+        </div>
+        <div id="pwaGuideIOS" style="display:none">
+          <p style="margin:.3rem 0 .6rem;font-weight:600;color:var(--text)">Trên Safari (iPhone/iPad):</p>
+          <ol style="margin:0;padding-left:1.3rem;line-height:2">
+            <li>Bấm nút <b>Chia sẻ</b> <i class="bi bi-box-arrow-up"></i> phía dưới</li>
+            <li>Cuộn xuống chọn <b>"Thêm vào màn hình chính"</b></li>
+            <li>Bấm <b>Thêm</b></li>
+          </ol>
+        </div>
+      </div>
+      <div class="regen-modal-actions">
+        <button class="regen-modal-confirm" onclick="closePwaGuideModal()" style="flex:1">Đã hiểu</button>
+      </div>
+    </div>
+  </div>
   <div id="ctxPopover" style="display:none;position:fixed;z-index:9990;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:min(92vw,380px);max-height:min(70vh,480px);overflow:hidden;padding:0;display:none;flex-direction:column;">
     <div id="ctxPopoverHeader" style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem .5rem;border-bottom:1px solid var(--border);background:var(--surface);cursor:move;user-select:none;flex-shrink:0;touch-action:none;">
       <span id="ctxPopoverTitle" style="font-size:.9rem;font-weight:700;color:var(--text)"></span>

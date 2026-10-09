@@ -804,6 +804,30 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
 
     // ── NEW AI FUNCTIONS ──
 
+    // Returns a short context string for context-menu AI features
+    function _ctxContext() {
+      const topic = (typeof topicInput !== 'undefined' && topicInput.value.trim()) || '';
+      const { lvlCode, toneStd } = typeof getStandards === 'function'
+        ? getStandards()
+        : { lvlCode: 'B', toneStd: null };
+      const fullText = (typeof _cleanEditorText === 'function' ? _cleanEditorText() : editor.innerText).trim();
+      // grab up to 300 chars around the selection for surrounding context
+      const sel = window.getSelection()?.toString().trim() || '';
+      let surroundCtx = '';
+      if (sel && fullText.includes(sel)) {
+        const idx = fullText.indexOf(sel);
+        const before = fullText.slice(Math.max(0, idx - 150), idx).trim();
+        const after = fullText.slice(idx + sel.length, idx + sel.length + 150).trim();
+        if (before || after) surroundCtx = [before && `…${before}`, '[SELECTED]', after && `${after}…`].filter(Boolean).join(' ');
+      }
+      const parts = [];
+      if (topic) parts.push(`Topic: "${topic}"`);
+      parts.push(`Level: ${lvlCode}1-${lvlCode}2`);
+      if (toneStd) parts.push(`Tone: ${toneStd.contractions ? 'casual' : 'formal'}`);
+      if (surroundCtx) parts.push(`Context: ${surroundCtx}`);
+      return parts.length ? `\n[Writing context: ${parts.join(' | ')}]` : '';
+    }
+
     function openPanelWith(title) {
       document.getElementById('pCards').style.display = 'none';
       document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.83rem;font-style:italic">${t('processing')}</p>`;
@@ -825,7 +849,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
         `You are an English writing coach. Rewrite the following text in 2 ways for an English learner:
 1) Casual: how a fluent native speaker would say it in conversation — simple words, natural flow, contractions welcome. Keep the same meaning.
 2) Formal/Academic: how it would appear in an essay, email, or report — clear structure, objective tone, no contractions. Keep the same meaning.
-
+${_ctxContext()}
 Return ONLY a JSON array, no explanation, no markdown:
 [{"en": "casual version"}, {"en": "formal/academic version"}]
 Text: "${text}"`,
@@ -865,12 +889,12 @@ Text: "${text}"`,
           ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm dùng format:
 **từ/cụm tiếng Anh** : nghĩa tiếng Việt
 > Câu ví dụ tiếng Anh
-Bỏ qua từ quá đơn giản (a, the, is...).
+Bỏ qua từ quá đơn giản (a, the, is...).${_ctxContext()}
 "${text}"`
           : `Explain key words/phrases for an English learner. For each use format:
 **word/phrase** : simple meaning
 > short example sentence
-Skip very basic words.
+Skip very basic words.${_ctxContext()}
 "${text}"`,
         null, false, true, 500
       );
@@ -887,7 +911,7 @@ Skip very basic words.
       const title = vi ? 'Phân tích ngữ pháp' : 'Grammar Analysis';
       openCtxPopover(title, null);
       const r = await callAI(
-        `Grammar check: tense, structure, errors. Be concise.${vi ? ' Explain each issue in Vietnamese. For corrections use format:\n**lỗi** : giải thích\n> correction in English' : ' For each issue use format:\n**error** : explanation\n> correction'}
+        `Grammar check: tense, structure, errors. Be concise.${vi ? ' Explain each issue in Vietnamese. For corrections use format:\n**lỗi** : giải thích\n> correction in English' : ' For each issue use format:\n**error** : explanation\n> correction'}${_ctxContext()}
 "${text}"`,
         null, false, true, 500
       );

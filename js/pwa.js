@@ -223,22 +223,22 @@ The user wants to express this idea but doesn't know the right words:
 ${tp ? `Writing topic: "${tp}"` : ''}Level: ${level} | Tone: ${tone} | Audience: ${aud}
 Interface language: ${isVi ? 'Vietnamese' : 'English'}
 
-LANGUAGE RULE: Write ALL labels, headings, meanings, and examples in ${isVi ? 'Vietnamese' : 'English'}.
+LANGUAGE RULE: Meanings and labels may be in ${isVi ? 'Vietnamese' : 'English'}. ALL example sentences, phrases, and natural expressions MUST be in English only — never Vietnamese.
 
 Give PRACTICAL vocabulary they can use RIGHT NOW in their writing. Output EXACTLY:
 
 ## ✏️ ${isVi ? 'Từ / Cụm từ chính' : 'Key words / phrases'}
-**word or phrase** — *${isVi ? 'nghĩa tiếng Việt' : 'meaning'}* | *${isVi ? 'ví dụ ngắn dùng ngay' : 'short example'}*
+**word or phrase** — *${isVi ? 'nghĩa tiếng Việt' : 'meaning'}* | *${isVi ? 'ví dụ ngắn (tiếng Anh)' : 'short example'}*
 (4–6 items: single words, collocations, phrasal verbs — most useful first)
 
 ## 💡 ${isVi ? 'Cách diễn đạt tự nhiên' : 'Natural ways to say it'}
 > Natural English sentence 1
 > Natural English sentence 2
 > Natural English sentence 3
-(3 ready-to-use sentences matching their level, tone and audience)
+(3 ready-to-use English sentences matching their level, tone and audience — English only)
 
 ## 🔗 ${isVi ? 'Thêm lựa chọn' : 'More options'}
-**alternative word/phrase** — *${isVi ? 'nghĩa' : 'meaning'}* | *${isVi ? 'ví dụ' : 'example'}*
+**alternative word/phrase** — *${isVi ? 'nghĩa' : 'meaning'}* | *${isVi ? 'ví dụ (tiếng Anh)' : 'example'}*
 (2–3 synonyms or related expressions)
 
 Rules: NO long explanations. Every example must be copy-paste ready. Match level (${level}) exactly — simple vocab for A/B levels, richer for C. Tone: ${tone}. Write for audience: ${aud}.`;

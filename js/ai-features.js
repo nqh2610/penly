@@ -700,31 +700,33 @@ ${uiLang === 'en'
 ## 🔄 Phrasal verbs
 *(Phrasal verbs commonly used in the topic area. Format:)*
 **verb** /IPA/ — meaning → *example.*
-💡 Why: brief note on the literal vs actual meaning (1 line only)
+💡 Why: ONLY add this line if the literal meaning would mislead — explain the gap between literal and actual meaning. Skip 💡 if the meaning is transparent.
 
 ## 💬 Idioms & proverbs
 *(Idioms, slang, or proverbs people commonly use about this topic. Format:)*
 **idiom/proverb** — real meaning → *example.*
-💡 Why: explain the origin or logic behind the phrase so learners understand it, not just memorize it (1 line only)
+💡 Why: explain the origin or logic — must be genuinely insightful, not a restatement of the meaning. (Always include for idioms since their literal meaning is always misleading.)
 
 ## 📌 Fixed expressions & useful phrases
 *(Fixed expressions or collocations frequently used in this topic area. Format:)*
-**expression** — meaning/when to use → *example.*`
+**expression** — meaning/when to use → *example.*
+*(No 💡 needed here — fixed expressions are literal enough.)*`
   : `CÁC PHẦN TÙY CHỌN — dựa trên CHỦ ĐỀ "${tp || 'đã cho'}", không chỉ từ bài viết của user. Đưa vào nếu tìm được ít nhất 1 ví dụ thực sự hữu ích cho chủ đề này. Với các chủ đề phong phú như tiền bạc, kinh doanh, du lịch, sức khỏe... hầu như lúc nào cũng có thể tìm được.
 
 ## 🔄 Cụm động từ
 *(Cụm động từ hay dùng trong chủ đề này. Định dạng:)*
 **cụm động từ** /IPA/ — nghĩa → *ví dụ.*
-💡 Tại sao: giải thích ngắn nghĩa đen vs nghĩa thực (1 dòng)
+💡 Tại sao: CHỈ thêm dòng này nếu nghĩa đen dễ gây hiểu nhầm — giải thích khoảng cách giữa nghĩa đen và nghĩa thực. Bỏ qua 💡 nếu nghĩa đã rõ ràng.
 
 ## 💬 Thành ngữ & tục ngữ
 *(Thành ngữ, slang, hoặc tục ngữ người ta hay dùng về chủ đề này. Định dạng:)*
 **thành ngữ** — ý nghĩa thực → *ví dụ.*
-💡 Tại sao: giải thích nguồn gốc hoặc logic đằng sau cụm từ để học sinh hiểu, không chỉ ghi nhớ (1 dòng)
+💡 Tại sao: giải thích nguồn gốc hoặc logic — phải thực sự có giá trị, không chỉ nhắc lại nghĩa. (Luôn cần với thành ngữ vì nghĩa đen luôn khác nghĩa thực.)
 
 ## 📌 Cụm từ cố định & diễn đạt hay
 *(Cụm từ cố định hoặc collocation hay dùng trong chủ đề này. Định dạng:)*
-**cụm từ** — nghĩa/khi dùng → *ví dụ.*`}
+**cụm từ** — nghĩa/khi dùng → *ví dụ.*
+*(Không cần 💡 ở đây — cụm từ cố định thường đủ rõ nghĩa.)*`}
 
 ---
 

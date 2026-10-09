@@ -164,7 +164,7 @@
 
     function openPanel(title, md, cards, keepCards = false) {
       document.getElementById('panelTitle').textContent = title;
-      document.getElementById('pContent').innerHTML = md ? marked.parse(md) : '';
+      document.getElementById('pContent').innerHTML = md ? marked.parse(md, { async: false }) : '';
       const ce = document.getElementById('pCards');
       if (keepCards) {
         // caller already populated pCards — just ensure it's visible if it has content

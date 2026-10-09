@@ -40,7 +40,7 @@
       if (pinBtn) pinBtn.style.opacity = '.5';
       if (md) {
         _stopCtxLoading();
-        document.getElementById('ctxPopoverBody').innerHTML = marked.parse(md);
+        document.getElementById('ctxPopoverBody').innerHTML = marked.parse(md, { async: false });
       } else {
         document.getElementById('ctxPopoverBody').innerHTML = `<div class="ctx-loading-wrap">
           <div class="ai-loading-dots"><span></span><span></span><span></span></div>
@@ -78,7 +78,7 @@
     function updateCtxPopover(md) {
       _stopCtxLoading();
       const body = document.getElementById('ctxPopoverBody');
-      if (body) body.innerHTML = md ? marked.parse(md) : '';
+      if (body) body.innerHTML = md ? marked.parse(md, { async: false }) : '';
     }
 
     function updateCtxPopoverHtml(html) {

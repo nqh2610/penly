@@ -813,7 +813,8 @@ Text: "${text}"`,
             </div>`).join('');
           updateCtxPopoverHtml(html);
         } catch {
-          updateCtxPopover(r);
+          // fallback: show raw text if JSON parsing fails
+          updateCtxPopoverHtml(`<p style="line-height:1.6">${r.replace(/</g,'&lt;')}</p>`);
         }
         setCooldown('ctx-paraphrase', 5000);
       }
@@ -935,7 +936,7 @@ Skip very basic words.
         const aiResult = await callAI(aiPrompt, null, true, true, 400);
         if (aiResult) {
           const aiEl = document.createElement('div');
-          aiEl.innerHTML = marked.parse(aiResult);
+          aiEl.innerHTML = marked.parse(aiResult, { async: false });
           app(aiEl);
         } else {
           const errEl = document.createElement('p');

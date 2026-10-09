@@ -695,35 +695,35 @@ ${uiLang === 'en' ? 'List 4–6 level-appropriate connectors with short examples
 ---
 
 ${uiLang === 'en'
-  ? `OPTIONAL SECTIONS — include ONLY if you can find at least 1 genuinely natural example directly connected to the topic "${tp || 'given'}". If you cannot, skip the section entirely — do not force unnatural examples.
+  ? `OPTIONAL SECTIONS — include these based on the TOPIC "${tp || 'given'}", not just the user's current text. Include a section if you can find at least 1 genuinely useful example for this topic. If truly nothing fits, skip — but for rich topics like money, business, travel, health etc. you should almost always find something.
 
 ## 🔄 Phrasal verbs
-*(Only if 1+ phrasal verbs fit naturally. Format:)*
+*(Phrasal verbs commonly used in the topic area. Format:)*
 **verb** /IPA/ — meaning → *example sentence.*
 💡 Why: brief note on the literal vs actual meaning (1 line only)
 
 ## 💬 Idioms & proverbs
-*(Only if 1+ idioms or proverbs connect naturally. Format:)*
+*(Idioms, slang, or proverbs people commonly use about this topic. Format:)*
 **idiom/proverb** — real meaning → *example sentence.*
 💡 Why: explain the origin or logic behind the phrase so learners understand it, not just memorize it (1 line only)
 
 ## 📌 Fixed expressions & useful phrases
-*(Only if 1+ fixed expressions are genuinely used in this topic area. Format:)*
+*(Fixed expressions or collocations frequently used in this topic area. Format:)*
 **expression** — meaning/when to use → *example sentence.*`
-  : `CÁC PHẦN TÙY CHỌN — chỉ đưa vào nếu tìm được ít nhất 1 ví dụ thực sự tự nhiên và gắn trực tiếp với chủ đề "${tp || 'đã cho'}". Nếu không có, bỏ qua hoàn toàn — không cố viết ví dụ gượng ép.
+  : `CÁC PHẦN TÙY CHỌN — dựa trên CHỦ ĐỀ "${tp || 'đã cho'}", không chỉ từ bài viết của user. Đưa vào nếu tìm được ít nhất 1 ví dụ thực sự hữu ích cho chủ đề này. Với các chủ đề phong phú như tiền bạc, kinh doanh, du lịch, sức khỏe... hầu như lúc nào cũng có thể tìm được.
 
 ## 🔄 Cụm động từ
-*(Chỉ khi có 1+ cụm động từ phù hợp tự nhiên. Định dạng:)*
+*(Cụm động từ hay dùng trong chủ đề này. Định dạng:)*
 **cụm động từ** /IPA/ — nghĩa → *câu ví dụ tiếng Anh.*
 💡 Tại sao: giải thích ngắn nghĩa đen vs nghĩa thực (1 dòng)
 
 ## 💬 Thành ngữ & tục ngữ
-*(Chỉ khi có 1+ thành ngữ/tục ngữ gắn tự nhiên. Định dạng:)*
+*(Thành ngữ, slang, hoặc tục ngữ người ta hay dùng về chủ đề này. Định dạng:)*
 **thành ngữ** — ý nghĩa thực → *câu ví dụ tiếng Anh.*
 💡 Tại sao: giải thích nguồn gốc hoặc logic đằng sau cụm từ để học sinh hiểu, không chỉ ghi nhớ (1 dòng)
 
 ## 📌 Cụm từ cố định & diễn đạt hay
-*(Chỉ khi có 1+ cụm từ thực sự dùng trong chủ đề này. Định dạng:)*
+*(Cụm từ cố định hoặc collocation hay dùng trong chủ đề này. Định dạng:)*
 **cụm từ** — nghĩa/khi dùng → *câu ví dụ tiếng Anh.*`}
 
 ---

@@ -16,9 +16,8 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 // Groq models — tried in order, best quality first
 const GROQ_MODELS = [
-  "llama3-70b-8192",       // best quality available on free tier
-  "llama3-8b-8192",        // fast backup
-  "llama-3.1-8b-instant",  // last backup
+  "openai/gpt-oss-120b", // best quality, 120B params
+  "openai/gpt-oss-20b",  // faster backup
 ];
 
 // OpenRouter free models — last resort
@@ -131,6 +130,7 @@ async function handleAdmin(request, env, url) {
 async function callGroq(env, prompt, temperature, max_tokens) {
   if (!env.GROQ_KEY) { console.info('[groq] no GROQ_KEY'); return null; }
 
+  let lastDebug = null;
   for (const model of GROQ_MODELS) {
     try {
       const res = await fetch(GROQ_URL, {
@@ -148,18 +148,19 @@ async function callGroq(env, prompt, temperature, max_tokens) {
       });
       const data = await res.json();
       const content = data.choices?.[0]?.message?.content;
-      console.info(`[groq] ${model} status=${res.status} ok=${!!content} err=${data.error?.message?.slice(0,80) || ''}`);
+      lastDebug = `${model} status=${res.status} body=${JSON.stringify(data).slice(0,150)}`;
+      console.info(`[groq] ${lastDebug}`);
       if (content) return { content, groq_model: model };
-      // 429 = rate limit, 404 = model not found — try next model
+      // 429 = rate limit, 404/model not found — try next model
       if (res.status !== 429 && res.status !== 404 && !data.error?.message?.includes('does not exist')) {
-        return { _err: data.error?.message || `status ${res.status}` };
+        return { _err: data.error?.message || `status ${res.status}`, _debug: lastDebug };
       }
     } catch (e) {
       console.info(`[groq] ${model} exception: ${e.message}`);
       return { _err: e.message };
     }
   }
-  return null;
+  return lastDebug ? { _debug: lastDebug } : null;
 }
 
 async function callOpenRouter(env, prompt, temperature, max_tokens) {
@@ -285,7 +286,7 @@ export default {
     // Groq (fallback — high quality)
     const groqResult = await callGroq(env, prompt, temperature, max_tokens);
     if (groqResult?.content) return json(groqResult);
-    const groqErr = groqResult?._err || null;
+    const groqErr = groqResult?._err || groqResult?._debug || null;
 
     // OpenRouter (last resort)
     const orResult = await callOpenRouter(env, prompt, temperature, max_tokens);

@@ -3,8 +3,6 @@
       // already installed as PWA — don't show
       if (window.matchMedia('(display-mode: standalone)').matches) return;
       if (window.navigator.standalone) return; // iOS PWA
-      // only show on touch devices (mobile/tablet)
-      if (!('ontouchstart' in window)) return;
       // user permanently dismissed
       if (localStorage.getItem('pwa_dismissed') === 'forever') return;
 

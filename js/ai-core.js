@@ -128,6 +128,18 @@
     function strip(s) { return s.replace(/```[\w]*\n?/g, '').replace(/```/g, '').trim(); }
 
     // ── PANEL ──
+    let _panelRegenFn = null; // set by vocab/sample to enable ↻ button
+
+    function _setRegenFn(fn) {
+      _panelRegenFn = fn;
+      const btn = document.getElementById('regenBtn');
+      if (btn) btn.classList.toggle('hidden', !fn);
+    }
+
+    function regenPanel() {
+      if (_panelRegenFn) _panelRegenFn();
+    }
+
     function openPanel(title, md, cards, keepCards = false) {
       document.getElementById('panelTitle').textContent = title;
       document.getElementById('pContent').innerHTML = md ? marked.parse(md) : '';
@@ -168,6 +180,7 @@
       document.getElementById('editorPane').classList.add('shifted');
     }
     function closePanel() {
+      _setRegenFn(null);
       const panel = document.getElementById('resultPanel');
       const pane = document.getElementById('editorPane');
       panel.classList.remove('open');

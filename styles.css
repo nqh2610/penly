@@ -1645,6 +1645,36 @@
       color: var(--accent)
     }
 
+    .phb-regen {
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .phb-regen:hover {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .panel-regen-hint {
+      margin-top: 1.5rem;
+      padding-top: .75rem;
+      border-top: 1px solid var(--border);
+      font-size: .78rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .panel-regen-link {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: .78rem;
+      color: var(--accent);
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .panel-regen-link:hover { opacity: .75; }
+
     .panel-body {
       flex: 1;
       overflow-y: auto;

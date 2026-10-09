@@ -317,7 +317,7 @@ Output the essay now:
       }).join('');
     }
 
-    function showSamplePanel(paras) {
+    function showSamplePanel(paras, cacheKey) {
       const vi = uiLang !== 'en';
       let showVi = false;
 
@@ -349,16 +349,32 @@ Output the essay now:
         });
       });
 
+      // Footer regen hint
+      const hint = document.createElement('p');
+      hint.className = 'panel-regen-hint';
+      hint.innerHTML = vi
+        ? `Chưa ưng? <button class="panel-regen-link" onclick="regenPanel()">↻ Tạo lại</button>`
+        : `Not satisfied? <button class="panel-regen-link" onclick="regenPanel()">↻ Regenerate</button>`;
+
       const pContent = document.getElementById('pContent');
       pContent.innerHTML = '';
       pContent.appendChild(toggleBtn);
       pContent.appendChild(wrap);
+      pContent.appendChild(hint);
       document.getElementById('pCards').style.display = 'none';
       document.getElementById('lbar').classList.add('hidden');
       document.getElementById('resultPanel').classList.add('open');
       document.getElementById('editorPane').classList.add('shifted');
       document.getElementById('panelTitle').textContent = uiLang === 'en' ? 'Sample Essay' : 'Bài Mẫu';
       setCooldown('btn-outline');
+
+      // Wire ↻ button
+      _setRegenFn(() => {
+        const d = getDoc(currentId);
+        if (d && d.sampleKey === cacheKey) { delete d.sample; delete d.sampleKey; saveDocs(); }
+        try { localStorage.removeItem(SAMPLE_LS_PREFIX + cacheKey); } catch (_) {}
+        callSample(true);
+      });
     }
 
     // Check if cached paras are valid (not placeholder or reasoning model output)
@@ -386,7 +402,7 @@ Output the essay now:
 
     let _sampleBgPromise = null; // track background sample run
 
-    async function callSample() {
+    async function callSample(forceRegen = false) {
       const tp = topic();
       if (!tp) return toast(uiLang === 'en' ? 'Enter a topic first.' : 'Nhập chủ đề trước.');
       if (!await guardTopic('btn-outline')) return;
@@ -396,20 +412,23 @@ Output the essay now:
       const lang = uiLang === 'en' ? 'en' : 'vi';
       const cacheKey = `${normTp}|${lvl}|${tone}|${aud}|${lang}`;
 
-      // 1. Doc-level cache
       const d = getDoc(currentId);
-      if (d && d.sample && d.sampleKey === cacheKey && isSampleValid(d.sample)) {
-        showSamplePanel(d.sample);
-        return;
+
+      if (!forceRegen) {
+        // 1. Doc-level cache
+        if (d && d.sample && d.sampleKey === cacheKey && isSampleValid(d.sample)) {
+          showSamplePanel(d.sample, cacheKey);
+          return;
+        }
+        // 2. localStorage cache
+        const lsCached = sampleLsGet(cacheKey);
+        if (lsCached && isSampleValid(lsCached)) {
+          showSamplePanel(lsCached, cacheKey);
+          if (d) { d.sample = lsCached; d.sampleKey = cacheKey; saveDocs(); }
+          return;
+        }
       }
-      // 2. localStorage cache
-      const lsCached = sampleLsGet(cacheKey);
-      if (lsCached && isSampleValid(lsCached)) {
-        showSamplePanel(lsCached);
-        if (d) { d.sample = lsCached; d.sampleKey = cacheKey; saveDocs(); }
-        return;
-      }
-      // Clear invalid cache
+      // Clear invalid or forced-regen cache
       if (d && d.sampleKey === cacheKey) { delete d.sample; delete d.sampleKey; saveDocs(); }
       try { localStorage.removeItem(SAMPLE_LS_PREFIX + cacheKey); } catch (_) {}
 
@@ -443,7 +462,6 @@ Output the essay now:
       setBusy('btn-outline', false, false);
 
       if (!paras) {
-        // If panel still showing sample loading, show error
         const pContent = document.getElementById('pContent');
         if (pContent && document.getElementById('resultPanel').classList.contains('open')) {
           pContent.innerHTML = `<p style="color:var(--muted);font-size:.85rem">${uiLang === 'en' ? 'Could not generate sample. Please try again.' : 'Chưa tạo được bài mẫu. Vui lòng thử lại.'}</p>`;
@@ -456,12 +474,10 @@ Output the essay now:
       sampleLsSet(cacheKey, paras);
       if (d) { d.sample = paras; d.sampleKey = cacheKey; saveDocs(); }
 
-      // If panel is open (user waited) — show directly
-      // If panel was closed (user did other things) — toast notification
       if (document.getElementById('resultPanel').classList.contains('open')) {
-        showSamplePanel(paras);
+        showSamplePanel(paras, cacheKey);
       } else {
-        toast(uiLang === 'en' ? '✅ Sample essay ready! Tap to view.' : '✅ Bài mẫu đã xong! Nhấn để xem.', 's', () => showSamplePanel(paras));
+        toast(uiLang === 'en' ? '✅ Sample essay ready! Tap to view.' : '✅ Bài mẫu đã xong! Nhấn để xem.', 's', () => showSamplePanel(paras, cacheKey));
       }
     }
 

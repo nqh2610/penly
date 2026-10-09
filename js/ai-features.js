@@ -580,7 +580,7 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
       if (r) { setCooldown('btn-review'); openPanel(t('panel-review'), r, null); }
     }
 
-    async function callVocab() {
+    async function callVocab(forceRegen = false) {
       if (!await guardTopic('btn-vocab')) return;
       const tp = topic(); const text = editor.innerText.trim();
       if (!tp && !text) return toast(t('no-text-vocab'));
@@ -589,19 +589,40 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
       // Cache check — doc-level first, then localStorage
       const d = getDoc(currentId);
       const vocabKey = `${tp}|${lvlSel.value}|${uiLang}`;
-      if (d && d.vocab && d.vocabKey === vocabKey) {
-        openPanel(t('panel-vocab'), d.vocab, null);
-        return;
-      }
       const lsVocabKey = `vocab3|${vocabKey}`;
-      try {
-        const lsCached = localStorage.getItem(lsVocabKey);
-        if (lsCached) {
-          if (d) { d.vocab = lsCached; d.vocabKey = vocabKey; saveDocs(); }
-          openPanel(t('panel-vocab'), lsCached, null);
+
+      function _clearVocabCache() {
+        if (d) { delete d.vocab; delete d.vocabKey; saveDocs(); }
+        try { localStorage.removeItem(lsVocabKey); } catch (_) {}
+      }
+
+      function _openVocabPanel(md) {
+        openPanel(t('panel-vocab'), md, null);
+        _setRegenFn(() => { _clearVocabCache(); callVocab(true); });
+        const hint = document.createElement('p');
+        hint.className = 'panel-regen-hint';
+        hint.innerHTML = uiLang === 'en'
+          ? `Not satisfied? <button class="panel-regen-link" onclick="regenPanel()">↻ Regenerate</button>`
+          : `Chưa ưng? <button class="panel-regen-link" onclick="regenPanel()">↻ Tạo lại</button>`;
+        document.getElementById('pContent').appendChild(hint);
+      }
+
+      if (!forceRegen) {
+        if (d && d.vocab && d.vocabKey === vocabKey) {
+          _openVocabPanel(d.vocab);
           return;
         }
-      } catch (_) {}
+        try {
+          const lsCached = localStorage.getItem(lsVocabKey);
+          if (lsCached) {
+            if (d) { d.vocab = lsCached; d.vocabKey = vocabKey; saveDocs(); }
+            _openVocabPanel(lsCached);
+            return;
+          }
+        } catch (_) {}
+      } else {
+        _clearVocabCache();
+      }
 
       const vocabPrompt =
         `You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for this user.
@@ -697,9 +718,9 @@ ${uiLang === 'en'
         if (d) { d.vocab = r; d.vocabKey = vocabKey; saveDocs(); }
         try { localStorage.setItem(lsVocabKey, r); } catch (_) {}
         if (document.getElementById('resultPanel').classList.contains('open')) {
-          openPanel(panelTitle, r, null);
+          _openVocabPanel(r);
         } else {
-          toast(uiLang === 'en' ? '✅ Vocabulary ready! Tap to view.' : '✅ Từ vựng đã xong! Nhấn để xem.', 's', () => openPanel(panelTitle, r, null));
+          toast(uiLang === 'en' ? '✅ Vocabulary ready! Tap to view.' : '✅ Từ vựng đã xong! Nhấn để xem.', 's', () => _openVocabPanel(r));
         }
       }
     }

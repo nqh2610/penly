@@ -7,12 +7,20 @@
  *
  * Secrets:
  *   ADMIN_PASSWORD  — admin password
- *   OPENROUTER_KEY  — OpenRouter API key
+ *   GROQ_KEY        — Groq API key (fallback)
+ *   OPENROUTER_KEY  — OpenRouter API key (last resort)
  */
 
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// OpenRouter free models — updated Oct 2026
+// Groq models — tried in order, best quality first
+const GROQ_MODELS = [
+  "llama-3.3-70b-versatile",   // best quality, 128k ctx
+  "llama-3.1-8b-instant",      // fast backup when 70b rate-limited
+];
+
+// OpenRouter free models — last resort
 const OR_MODELS = [
   "google/gemma-4-26b-a4b-it:free",
   "google/gemma-4-31b-it:free",
@@ -117,6 +125,38 @@ async function handleAdmin(request, env, url) {
   }
 
   return json({ error: "Not found" }, 404);
+}
+
+async function callGroq(env, prompt, temperature, max_tokens) {
+  if (!env.GROQ_KEY) { console.info('[groq] no GROQ_KEY'); return null; }
+
+  for (const model of GROQ_MODELS) {
+    try {
+      const res = await fetch(GROQ_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${env.GROQ_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          temperature: temperature ?? 0.7,
+          max_tokens: max_tokens ?? 3000,
+        }),
+      });
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      console.info(`[groq] ${model} status=${res.status} ok=${!!content}`);
+      if (content) return { content, groq_model: model };
+      // 429 = rate limit — try next model; other errors stop
+      if (res.status !== 429) break;
+    } catch (e) {
+      console.info(`[groq] ${model} exception: ${e.message}`);
+      break;
+    }
+  }
+  return null;
 }
 
 async function callOpenRouter(env, prompt, temperature, max_tokens) {
@@ -236,7 +276,11 @@ export default {
       console.info(`[cf-ai] failed: ${e.message}`);
     }
 
-    // OpenRouter (fallback)
+    // Groq (fallback — high quality)
+    const groqResult = await callGroq(env, prompt, temperature, max_tokens);
+    if (groqResult) return json(groqResult);
+
+    // OpenRouter (last resort)
     const orResult = await callOpenRouter(env, prompt, temperature, max_tokens);
     if (orResult) return json(orResult);
 

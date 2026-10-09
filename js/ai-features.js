@@ -887,14 +887,16 @@ Text: "${text}"`,
       const r = await callAI(
         vi
           ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm dùng format:
-**từ/cụm tiếng Anh** : nghĩa tiếng Việt
+**từ/cụm tiếng Anh** *(loại: nếu là idiom/slang/phrasal verb/proverb/jargon thì ghi rõ)* : nghĩa tiếng Việt
 > Câu ví dụ tiếng Anh
+Nếu là idiom, slang, phrasal verb, proverb, hoặc jargon: thêm 1 dòng giải thích ngắn tại sao nó có nghĩa đó hoặc cách dùng đặc biệt (bắt đầu bằng 💡).
 Bỏ qua từ quá đơn giản (a, the, is...).
 QUAN TRỌNG: Chỉ giải thích từ/cụm có trong đoạn được chọn bên dưới — không giải thích từ trong phần ngữ cảnh xung quanh.${_ctxContext()}
 Đoạn được chọn: "${text}"`
           : `Explain key words/phrases for an English learner. For each use format:
-**word/phrase** : simple meaning
+**word/phrase** *(type: label if idiom/slang/phrasal verb/proverb/jargon)* : simple meaning
 > short example sentence
+If it is an idiom, slang, phrasal verb, proverb, or jargon: add a 💡 line briefly explaining why it means that or how it's used — because the literal meaning won't help.
 Skip very basic words.
 IMPORTANT: Only explain words/phrases that appear in the selected text below — do not explain words from the surrounding context.${_ctxContext()}
 Selected text: "${text}"`,

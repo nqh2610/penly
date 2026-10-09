@@ -2069,7 +2069,7 @@
       background: var(--accent-soft);
       border-radius: 0 7px 7px 0;
       margin: 0.55rem 0;
-      font-style: italic;
+      font-style: normal;
       color: var(--accent);
       font-weight: 500;
     }

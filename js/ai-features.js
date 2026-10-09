@@ -795,8 +795,9 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const title = vi ? 'Diễn đạt lại' : 'Paraphrase';
       openCtxPopover(title, null);
       const r = await callAI(
-        `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced. Keep both rewrites in English.${vi ? ' After each rewrite, add a short Vietnamese translation in plain text on the next line.' : ''} Format each rewrite as a blockquote like:
-> rewrite here
+        `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced.${vi ? ' After each English rewrite, add a Vietnamese translation as plain text (NOT in a blockquote).' : ''} Put ONLY the English rewrite in a blockquote like:
+> English rewrite here
+${vi ? 'Vietnamese translation here (plain text, no >)' : ''}
 Be brief.
 "${text}"`,
         null, false, true, 400

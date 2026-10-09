@@ -137,6 +137,23 @@
     }
 
     function regenPanel() {
+      if (!_panelRegenFn) return;
+      const vi = uiLang !== 'en';
+      document.getElementById('regenModalTitle').textContent = vi ? 'Tạo lại nội dung?' : 'Regenerate content?';
+      document.getElementById('regenModalDesc').textContent = vi
+        ? 'Nội dung hiện tại sẽ bị xóa và AI sẽ tạo bản mới hoàn toàn.'
+        : 'The current result will be discarded and AI will generate a fresh version.';
+      document.getElementById('regenModalConfirm').querySelector('#regenModalBtnLabel').textContent = vi ? 'Tạo lại' : 'Regenerate';
+      document.querySelector('#regenModal .express-cancel').textContent = vi ? 'Hủy' : 'Cancel';
+      document.getElementById('regenModal').style.display = 'flex';
+    }
+
+    function closeRegenModal() {
+      document.getElementById('regenModal').style.display = 'none';
+    }
+
+    function confirmRegen() {
+      closeRegenModal();
       if (_panelRegenFn) _panelRegenFn();
     }
 

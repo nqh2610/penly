@@ -318,13 +318,35 @@ STRICT RULES — failure to follow these makes the output useless:
       if (!improveOriginalText) {
         improveOriginalText = text;
       } else {
-        // nếu text hiện tại khác bản gốc > 40% → user đã viết lại, reset
         const sim = text.length > 0 ? Math.min(improveOriginalText.length, text.length) / Math.max(improveOriginalText.length, text.length) : 0;
         if (sim < 0.6) improveOriginalText = text;
       }
 
       const isFirstImprove = improveOriginalText === text;
       const baseText = improveOriginalText;
+
+      // Giải pháp 2: cảnh báo nếu đã improve rồi (text hiện tại khác bản gốc)
+      if (!isFirstImprove) {
+        const vi = uiLang !== 'en';
+        const confirmed = await new Promise(resolve => {
+          const modal = document.getElementById('regenModal');
+          document.getElementById('regenModalTitle').textContent = vi ? 'Nâng cấp thêm?' : 'Improve again?';
+          document.getElementById('regenModalDesc').textContent = vi
+            ? 'Bài viết của bạn đã được nâng cấp. Nâng cấp thêm có thể làm thay đổi văn phong gốc của bạn.'
+            : 'Your writing has already been improved. Improving again may drift further from your original voice.';
+          modal.classList.add('open');
+          const onConfirm = () => { cleanup(); resolve(true); };
+          const onCancel = () => { cleanup(); resolve(false); };
+          function cleanup() {
+            modal.classList.remove('open');
+            modal.querySelector('.regen-modal-confirm').removeEventListener('click', onConfirm);
+            modal.querySelector('.regen-modal-cancel').removeEventListener('click', onCancel);
+          }
+          modal.querySelector('.regen-modal-confirm').addEventListener('click', onConfirm, { once: true });
+          modal.querySelector('.regen-modal-cancel').addEventListener('click', onCancel, { once: true });
+        });
+        if (!confirmed) return;
+      }
 
       setPanelTitle('panel-improve');
 
@@ -368,9 +390,9 @@ ${styleRules}
 - NEVER invent new content — do not add adjectives, clauses, or ideas not in the original
 - A sentence ending with "X, Y, and Z" is COMPLETE — never append "and [new word]" after it
 - If a sentence is already complete and natural, leave it as-is
+- If the text is already well-written with no meaningful improvements possible, output ONLY this inside %%S%%...%%E%% (translated to interface language): "This writing is already well-crafted. No significant improvements needed." — and skip the changes/tips sections.
 - Keep roughly the same length as the original
 - NEVER output any reasoning, word counts, or internal notes — output ONLY the three sections below
-- If improved once, focus on a DIFFERENT aspect
 - Bold (**word**) ONLY words/phrases changed from current version
 - You MUST output ALL THREE sections below in order: the improved text between %%S%% and %%E%%, then the changes section, then the tips section. Do not stop after the improved text.
 

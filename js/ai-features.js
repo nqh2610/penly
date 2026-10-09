@@ -680,7 +680,7 @@ ${uiLang === 'en' ? '10–12 words/phrases — practical, level-appropriate, top
 Use this EXACT format for each word (no tables, no columns):
 
 **word** /IPA/ *(part of speech)* — ${uiLang === 'en' ? 'meaning in English' : 'nghĩa tiếng Việt'}
-> *Example sentence in English using this word.*
+> *Example sentence using this word.*
 
 *(repeat for each word)*
 
@@ -690,7 +690,7 @@ Use this EXACT format for each word (no tables, no columns):
 
 ${uiLang === 'en' ? 'List 4–6 level-appropriate connectors with short examples' : 'Chỉ liệt kê 4–6 từ nối phù hợp trình độ, kèm ví dụ ngắn'}
 
-- **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *English example sentence.*
+- **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *example.*
 
 ---
 
@@ -699,32 +699,32 @@ ${uiLang === 'en'
 
 ## 🔄 Phrasal verbs
 *(Phrasal verbs commonly used in the topic area. Format:)*
-**verb** /IPA/ — meaning → *example sentence.*
+**verb** /IPA/ — meaning → *example.*
 💡 Why: brief note on the literal vs actual meaning (1 line only)
 
 ## 💬 Idioms & proverbs
 *(Idioms, slang, or proverbs people commonly use about this topic. Format:)*
-**idiom/proverb** — real meaning → *example sentence.*
+**idiom/proverb** — real meaning → *example.*
 💡 Why: explain the origin or logic behind the phrase so learners understand it, not just memorize it (1 line only)
 
 ## 📌 Fixed expressions & useful phrases
 *(Fixed expressions or collocations frequently used in this topic area. Format:)*
-**expression** — meaning/when to use → *example sentence.*`
+**expression** — meaning/when to use → *example.*`
   : `CÁC PHẦN TÙY CHỌN — dựa trên CHỦ ĐỀ "${tp || 'đã cho'}", không chỉ từ bài viết của user. Đưa vào nếu tìm được ít nhất 1 ví dụ thực sự hữu ích cho chủ đề này. Với các chủ đề phong phú như tiền bạc, kinh doanh, du lịch, sức khỏe... hầu như lúc nào cũng có thể tìm được.
 
 ## 🔄 Cụm động từ
 *(Cụm động từ hay dùng trong chủ đề này. Định dạng:)*
-**cụm động từ** /IPA/ — nghĩa → *câu ví dụ tiếng Anh.*
+**cụm động từ** /IPA/ — nghĩa → *ví dụ.*
 💡 Tại sao: giải thích ngắn nghĩa đen vs nghĩa thực (1 dòng)
 
 ## 💬 Thành ngữ & tục ngữ
 *(Thành ngữ, slang, hoặc tục ngữ người ta hay dùng về chủ đề này. Định dạng:)*
-**thành ngữ** — ý nghĩa thực → *câu ví dụ tiếng Anh.*
+**thành ngữ** — ý nghĩa thực → *ví dụ.*
 💡 Tại sao: giải thích nguồn gốc hoặc logic đằng sau cụm từ để học sinh hiểu, không chỉ ghi nhớ (1 dòng)
 
 ## 📌 Cụm từ cố định & diễn đạt hay
 *(Cụm từ cố định hoặc collocation hay dùng trong chủ đề này. Định dạng:)*
-**cụm từ** — nghĩa/khi dùng → *câu ví dụ tiếng Anh.*`}
+**cụm từ** — nghĩa/khi dùng → *ví dụ.*`}
 
 ---
 

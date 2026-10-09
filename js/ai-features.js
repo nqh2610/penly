@@ -797,22 +797,19 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const r = await callAI(
         `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced.
 Return ONLY a JSON array, no explanation, no markdown:
-[
-  {"en": "natural rewrite in English", "vi": "${vi ? 'bản dịch tiếng Việt' : ''}"},
-  {"en": "advanced rewrite in English", "vi": "${vi ? 'bản dịch tiếng Việt' : ''}"}
-]
+[{"en": "natural rewrite"}, {"en": "advanced rewrite"}]
 Text: "${text}"`,
-        null, false, true, 400
+        null, false, true, 300
       );
       if (r) {
         try {
           const clean = r.replace(/```json|```/g, '').trim();
           const items = JSON.parse(clean);
+          const labels = vi ? ['Tự nhiên hơn', 'Nâng cao hơn'] : ['More natural', 'More advanced'];
           const html = items.map((item, i) => `
             <div style="margin-bottom:.9rem">
-              <div style="font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em">${vi ? (i === 0 ? 'Tự nhiên hơn' : 'Nâng cao hơn') : (i === 0 ? 'More natural' : 'More advanced')}</div>
+              <div style="font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em">${labels[i] || ''}</div>
               <div style="background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:.5rem .75rem;color:var(--accent);font-weight:500;line-height:1.5">${item.en}</div>
-              ${vi && item.vi ? `<div style="font-size:.82rem;color:var(--muted);margin-top:.3rem;padding-left:.75rem;line-height:1.5">${item.vi}</div>` : ''}
             </div>`).join('');
           updateCtxPopoverHtml(html);
         } catch {

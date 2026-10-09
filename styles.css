@@ -1040,8 +1040,29 @@
     }
 
     .tb-btn.loading {
-      opacity: .4;
-      pointer-events: none
+      opacity: .5;
+      pointer-events: none;
+      position: relative;
+    }
+
+    .tb-btn.loading i {
+      visibility: hidden;
+    }
+
+    .tb-btn.loading::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: tb-spin .7s linear infinite;
+      opacity: .8;
+    }
+
+    @keyframes tb-spin {
+      to { transform: rotate(360deg); }
     }
 
     .tb-sep2 {

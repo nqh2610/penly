@@ -197,8 +197,10 @@ async function callGroq(env, prompt, temperature, max_tokens) {
         }),
       });
       const data = await res.json();
-      const content = data.choices?.[0]?.message?.content;
-      lastDebug = `${model} status=${res.status} body=${JSON.stringify(data).slice(0,150)}`;
+      const choice = data.choices?.[0];
+      const content = choice?.message?.content;
+      const finishReason = choice?.finish_reason;
+      lastDebug = `${model} status=${res.status} finish=${finishReason} body=${JSON.stringify(data).slice(0,150)}`;
       console.info(`[groq] ${lastDebug}`);
       if (content) return { content, groq_model: model };
       // Hard error from Groq (not rate-limit, not model-not-found, not empty response) — stop trying

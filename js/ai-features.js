@@ -795,7 +795,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const title = vi ? 'Diễn đạt lại' : 'Paraphrase';
       openCtxPopover(title, null);
       const r = await callAI(
-        `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced. Keep both rewrites in English.${vi ? ' After each rewrite, add a short Vietnamese translation.' : ''} Be brief.
+        `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced. Keep both rewrites in English.${vi ? ' After each rewrite, add a short Vietnamese translation in plain text.' : ''} Wrap each English rewrite in backticks like \`the rewrite here\`. Be brief.
 "${text}"`,
         null, false, true, 400
       );
@@ -813,9 +813,9 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       openCtxPopover(title, null);
       const r = await callAI(
         vi
-          ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm: nghĩa tiếng Việt đơn giản + 1 ví dụ ngắn bằng tiếng Anh. Bỏ qua từ quá đơn giản (a, the, is...).
+          ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm: nghĩa tiếng Việt đơn giản + 1 ví dụ ngắn bằng tiếng Anh. Wrap từ/cụm tiếng Anh và ví dụ tiếng Anh trong backticks như \`example here\`. Bỏ qua từ quá đơn giản (a, the, is...).
 "${text}"`
-          : `Explain key words/phrases for an English learner. For each: simple meaning + 1 short example. Skip very basic words.
+          : `Explain key words/phrases for an English learner. For each: simple meaning + 1 short example. Wrap each English word/phrase and example in backticks like \`example here\`. Skip very basic words.
 "${text}"`,
         null, false, true, 500
       );
@@ -832,7 +832,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const title = vi ? 'Phân tích ngữ pháp' : 'Grammar Analysis';
       openCtxPopover(title, null);
       const r = await callAI(
-        `Grammar check: tense, structure, errors. Be concise.${vi ? ' Explain in Vietnamese, but keep all example sentences and corrections in English.' : ''}
+        `Grammar check: tense, structure, errors. Be concise.${vi ? ' Explain in Vietnamese, but wrap all English example sentences and corrections in backticks like \`correction here\`.' : ' Wrap all example sentences and corrections in backticks like \`correction here\`.'}
 "${text}"`,
         null, false, true, 500
       );

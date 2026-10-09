@@ -1040,29 +1040,14 @@
     }
 
     .tb-btn.loading {
-      opacity: .5;
+      opacity: .6;
       pointer-events: none;
-      position: relative;
+      animation: tb-btn-pulse 1.2s ease-in-out infinite;
     }
 
-    .tb-btn.loading i {
-      visibility: hidden;
-    }
-
-    .tb-btn.loading::after {
-      content: '';
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      border: 2px solid currentColor;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: tb-spin .7s linear infinite;
-      opacity: .8;
-    }
-
-    @keyframes tb-spin {
-      to { transform: rotate(360deg); }
+    @keyframes tb-btn-pulse {
+      0%, 100% { opacity: .6; }
+      50%       { opacity: 1; }
     }
 
     .tb-sep2 {

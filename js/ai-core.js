@@ -113,7 +113,8 @@
 
         if (!silent) setBusy(btnId, false, !noPanel);
         if (d.rate_limited) {
-          if (!silent) toast(uiLang === 'en' ? 'AI is busy, please try again shortly.' : 'AI đang bận, vui lòng thử lại sau.', 'd');
+          const detail = [d.cf_error && `CF:${d.cf_error}`, d.groq_error && `Groq:${d.groq_error}`].filter(Boolean).join(' | ');
+          if (!silent) toast((uiLang === 'en' ? 'AI is busy. ' : 'AI đang bận. ') + (detail || ''), 'd');
         } else {
           const err = d.error || 'Unknown error';
           if (!silent) toast((uiLang === 'en' ? 'Error: ' : 'Lỗi: ') + err.substring(0, 100), 'd');

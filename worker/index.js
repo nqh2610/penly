@@ -147,13 +147,13 @@ async function callGroq(env, prompt, temperature, max_tokens) {
       });
       const data = await res.json();
       const content = data.choices?.[0]?.message?.content;
-      console.info(`[groq] ${model} status=${res.status} ok=${!!content}`);
+      console.info(`[groq] ${model} status=${res.status} ok=${!!content} err=${data.error?.message?.slice(0,80) || ''}`);
       if (content) return { content, groq_model: model };
       // 429 = rate limit — try next model; other errors stop
-      if (res.status !== 429) break;
+      if (res.status !== 429) return { _err: data.error?.message || `status ${res.status}` };
     } catch (e) {
       console.info(`[groq] ${model} exception: ${e.message}`);
-      break;
+      return { _err: e.message };
     }
   }
   return null;
@@ -264,6 +264,7 @@ export default {
     if (!entry.active) return json({ error: "License key is disabled" }, 401);
 
     // Cloudflare AI (primary — fast)
+    let cfErr = null;
     try {
       const result = await env.AI.run(CF_AI_MODEL, {
         messages: [{ role: "user", content: prompt }],
@@ -272,18 +273,21 @@ export default {
       });
       const content = result?.response || result?.choices?.[0]?.message?.content;
       if (content) return json({ content, cf_fallback: true });
+      cfErr = 'no content';
     } catch (e) {
+      cfErr = e.message;
       console.info(`[cf-ai] failed: ${e.message}`);
     }
 
     // Groq (fallback — high quality)
     const groqResult = await callGroq(env, prompt, temperature, max_tokens);
-    if (groqResult) return json(groqResult);
+    if (groqResult?.content) return json(groqResult);
+    const groqErr = groqResult?._err || null;
 
     // OpenRouter (last resort)
     const orResult = await callOpenRouter(env, prompt, temperature, max_tokens);
     if (orResult) return json(orResult);
 
-    return json({ error: "All AI providers exhausted", rate_limited: true }, 502);
+    return json({ error: "All AI providers exhausted", cf_error: cfErr, groq_error: groqErr, rate_limited: true }, 502);
   },
 };

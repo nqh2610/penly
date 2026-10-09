@@ -81,6 +81,12 @@
       if (body) body.innerHTML = md ? marked.parse(md) : '';
     }
 
+    function updateCtxPopoverHtml(html) {
+      _stopCtxLoading();
+      const body = document.getElementById('ctxPopoverBody');
+      if (body) body.innerHTML = html;
+    }
+
     function closeCtxPopover() {
       _stopCtxLoading();
       _ctxPopoverPinned = false;

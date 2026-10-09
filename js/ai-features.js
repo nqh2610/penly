@@ -795,14 +795,31 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       const title = vi ? 'Diễn đạt lại' : 'Paraphrase';
       openCtxPopover(title, null);
       const r = await callAI(
-        `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced.${vi ? ' After each English rewrite, add a Vietnamese translation as plain text (NOT in a blockquote).' : ''} Put ONLY the English rewrite in a blockquote like:
-> English rewrite here
-${vi ? 'Vietnamese translation here (plain text, no >)' : ''}
-Be brief.
-"${text}"`,
+        `Rewrite the following English text in 2 ways: 1) more natural, 2) more advanced.
+Return ONLY a JSON array, no explanation, no markdown:
+[
+  {"en": "natural rewrite in English", "vi": "${vi ? 'bản dịch tiếng Việt' : ''}"},
+  {"en": "advanced rewrite in English", "vi": "${vi ? 'bản dịch tiếng Việt' : ''}"}
+]
+Text: "${text}"`,
         null, false, true, 400
       );
-      if (r) { updateCtxPopover(r); setCooldown('ctx-paraphrase', 5000); }
+      if (r) {
+        try {
+          const clean = r.replace(/```json|```/g, '').trim();
+          const items = JSON.parse(clean);
+          const html = items.map((item, i) => `
+            <div style="margin-bottom:.9rem">
+              <div style="font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em">${vi ? (i === 0 ? 'Tự nhiên hơn' : 'Nâng cao hơn') : (i === 0 ? 'More natural' : 'More advanced')}</div>
+              <div style="background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:.5rem .75rem;color:var(--accent);font-weight:500;line-height:1.5">${item.en}</div>
+              ${vi && item.vi ? `<div style="font-size:.82rem;color:var(--muted);margin-top:.3rem;padding-left:.75rem;line-height:1.5">${item.vi}</div>` : ''}
+            </div>`).join('');
+          updateCtxPopoverHtml(html);
+        } catch {
+          updateCtxPopover(r);
+        }
+        setCooldown('ctx-paraphrase', 5000);
+      }
       else closeCtxPopover();
     }
 

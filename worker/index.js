@@ -12,13 +12,60 @@
  */
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODELS_URL = "https://api.groq.com/openai/v1/models";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// Groq models — tried in order, best quality first
-const GROQ_MODELS = [
-  "openai/gpt-oss-120b", // best quality, 120B params
-  "openai/gpt-oss-20b",  // faster backup
-];
+// Priority score for known model families — higher = try first
+// Unknown models get score 0 and are tried last
+const GROQ_MODEL_PRIORITY = {
+  "gpt-oss-120b": 100,
+  "llama-3.3-70b": 90,
+  "llama-3.1-70b": 80,
+  "llama-4-maverick": 75,
+  "llama-4-scout": 70,
+  "llama-3.3": 65,
+  "llama-3.1": 60,
+  "llama3-70b": 55,
+  "gpt-oss-20b": 50,
+  "llama-3.2": 45,
+  "llama3-8b": 30,
+  "llama-3.1-8b": 25,
+  "gemma": 20,
+  "qwen": 15,
+  "mistral": 10,
+};
+
+function groqModelScore(id) {
+  const lower = id.toLowerCase();
+  for (const [key, score] of Object.entries(GROQ_MODEL_PRIORITY)) {
+    if (lower.includes(key)) return score;
+  }
+  return 0;
+}
+
+// In-memory cache of sorted Groq models (refreshed per worker instance)
+let _groqModelCache = null;
+
+async function getGroqModels(groqKey) {
+  if (_groqModelCache) return _groqModelCache;
+  try {
+    const res = await fetch(GROQ_MODELS_URL, {
+      headers: { "Authorization": `Bearer ${groqKey}` },
+    });
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const data = await res.json();
+    const ids = (data.data || [])
+      .filter(m => m.object === 'model' && !m.id.includes('whisper') && !m.id.includes('vision') && !m.id.includes('guard') && !m.id.includes('tool'))
+      .map(m => m.id)
+      .sort((a, b) => groqModelScore(b) - groqModelScore(a));
+    console.info(`[groq] discovered ${ids.length} models: ${ids.slice(0,5).join(', ')}...`);
+    _groqModelCache = ids.length ? ids : null;
+    return _groqModelCache;
+  } catch (e) {
+    console.info(`[groq] model discovery failed: ${e.message}`);
+    return null;
+  }
+}
 
 // OpenRouter free models — last resort
 const OR_MODELS = [
@@ -130,8 +177,11 @@ async function handleAdmin(request, env, url) {
 async function callGroq(env, prompt, temperature, max_tokens) {
   if (!env.GROQ_KEY) { console.info('[groq] no GROQ_KEY'); return null; }
 
+  const models = await getGroqModels(env.GROQ_KEY);
+  if (!models || !models.length) { console.info('[groq] no models available'); return null; }
+
   let lastDebug = null;
-  for (const model of GROQ_MODELS) {
+  for (const model of models) {
     try {
       const res = await fetch(GROQ_URL, {
         method: "POST",

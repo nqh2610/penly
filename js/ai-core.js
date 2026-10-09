@@ -104,6 +104,7 @@
           body: JSON.stringify({ penly_key: lk, prompt, temperature: 0.7, max_tokens: maxTokens })
         });
         const d = await res.json();
+        console.info('[callAI] response:', JSON.stringify(d).substring(0, 300));
 
         if (d.content) {
           if (!silent) setBusy(btnId, false, !noPanel);
@@ -114,9 +115,11 @@
         if (!silent) setBusy(btnId, false, !noPanel);
         if (d.rate_limited) {
           const detail = [d.cf_error && `CF:${d.cf_error}`, d.groq_error && `Groq:${d.groq_error}`].filter(Boolean).join(' | ');
-          if (!silent) toast((uiLang === 'en' ? 'AI is busy. ' : 'AI đang bận. ') + (detail || ''), 'd');
+          console.warn('[callAI] all providers failed:', detail);
+          if (!silent) toast(uiLang === 'en' ? 'AI is busy, please try again shortly.' : 'AI đang bận, vui lòng thử lại sau.', 'd');
         } else {
           const err = d.error || 'Unknown error';
+          console.warn('[callAI] error:', err);
           if (!silent) toast((uiLang === 'en' ? 'Error: ' : 'Lỗi: ') + err.substring(0, 100), 'd');
         }
         return null;

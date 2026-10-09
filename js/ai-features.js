@@ -211,7 +211,7 @@ ${text}
 ${ctx()}
 Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
 
-LANGUAGE RULE: Write ALL explanations, labels, and feedback in ${uiLang === 'en' ? 'English' : 'Vietnamese'}.
+LANGUAGE RULE: Write ALL explanations, labels, and feedback in ${uiLang === 'en' ? 'English' : 'Vietnamese'}. IMPORTANT: Any example sentences, rewrites, or quoted English text must always remain in English — never translate them into Vietnamese.
 
 TONE & STYLE RULES — based on the user's selected tone (${toneWord}):
 ${toneRules}
@@ -534,7 +534,7 @@ ${text}
 ${ctx(false)}
 Interface language: ${vi ? 'Vietnamese' : 'English'}
 
-LANGUAGE RULE: Write ALL feedback in ${vi ? 'Vietnamese' : 'English'}.
+LANGUAGE RULE: Write ALL feedback in ${vi ? 'Vietnamese' : 'English'}. IMPORTANT: Any example sentences, rewrites, or quoted English text must always remain in English — never translate them into Vietnamese.
 
 CALIBRATION RULE: Only praise what genuinely works. Only flag real problems. Do not invent strengths to be encouraging, and do not manufacture weaknesses to seem thorough. A short but well-written text deserves honest recognition. A weak text deserves clear, kind guidance.
 
@@ -578,7 +578,7 @@ ${text}
 ${ctx(false)}${srcInstruction}
 Interface language: ${vi ? 'Vietnamese' : 'English'}
 
-LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}.
+LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}. IMPORTANT: Any example sentences, rewrites, or quoted English text must always remain in English — never translate them into Vietnamese.
 
 ---
 

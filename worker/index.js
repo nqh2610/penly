@@ -201,10 +201,11 @@ async function callGroq(env, prompt, temperature, max_tokens) {
       lastDebug = `${model} status=${res.status} body=${JSON.stringify(data).slice(0,150)}`;
       console.info(`[groq] ${lastDebug}`);
       if (content) return { content, groq_model: model };
-      // 429 = rate limit, 404/model not found — try next model
-      if (res.status !== 429 && res.status !== 404 && !data.error?.message?.includes('does not exist')) {
-        return { _err: data.error?.message || `status ${res.status}`, _debug: lastDebug };
+      // Hard error from Groq (not rate-limit, not model-not-found, not empty response) — stop trying
+      if (data.error && res.status !== 429 && res.status !== 404 && !data.error?.message?.includes('does not exist')) {
+        return { _err: data.error.message || `status ${res.status}`, _debug: lastDebug };
       }
+      // status 200 but no content, or 429/404 — try next model
     } catch (e) {
       console.info(`[groq] ${model} exception: ${e.message}`);
       return { _err: e.message };
@@ -305,7 +306,7 @@ export default {
     let body;
     try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
-    const { penly_key, prompt, temperature, max_tokens } = body;
+    const { penly_key, prompt, temperature, max_tokens, force_provider } = body;
 
     if (!penly_key || !/^PENLY-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(penly_key.trim().toUpperCase())) {
       return json({ error: "Invalid license key format" }, 401);
@@ -317,20 +318,22 @@ export default {
     if (!entry) return json({ error: "License key not found or inactive" }, 401);
     if (!entry.active) return json({ error: "License key is disabled" }, 401);
 
-    // Cloudflare AI (primary — fast)
+    // Cloudflare AI (primary — fast, skip if force_provider set)
     let cfErr = null;
-    try {
-      const result = await env.AI.run(CF_AI_MODEL, {
-        messages: [{ role: "user", content: prompt }],
-        temperature: temperature ?? 0.7,
-        max_tokens: max_tokens ?? 3000,
-      });
-      const content = result?.response || result?.choices?.[0]?.message?.content;
-      if (content) return json({ content, cf_fallback: true });
-      cfErr = 'no content';
-    } catch (e) {
-      cfErr = e.message;
-      console.info(`[cf-ai] failed: ${e.message}`);
+    if (!force_provider) {
+      try {
+        const result = await env.AI.run(CF_AI_MODEL, {
+          messages: [{ role: "user", content: prompt }],
+          temperature: temperature ?? 0.7,
+          max_tokens: max_tokens ?? 3000,
+        });
+        const content = result?.response || result?.choices?.[0]?.message?.content;
+        if (content) return json({ content, cf_fallback: true });
+        cfErr = 'no content';
+      } catch (e) {
+        cfErr = e.message;
+        console.info(`[cf-ai] failed: ${e.message}`);
+      }
     }
 
     // Groq (fallback — high quality)

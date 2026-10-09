@@ -698,23 +698,33 @@ ${uiLang === 'en'
   ? `OPTIONAL SECTIONS — include ONLY if you can find at least 1 genuinely natural example directly connected to the topic "${tp || 'given'}". If you cannot, skip the section entirely — do not force unnatural examples.
 
 ## 🔄 Phrasal verbs
-*(Only if 1+ phrasal verbs fit naturally. Format: **verb** /IPA/ — meaning → example sentence.)*
+*(Only if 1+ phrasal verbs fit naturally. Format:)*
+**verb** /IPA/ — meaning → *example sentence.*
+💡 Why: brief note on the literal vs actual meaning (1 line only)
 
 ## 💬 Idioms & proverbs
-*(Only if 1+ idioms or proverbs connect naturally. Format: **idiom** — real meaning → example sentence.)*
+*(Only if 1+ idioms or proverbs connect naturally. Format:)*
+**idiom/proverb** — real meaning → *example sentence.*
+💡 Why: explain the origin or logic behind the phrase so learners understand it, not just memorize it (1 line only)
 
 ## 📌 Fixed expressions & useful phrases
-*(Only if 1+ fixed expressions are genuinely used in this topic area. Format: **expression** — meaning/when to use → example sentence.)*`
+*(Only if 1+ fixed expressions are genuinely used in this topic area. Format:)*
+**expression** — meaning/when to use → *example sentence.*`
   : `CÁC PHẦN TÙY CHỌN — chỉ đưa vào nếu tìm được ít nhất 1 ví dụ thực sự tự nhiên và gắn trực tiếp với chủ đề "${tp || 'đã cho'}". Nếu không có, bỏ qua hoàn toàn — không cố viết ví dụ gượng ép.
 
 ## 🔄 Cụm động từ
-*(Chỉ khi có 1+ cụm động từ phù hợp tự nhiên. Định dạng: **cụm động từ** /IPA/ — nghĩa → câu ví dụ tiếng Anh.)*
+*(Chỉ khi có 1+ cụm động từ phù hợp tự nhiên. Định dạng:)*
+**cụm động từ** /IPA/ — nghĩa → *câu ví dụ tiếng Anh.*
+💡 Tại sao: giải thích ngắn nghĩa đen vs nghĩa thực (1 dòng)
 
 ## 💬 Thành ngữ & tục ngữ
-*(Chỉ khi có 1+ thành ngữ/tục ngữ gắn tự nhiên. Định dạng: **thành ngữ** — ý nghĩa thực → câu ví dụ tiếng Anh.)*
+*(Chỉ khi có 1+ thành ngữ/tục ngữ gắn tự nhiên. Định dạng:)*
+**thành ngữ** — ý nghĩa thực → *câu ví dụ tiếng Anh.*
+💡 Tại sao: giải thích nguồn gốc hoặc logic đằng sau cụm từ để học sinh hiểu, không chỉ ghi nhớ (1 dòng)
 
 ## 📌 Cụm từ cố định & diễn đạt hay
-*(Chỉ khi có 1+ cụm từ thực sự dùng trong chủ đề này. Định dạng: **cụm từ** — nghĩa/khi dùng → câu ví dụ tiếng Anh.)*`}
+*(Chỉ khi có 1+ cụm từ thực sự dùng trong chủ đề này. Định dạng:)*
+**cụm từ** — nghĩa/khi dùng → *câu ví dụ tiếng Anh.*`}
 
 ---
 

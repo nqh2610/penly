@@ -16,8 +16,9 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 // Groq models — tried in order, best quality first
 const GROQ_MODELS = [
-  "llama-3.3-70b-versatile",   // best quality, 128k ctx
-  "llama-3.1-8b-instant",      // fast backup when 70b rate-limited
+  "llama3-70b-8192",       // best quality available on free tier
+  "llama3-8b-8192",        // fast backup
+  "llama-3.1-8b-instant",  // last backup
 ];
 
 // OpenRouter free models — last resort
@@ -149,8 +150,10 @@ async function callGroq(env, prompt, temperature, max_tokens) {
       const content = data.choices?.[0]?.message?.content;
       console.info(`[groq] ${model} status=${res.status} ok=${!!content} err=${data.error?.message?.slice(0,80) || ''}`);
       if (content) return { content, groq_model: model };
-      // 429 = rate limit — try next model; other errors stop
-      if (res.status !== 429) return { _err: data.error?.message || `status ${res.status}` };
+      // 429 = rate limit, 404 = model not found — try next model
+      if (res.status !== 429 && res.status !== 404 && !data.error?.message?.includes('does not exist')) {
+        return { _err: data.error?.message || `status ${res.status}` };
+      }
     } catch (e) {
       console.info(`[groq] ${model} exception: ${e.message}`);
       return { _err: e.message };

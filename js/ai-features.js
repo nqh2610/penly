@@ -180,6 +180,10 @@
       const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Grammar check' : 'Kiểm tra lỗi');
       const { toneWord, toneStd } = typeof getStandards === 'function' ? getStandards() : { toneWord: 'casual', toneStd: { contractions: true, firstPerson: true } };
       const isCasual = ['casual', 'friendly', 'bạn bè', 'tự nhiên'].includes(toneWord.toLowerCase());
+
+      // Spin the button only — grammar injects into editor, no panel needed
+      const btnEl = document.getElementById('btn-grammar');
+      if (btnEl) btnEl.classList.add('loading');
       const toneRules = [
         toneStd.contractions ? '- Contractions (it\'s, don\'t, I\'m) are CORRECT for this tone — do NOT mark them as errors' : '- No contractions expected — mark missing apostrophes in contractions',
         isCasual ? '- Casual/informal words (gonna, wanna, kinda, coz, yeah, hey) are INTENTIONAL for this tone — do NOT mark them as errors' : '',
@@ -232,8 +236,9 @@ STRICT RULES — failure to follow these makes the output useless:
 - data-fix = the corrected text only (no explanation)
 - Zero errors → return the text exactly as-is, character for character
 - Return ONLY the corrected HTML string. No explanation, no markdown, no code blocks.`,
-        'btn-grammar', false, false
+        null, true, true
       );
+      if (btnEl) btnEl.classList.remove('loading');
       if (!r) return;
       setCooldown('btn-grammar');
       let clean = strip(r);

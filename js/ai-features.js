@@ -89,7 +89,7 @@
       return false;
     }
 
-    function setCooldown(btnId, ms = 30000) {
+    function setCooldown(btnId, ms = 15000) {
       if (btnId) _btnCooldown[btnId] = Date.now() + ms;
     }
 
@@ -714,7 +714,7 @@ ${uiLang === 'en'
       setBusy('btn-vocab', false, false);
 
       if (r) {
-        setCooldown('btn-vocab');
+      setCooldown('btn-vocab', 10000);
         if (d) { d.vocab = r; d.vocabKey = vocabKey; saveDocs(); }
         try { localStorage.setItem(lsVocabKey, r); } catch (_) {}
         if (document.getElementById('resultPanel').classList.contains('open')) {
@@ -771,7 +771,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
         }
         if (buf.length) paras.push(buf.join(' '));
         openPanel(t('panel-translate'), paras.join('\n\n'), null);
-        setCooldown('btn-translate');
+        setCooldown('btn-translate', 8000);
       }
     }
 
@@ -787,6 +787,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
     }
 
     async function callParaphrase() {
+      if (isCooldown('ctx-paraphrase')) return;
       const sel = window.getSelection()?.toString().trim();
       const text = (sel || ttsGetCurrentPara()).slice(0, 400);
       if (!text) return toast(t('no-text'));
@@ -798,11 +799,12 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
 "${text}"`,
         null, false, true, 400
       );
-      if (r) updateCtxPopover(r);
+      if (r) { updateCtxPopover(r); setCooldown('ctx-paraphrase', 5000); }
       else closeCtxPopover();
     }
 
     async function callExplain() {
+      if (isCooldown('ctx-explain')) return;
       const sel = window.getSelection()?.toString().trim();
       const text = (sel || ttsGetCurrentPara()).slice(0, 400);
       if (!text) return toast(t('no-text'));
@@ -817,11 +819,12 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
 "${text}"`,
         null, false, true, 500
       );
-      if (r) updateCtxPopover(r);
+      if (r) { updateCtxPopover(r); setCooldown('ctx-explain', 5000); }
       else closeCtxPopover();
     }
 
     async function callAnalyze() {
+      if (isCooldown('ctx-analyze')) return;
       const sel = window.getSelection()?.toString().trim();
       const text = (sel || ttsGetCurrentPara()).slice(0, 400);
       if (!text) return toast(t('no-text'));
@@ -833,7 +836,7 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
 "${text}"`,
         null, false, true, 500
       );
-      if (r) updateCtxPopover(r);
+      if (r) { updateCtxPopover(r); setCooldown('ctx-analyze', 5000); }
       else closeCtxPopover();
     }
 

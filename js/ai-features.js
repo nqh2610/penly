@@ -796,11 +796,11 @@ ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
       openCtxPopover(title, null);
       const r = await callAI(
         `You are an English writing coach. Rewrite the following text in 2 ways for an English learner:
-1) Everyday natural: how a native speaker would casually say it — simple words, natural flow, contractions ok
-2) Polished formal: how a skilled writer would phrase it — varied sentence structure, precise vocabulary, no clichés
+1) Everyday natural: how a fluent native speaker would say it casually — simple words, natural flow, contractions welcome. Do NOT change the meaning.
+2) Elegant written: how a skilled author would write it — clear, precise, varied sentence rhythm. Avoid pompous or bureaucratic words like "commence", "endeavor", "acquaintance". Keep it human.
 
 Return ONLY a JSON array, no explanation, no markdown:
-[{"en": "everyday natural version"}, {"en": "polished formal version"}]
+[{"en": "everyday natural version"}, {"en": "elegant written version"}]
 Text: "${text}"`,
         null, false, true, 300
       );
@@ -809,7 +809,7 @@ Text: "${text}"`,
           const raw = typeof r === 'string' ? r : JSON.stringify(r);
           const clean = raw.replace(/```json|```/g, '').trim();
           const items = JSON.parse(clean);
-          const labels = vi ? ['Tự nhiên hàng ngày', 'Văn phong trau chuốt'] : ['Everyday natural', 'Polished formal'];
+          const labels = vi ? ['Tự nhiên hàng ngày', 'Văn phong tinh tế'] : ['Everyday natural', 'Elegant written'];
           const html = items.map((item, i) => `
             <div style="margin-bottom:.9rem">
               <div style="font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em">${labels[i] || ''}</div>

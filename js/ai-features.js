@@ -889,13 +889,15 @@ Text: "${text}"`,
           ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm dùng format:
 **từ/cụm tiếng Anh** : nghĩa tiếng Việt
 > Câu ví dụ tiếng Anh
-Bỏ qua từ quá đơn giản (a, the, is...).${_ctxContext()}
-"${text}"`
+Bỏ qua từ quá đơn giản (a, the, is...).
+QUAN TRỌNG: Chỉ giải thích từ/cụm có trong đoạn được chọn bên dưới — không giải thích từ trong phần ngữ cảnh xung quanh.${_ctxContext()}
+Đoạn được chọn: "${text}"`
           : `Explain key words/phrases for an English learner. For each use format:
 **word/phrase** : simple meaning
 > short example sentence
-Skip very basic words.${_ctxContext()}
-"${text}"`,
+Skip very basic words.
+IMPORTANT: Only explain words/phrases that appear in the selected text below — do not explain words from the surrounding context.${_ctxContext()}
+Selected text: "${text}"`,
         null, false, true, 500
       );
       if (r) { updateCtxPopover(r); setCooldown('ctx-explain', 5000); }
@@ -911,8 +913,8 @@ Skip very basic words.${_ctxContext()}
       const title = vi ? 'Phân tích ngữ pháp' : 'Grammar Analysis';
       openCtxPopover(title, null);
       const r = await callAI(
-        `Grammar check: tense, structure, errors. Be concise.${vi ? ' Explain each issue in Vietnamese. For corrections use format:\n**lỗi** : giải thích\n> correction in English' : ' For each issue use format:\n**error** : explanation\n> correction'}${_ctxContext()}
-"${text}"`,
+        `Grammar check: tense, structure, errors. Be concise. Only check the selected text — do not flag issues from the surrounding context.${vi ? ' Explain each issue in Vietnamese. For corrections use format:\n**lỗi** : giải thích\n> correction in English' : ' For each issue use format:\n**error** : explanation\n> correction'}${_ctxContext()}
+Selected text: "${text}"`,
         null, false, true, 500
       );
       if (r) { updateCtxPopover(r); setCooldown('ctx-analyze', 5000); }

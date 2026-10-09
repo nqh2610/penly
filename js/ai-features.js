@@ -334,16 +334,21 @@ STRICT RULES — failure to follow these makes the output useless:
           document.getElementById('regenModalDesc').textContent = vi
             ? 'Bài viết của bạn đã được nâng cấp. Nâng cấp thêm có thể làm thay đổi văn phong gốc của bạn.'
             : 'Your writing has already been improved. Improving again may drift further from your original voice.';
+          const cancelBtn = modal.querySelector('.regen-modal-cancel');
+          cancelBtn.textContent = vi ? 'Thôi' : 'Cancel';
+          const labelEl = document.getElementById('regenModalBtnLabel');
+          if (labelEl) labelEl.textContent = vi ? 'Nâng cấp thêm' : 'Improve anyway';
           modal.classList.add('open');
-          const onConfirm = () => { cleanup(); resolve(true); };
-          const onCancel = () => { cleanup(); resolve(false); };
+          // temporarily override global handlers
+          const origConfirm = window.confirmRegen;
+          const origClose = window.closeRegenModal;
           function cleanup() {
             modal.classList.remove('open');
-            modal.querySelector('.regen-modal-confirm').removeEventListener('click', onConfirm);
-            modal.querySelector('.regen-modal-cancel').removeEventListener('click', onCancel);
+            window.confirmRegen = origConfirm;
+            window.closeRegenModal = origClose;
           }
-          modal.querySelector('.regen-modal-confirm').addEventListener('click', onConfirm, { once: true });
-          modal.querySelector('.regen-modal-cancel').addEventListener('click', onCancel, { once: true });
+          window.confirmRegen = () => { cleanup(); resolve(true); };
+          window.closeRegenModal = () => { cleanup(); resolve(false); };
         });
         if (!confirmed) return;
       }

@@ -203,7 +203,12 @@ async function callGroq(env, prompt, temperature, max_tokens) {
       lastDebug = `${model} status=${res.status} finish=${finishReason} body=${JSON.stringify(data).slice(0,150)}`;
       console.info(`[groq] ${lastDebug}`);
       if (content) return { content, groq_model: model };
-      // Hard error from Groq (not rate-limit, not model-not-found, not empty response) — stop trying
+      // Content filter — no point retrying other models with same topic
+      if (finishReason === 'content_filter') {
+        console.info('[groq] content_filter — skipping to next provider');
+        return null;
+      }
+      // Hard error (not rate-limit, not model-not-found, not empty response) — stop trying
       if (data.error && res.status !== 429 && res.status !== 404 && !data.error?.message?.includes('does not exist')) {
         return { _err: data.error.message || `status ${res.status}`, _debug: lastDebug };
       }

@@ -803,7 +803,8 @@ Text: "${text}"`,
       );
       if (r) {
         try {
-          const clean = r.replace(/```json|```/g, '').trim();
+          const raw = typeof r === 'string' ? r : JSON.stringify(r);
+          const clean = raw.replace(/```json|```/g, '').trim();
           const items = JSON.parse(clean);
           const labels = vi ? ['Tự nhiên hơn', 'Nâng cao hơn'] : ['More natural', 'More advanced'];
           const html = items.map((item, i) => `

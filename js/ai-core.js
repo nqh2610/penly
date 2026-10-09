@@ -6,8 +6,9 @@
       const chip = document.getElementById('modelChip');
       if (!chip) return;
       const map = {
-        '__or__': { text: '🌐 OR', cls: 'tier-3', title: 'Đang dùng OpenRouter' },
-        '__cf__': { text: '☁ Cafe', cls: 'tier-4', title: 'Đang dùng Cloudflare AI' },
+        '__groq__': { text: '⚡ Groq', cls: 'tier-2', title: 'Đang dùng Groq AI' },
+        '__or__':   { text: '🌐 OR',  cls: 'tier-3', title: 'Đang dùng OpenRouter' },
+        '__cf__':   { text: '☁ Cafe', cls: 'tier-4', title: 'Đang dùng Cloudflare AI' },
       };
       const info = map[source] || map['__cf__'];
       chip.textContent = info.text;
@@ -106,7 +107,7 @@
 
         if (d.content) {
           if (!silent) setBusy(btnId, false, !noPanel);
-          setModelChip(d.or_model ? '__or__' : '__cf__');
+          setModelChip(d.groq_model ? '__groq__' : d.or_model ? '__or__' : '__cf__');
           return d.content;
         }
 

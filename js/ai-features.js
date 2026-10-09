@@ -232,7 +232,7 @@ STRICT RULES — failure to follow these makes the output useless:
 - data-fix = the corrected text only (no explanation)
 - Zero errors → return the text exactly as-is, character for character
 - Return ONLY the corrected HTML string. No explanation, no markdown, no code blocks.`,
-        'btn-grammar', false, true
+        'btn-grammar', false, false
       );
       if (!r) return;
       setCooldown('btn-grammar');
@@ -244,26 +244,29 @@ STRICT RULES — failure to follow these makes the output useless:
         return fix.trim().toLowerCase() === orig.trim().toLowerCase() ? orig : match;
       });
       // Save original HTML for undo before overwriting
-      const _grammarUndo = editor.innerHTML;
       editor.innerHTML = clean;
       const n = (clean.match(/<span class="ge"/g) || []).length;
       if (n > 0) {
         const vi = uiLang !== 'en';
-        // Show action bar with Fix all / Dismiss all / Undo
         const wrap = document.createElement('div');
         wrap.className = 'ti grammar-action-bar';
-        wrap.innerHTML =
-          `<span>${t('grammar-found', { n })}</span>` +
-          `<button onclick="fixAllErrors()">${vi ? 'Sửa tất cả' : 'Fix all'}</button>` +
-          `<button onclick="dismissAllErrors()">${vi ? 'Bỏ qua' : 'Dismiss'}</button>` +
-          `<button class="undo-btn" onclick="(function(){` +
-            `editor.innerHTML=${JSON.stringify(_grammarUndo)};` +
-            `editor.dispatchEvent(new Event('input'));` +
-            `this.closest('.grammar-action-bar').remove();` +
-            `toast('${vi ? 'Đã hoàn tác.' : 'Reverted.'}','s');` +
-          `}).call(this)">${vi ? 'Hoàn tác' : 'Undo'}</button>`;
+
+        const label = document.createElement('span');
+        label.textContent = t('grammar-found', { n });
+        wrap.appendChild(label);
+
+        const btnFix = document.createElement('button');
+        btnFix.textContent = vi ? 'Sửa tất cả' : 'Fix all';
+        btnFix.addEventListener('click', () => fixAllErrors());
+        wrap.appendChild(btnFix);
+
+        const btnDismiss = document.createElement('button');
+        btnDismiss.textContent = vi ? 'Bỏ qua' : 'Dismiss';
+        btnDismiss.addEventListener('click', () => dismissAllErrors());
+        wrap.appendChild(btnDismiss);
+
         document.getElementById('toastWrap').appendChild(wrap);
-        setTimeout(() => wrap.remove(), 8000);
+        setTimeout(() => wrap.remove(), 10000);
       } else {
         toast(t('grammar-clean'), 's');
       }

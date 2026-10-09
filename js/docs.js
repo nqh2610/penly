@@ -9,7 +9,11 @@
         docs = [];
       }
       if (!docs.length) createDoc(false);
-      else openDoc(docs[0].id, false);
+      else {
+        const lastId = localStorage.getItem('wc_last_doc');
+        const target = lastId && docs.find(d => d.id == lastId) ? Number(lastId) : docs[0].id;
+        openDoc(target, false);
+      }
       renderDocList();
     }
 
@@ -80,6 +84,7 @@
         }
       }
       currentId = id;
+      localStorage.setItem('wc_last_doc', id);
       improveOriginalText = null; // reset khi chuyển doc
       writingSource = null; // reset writing source khi chuyển doc
       const d = getDoc(id); if (!d) return;

@@ -1,208 +1,248 @@
-    // callSample is defined in outline.js
+// callSample is defined in outline.js
+// Hàm phát âm dùng chung, đồng bộ với setting giọng đọc và tốc độ
+window.speakText = function(text) {
+  if (!text) return;
+  const clean = text.replace(/<[^>]*>?/gm, '').replace(/[*_`]/g, '').trim();
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = 'en-US';
+  
+  // Lấy tốc độ chuẩn từ cài đặt (giống tts.js)
+  u.rate = typeof ttsGetRate === 'function' ? ttsGetRate() : +(localStorage.getItem('tts_rate') || 1);
+  
+  // Lấy đúng giọng đọc đang được chọn trong setting (giống tts.js)
+  const voice = typeof ttsGetVoice === 'function' ? ttsGetVoice() : null;
+  if (voice) u.voice = voice;
 
-    // ── TEXT PREPARATION ──
-    const VI_CHARS = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+};
 
-    // Strip grammar error spans from editor, returning plain text
-    function _cleanEditorText() {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = editor.innerHTML;
-      tmp.querySelectorAll('span.ge').forEach(s => s.replaceWith(document.createTextNode(s.textContent)));
-      return tmp.innerText || tmp.textContent || '';
+// Hàm tự động gắn nút phát âm vào panel Từ vựng & Cụm từ
+function _addTtsButtonsToPanel() {
+  const content = document.getElementById('pContent');
+  if (!content) return;
+
+  content.querySelectorAll('strong, blockquote p').forEach(el => {
+    if (el.querySelector('.dict-audio-btn')) return;
+    const text = el.textContent.trim();
+    if (!text || text.length > 100) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'dict-audio-btn';
+    btn.style.cssText = 'margin-left:6px;vertical-align:middle;background:none;border:none;color:var(--accent);cursor:pointer;';
+    btn.title = 'Listen';
+    btn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      speakText(text); 
+    };
+    el.appendChild(btn);
+  });
+}
+
+// ── TEXT PREPARATION ──
+const VI_CHARS = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g;
+
+// Strip grammar error spans from editor, returning plain text
+function _cleanEditorText() {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = editor.innerHTML;
+  tmp.querySelectorAll('span.ge').forEach(s => s.replaceWith(document.createTextNode(s.textContent)));
+  return tmp.innerText || tmp.textContent || '';
+}
+
+// Returns fraction of Vietnamese diacritic characters in a string
+function _viRatio(s) {
+  return ((s.match(VI_CHARS) || []).length) / Math.max(s.length, 1);
+}
+
+// Returns true if a sentence is predominantly Vietnamese (>40% vi chars)
+function _isViSentence(s) {
+  return _viRatio(s) > 0.08 && (s.match(VI_CHARS) || []).length >= 3;
+}
+
+// Strips Vietnamese-heavy sentences from text.
+// Returns { text, stripped } where stripped=true means something was removed.
+function _stripVietnamese(raw) {
+  const sentences = raw.split(/(?<=[.!?])\s+/);
+  const kept = sentences.filter(s => !_isViSentence(s));
+  if (kept.length === sentences.length) return { text: raw, stripped: false };
+  return { text: kept.join(' ').trim(), stripped: true };
+}
+
+// Returns an instruction string to inject into prompts when text has Vietnamese.
+// level: 'low' (<20% vi) → just an instruction; 'high' (≥20%) → after strip
+function _viInstruction(level) {
+  if (level === 'high') return '\nNOTE: Some Vietnamese sentences were removed before sending. Process only the English text above.';
+  return '\nNOTE: The text may contain occasional Vietnamese words or phrases. Ignore them — process only the English parts.';
+}
+
+// Prepares text for AI: detect Vi ratio → strip if heavy → trim to maxChars.
+// Returns { text, viNote } — viNote is an instruction string to append to the prompt.
+function _prepText(raw, maxChars, btnLabel) {
+  const isVi = uiLang !== 'en';
+  let text = raw.trim();
+  let viNote = '';
+
+  const ratio = _viRatio(text);
+
+  if (ratio >= 0.20) {
+    // Heavy Vietnamese — strip Vietnamese sentences (B)
+    const { text: stripped, stripped: didStrip } = _stripVietnamese(text);
+    if (didStrip) {
+      text = stripped;
+      viNote = _viInstruction('high');
+      toast(isVi
+        ? `⚠️ ${btnLabel}: Đã bỏ qua các câu tiếng Việt — chỉ xử lý phần tiếng Anh.`
+        : `⚠️ ${btnLabel}: Vietnamese sentences removed — processing English only.`, 'i');
     }
+  } else if (ratio > 0.05) {
+    // Light Vietnamese — keep text, inject instruction (C)
+    viNote = _viInstruction('low');
+  }
 
-    // Returns fraction of Vietnamese diacritic characters in a string
-    function _viRatio(s) {
-      return ((s.match(VI_CHARS) || []).length) / Math.max(s.length, 1);
-    }
+  // Trim to maxChars at a sentence boundary where possible
+  if (text.length > maxChars) {
+    const cut = text.lastIndexOf('.', maxChars);
+    text = cut > maxChars * 0.6 ? text.substring(0, cut + 1) : text.substring(0, maxChars);
+    toast(isVi
+      ? `📄 ${btnLabel}: Bài dài — chỉ phân tích ${maxChars} ký tự đầu để đảm bảo tốc độ.`
+      : `📄 ${btnLabel}: Long text — analysing first ${maxChars} chars for speed.`, 'i');
+  }
 
-    // Returns true if a sentence is predominantly Vietnamese (>40% vi chars)
-    function _isViSentence(s) {
-      return _viRatio(s) > 0.08 && (s.match(VI_CHARS) || []).length >= 3;
-    }
+  return { text, viNote };
+}
 
-    // Strips Vietnamese-heavy sentences from text.
-    // Returns { text, stripped } where stripped=true means something was removed.
-    function _stripVietnamese(raw) {
-      const sentences = raw.split(/(?<=[.!?])\s+/);
-      const kept = sentences.filter(s => !_isViSentence(s));
-      if (kept.length === sentences.length) return { text: raw, stripped: false };
-      return { text: kept.join(' ').trim(), stripped: true };
-    }
+// ── TOPIC VALIDATION ──
+const _btnCooldown = {};      // btnId -> timestamp
+const _topicValidCache = {};  // topic key -> true/false
+let _topicExtra = '';         // extra context added via clarify dialog
 
-    // Returns an instruction string to inject into prompts when text has Vietnamese.
-    // level: 'low' (<20% vi) → just an instruction; 'high' (≥20%) → after strip
-    function _viInstruction(level) {
-      if (level === 'high') return '\nNOTE: Some Vietnamese sentences were removed before sending. Process only the English text above.';
-      return '\nNOTE: The text may contain occasional Vietnamese words or phrases. Ignore them — process only the English parts.';
-    }
+function isCooldown(btnId) {
+  if (!btnId) return false;
+  const until = _btnCooldown[btnId] || 0;
+  if (Date.now() < until) {
+    const secs = Math.ceil((until - Date.now()) / 1000);
+    toast(uiLang === 'en' ? `Please wait ${secs}s before trying again.` : `Vui lòng chờ ${secs}s trước khi thử lại.`, 'i');
+    return true;
+  }
+  return false;
+}
 
-    // Prepares text for AI: detect Vi ratio → strip if heavy → trim to maxChars.
-    // Returns { text, viNote } — viNote is an instruction string to append to the prompt.
-    function _prepText(raw, maxChars, btnLabel) {
-      const isVi = uiLang !== 'en';
-      let text = raw.trim();
-      let viNote = '';
+function setCooldown(btnId, ms = 15000) {
+  if (btnId) _btnCooldown[btnId] = Date.now() + ms;
+}
 
-      const ratio = _viRatio(text);
+// Returns extra topic context (if user clarified), resets after use
+function consumeTopicExtra() {
+  const x = _topicExtra; _topicExtra = ''; return x;
+}
 
-      if (ratio >= 0.20) {
-        // Heavy Vietnamese — strip Vietnamese sentences (B)
-        const { text: stripped, stripped: didStrip } = _stripVietnamese(text);
-        if (didStrip) {
-          text = stripped;
-          viNote = _viInstruction('high');
-          toast(isVi
-            ? `⚠️ ${btnLabel}: Đã bỏ qua các câu tiếng Việt — chỉ xử lý phần tiếng Anh.`
-            : `⚠️ ${btnLabel}: Vietnamese sentences removed — processing English only.`, 'i');
-        }
-      } else if (ratio > 0.05) {
-        // Light Vietnamese — keep text, inject instruction (C)
-        viNote = _viInstruction('low');
-      }
+function _isObviousGibberish(tp) {
+  if (!/[a-zA-ZÀ-ỹ]/.test(tp)) return true;
+  const letters = tp.toLowerCase().replace(/[^a-z]/g, '');
+  if (letters.length > 4 && new Set(letters).size / letters.length < 0.25) return true;
+  return false;
+}
 
-      // Trim to maxChars at a sentence boundary where possible
-      if (text.length > maxChars) {
-        const cut = text.lastIndexOf('.', maxChars);
-        text = cut > maxChars * 0.6 ? text.substring(0, cut + 1) : text.substring(0, maxChars);
-        toast(isVi
-          ? `📄 ${btnLabel}: Bài dài — chỉ phân tích ${maxChars} ký tự đầu để đảm bảo tốc độ.`
-          : `📄 ${btnLabel}: Long text — analysing first ${maxChars} chars for speed.`, 'i');
-      }
+function _showClarifyDialog(resolve) {
+  const vi = uiLang !== 'en';
+  const overlay = document.getElementById('topicClarifyOverlay');
+  document.getElementById('topicClarifyTitle').textContent = vi ? 'Chủ đề chưa rõ' : 'Topic unclear';
+  document.getElementById('topicClarifyDesc').textContent = vi
+    ? 'AI chưa hiểu chủ đề này. Bạn muốn viết về điều gì cụ thể?'
+    : 'AI couldn\'t understand this topic. What specifically do you want to write about?';
+  document.getElementById('topicClarifyInput').placeholder = vi ? 'Mô tả thêm về chủ đề…' : 'Describe your topic further…';
+  document.getElementById('topicClarifyOK').textContent = vi ? 'Tiếp tục' : 'Continue';
+  document.getElementById('topicClarifyCancel').textContent = vi ? 'Huỷ' : 'Cancel';
+  document.getElementById('topicClarifyInput').value = '';
+  overlay.style.display = 'flex';
+  document.getElementById('topicClarifyInput').focus();
 
-      return { text, viNote };
-    }
+  const ok = document.getElementById('topicClarifyOK');
+  const cancel = document.getElementById('topicClarifyCancel');
+  function cleanup() {
+    overlay.style.display = 'none';
+    ok.replaceWith(ok.cloneNode(true));
+    cancel.replaceWith(cancel.cloneNode(true));
+  }
+  document.getElementById('topicClarifyOK').onclick = () => {
+    const extra = document.getElementById('topicClarifyInput').value.trim();
+    cleanup();
+    resolve(extra || null);
+  };
+  document.getElementById('topicClarifyCancel').onclick = () => { cleanup(); resolve(false); };
+  document.getElementById('topicClarifyInput').onkeydown = e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('topicClarifyOK').click(); }
+    if (e.key === 'Escape') { cleanup(); resolve(false); }
+  };
+}
 
-    // ── TOPIC VALIDATION ──
-    const _btnCooldown = {};      // btnId -> timestamp
-    const _topicValidCache = {};  // topic key -> true/false
-    let _topicExtra = '';         // extra context added via clarify dialog
+async function _validateTopicAI(tp) {
+  const key = tp.trim().toLowerCase();
+  if (key in _topicValidCache) return _topicValidCache[key];
+  const lk = getLicenseKey();
+  if (!lk) return true;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        penly_key: lk,
+        prompt: `Is "${tp.trim()}" a valid English writing topic? Reply only YES or NO.`,
+        temperature: 0,
+        max_tokens: 5,
+        model: 'llama-3.1-8b-instant'
+      })
+    });
+    const d = await res.json();
+    const valid = (d.content || '').trim().toUpperCase().startsWith('YES');
+    _topicValidCache[key] = valid;
+    return valid;
+  } catch { return true; }
+}
 
-    function isCooldown(btnId) {
-      if (!btnId) return false;
-      const until = _btnCooldown[btnId] || 0;
-      if (Date.now() < until) {
-        const secs = Math.ceil((until - Date.now()) / 1000);
-        toast(uiLang === 'en' ? `Please wait ${secs}s before trying again.` : `Vui lòng chờ ${secs}s trước khi thử lại.`, 'i');
-        return true;
-      }
-      return false;
-    }
+async function guardTopic(btnId) {
+  if (isCooldown(btnId)) return false;
+  const tp = (topic() || '').trim();
+  if (!tp) return true;
+  if (_isObviousGibberish(tp)) {
+    toast(uiLang === 'en' ? 'Please enter a real writing topic.' : 'Vui lòng nhập chủ đề thực sự.', 'i');
+    return false;
+  }
+  return true;
+}
 
-    function setCooldown(btnId, ms = 15000) {
-      if (btnId) _btnCooldown[btnId] = Date.now() + ms;
-    }
+async function callGrammar() {
+  if (!await guardTopic('btn-grammar')) return;
+  const raw = _cleanEditorText().trim();
+  if (!raw) return toast(t('no-text'));
+  const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Grammar check' : 'Kiểm tra lỗi');
+  const { toneWord, toneStd } = typeof getStandards === 'function' ? getStandards() : { toneWord: 'casual', toneStd: { contractions: true, firstPerson: true } };
+  const isCasual = ['casual', 'friendly', 'bạn bè', 'tự nhiên'].includes(toneWord.toLowerCase());
 
-    // Returns extra topic context (if user clarified), resets after use
-    function consumeTopicExtra() {
-      const x = _topicExtra; _topicExtra = ''; return x;
-    }
+  // Spin the button only — grammar injects into editor, no panel needed
+  const btnEl = document.getElementById('btn-grammar');
+  if (btnEl) btnEl.classList.add('loading');
+  const toneRules = [
+    toneStd.contractions ? '- Contractions (it\'s, don\'t, I\'m) are CORRECT for this tone — do NOT mark them as errors' : '- No contractions expected — mark missing apostrophes in contractions',
+    isCasual ? '- Casual/informal words (gonna, wanna, kinda, coz, yeah, hey) are INTENTIONAL for this tone — do NOT mark them as errors' : '',
+    '- Sentences starting with "Because", "And", "But", "So" are grammatically acceptable in modern English — do NOT mark them as errors',
+    '- Both British and American spelling are acceptable (colour/color, realise/realize) — do NOT flag either as wrong',
+    '- Proper nouns (names of people, places, brands) in any language are NEVER errors — do NOT mark them',
+  ].filter(Boolean).join('\n');
 
-    function _isObviousGibberish(tp) {
-      if (!/[a-zA-ZÀ-ỹ]/.test(tp)) return true;
-      const letters = tp.toLowerCase().replace(/[^a-z]/g, '');
-      if (letters.length > 4 && new Set(letters).size / letters.length < 0.25) return true;
-      return false;
-    }
+  // Detect capitalized words not at sentence start — likely proper nouns
+  const properNouns = [...new Set(
+    (text.match(/(?<=[.!?]\s+|\s)[A-Z][a-záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ]{1,}(?:\s[A-Z][a-z]{1,})?/g) || [])
+      .filter(w => !['I', 'The', 'A', 'An', 'In', 'On', 'At', 'To', 'Of', 'For', 'And', 'But', 'Or', 'So', 'Yet', 'Nor', 'Because', 'When', 'If', 'That', 'This', 'These', 'Those', 'He', 'She', 'It', 'We', 'They', 'My', 'Your', 'His', 'Her', 'Its', 'Our', 'Their'].includes(w))
+  )];
+  const properNounNote = properNouns.length
+    ? `\nPROPER NOUNS in this text — treat ALL of these as correct, never mark them: ${properNouns.join(', ')}`
+    : '';
 
-    function _showClarifyDialog(resolve) {
-      const vi = uiLang !== 'en';
-      const overlay = document.getElementById('topicClarifyOverlay');
-      document.getElementById('topicClarifyTitle').textContent = vi ? 'Chủ đề chưa rõ' : 'Topic unclear';
-      document.getElementById('topicClarifyDesc').textContent = vi
-        ? 'AI chưa hiểu chủ đề này. Bạn muốn viết về điều gì cụ thể?'
-        : 'AI couldn\'t understand this topic. What specifically do you want to write about?';
-      document.getElementById('topicClarifyInput').placeholder = vi ? 'Mô tả thêm về chủ đề…' : 'Describe your topic further…';
-      document.getElementById('topicClarifyOK').textContent = vi ? 'Tiếp tục' : 'Continue';
-      document.getElementById('topicClarifyCancel').textContent = vi ? 'Huỷ' : 'Cancel';
-      document.getElementById('topicClarifyInput').value = '';
-      overlay.style.display = 'flex';
-      document.getElementById('topicClarifyInput').focus();
-
-      const ok = document.getElementById('topicClarifyOK');
-      const cancel = document.getElementById('topicClarifyCancel');
-      function cleanup() {
-        overlay.style.display = 'none';
-        ok.replaceWith(ok.cloneNode(true));
-        cancel.replaceWith(cancel.cloneNode(true));
-      }
-      document.getElementById('topicClarifyOK').onclick = () => {
-        const extra = document.getElementById('topicClarifyInput').value.trim();
-        cleanup();
-        resolve(extra || null);
-      };
-      document.getElementById('topicClarifyCancel').onclick = () => { cleanup(); resolve(false); };
-      document.getElementById('topicClarifyInput').onkeydown = e => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('topicClarifyOK').click(); }
-        if (e.key === 'Escape') { cleanup(); resolve(false); }
-      };
-    }
-
-    async function _validateTopicAI(tp) {
-      const key = tp.trim().toLowerCase();
-      if (key in _topicValidCache) return _topicValidCache[key];
-      const lk = getLicenseKey();
-      if (!lk) return true;
-      try {
-        const res = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            penly_key: lk,
-            prompt: `Is "${tp.trim()}" a valid English writing topic? Reply only YES or NO.`,
-            temperature: 0,
-            max_tokens: 5,
-            model: 'llama-3.1-8b-instant'
-          })
-        });
-        const d = await res.json();
-        const valid = (d.content || '').trim().toUpperCase().startsWith('YES');
-        _topicValidCache[key] = valid;
-        return valid;
-      } catch { return true; }
-    }
-
-    async function guardTopic(btnId) {
-      if (isCooldown(btnId)) return false;
-      const tp = (topic() || '').trim();
-      if (!tp) return true;
-      if (_isObviousGibberish(tp)) {
-        toast(uiLang === 'en' ? 'Please enter a real writing topic.' : 'Vui lòng nhập chủ đề thực sự.', 'i');
-        return false;
-      }
-      return true;
-    }
-
-    async function callGrammar() {
-      if (!await guardTopic('btn-grammar')) return;
-      const raw = _cleanEditorText().trim();
-      if (!raw) return toast(t('no-text'));
-      const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Grammar check' : 'Kiểm tra lỗi');
-      const { toneWord, toneStd } = typeof getStandards === 'function' ? getStandards() : { toneWord: 'casual', toneStd: { contractions: true, firstPerson: true } };
-      const isCasual = ['casual', 'friendly', 'bạn bè', 'tự nhiên'].includes(toneWord.toLowerCase());
-
-      // Spin the button only — grammar injects into editor, no panel needed
-      const btnEl = document.getElementById('btn-grammar');
-      if (btnEl) btnEl.classList.add('loading');
-      const toneRules = [
-        toneStd.contractions ? '- Contractions (it\'s, don\'t, I\'m) are CORRECT for this tone — do NOT mark them as errors' : '- No contractions expected — mark missing apostrophes in contractions',
-        isCasual ? '- Casual/informal words (gonna, wanna, kinda, coz, yeah, hey) are INTENTIONAL for this tone — do NOT mark them as errors' : '',
-        '- Sentences starting with "Because", "And", "But", "So" are grammatically acceptable in modern English — do NOT mark them as errors',
-        '- Both British and American spelling are acceptable (colour/color, realise/realize) — do NOT flag either as wrong',
-        '- Proper nouns (names of people, places, brands) in any language are NEVER errors — do NOT mark them',
-      ].filter(Boolean).join('\n');
-
-      // Detect capitalized words not at sentence start — likely proper nouns
-      const properNouns = [...new Set(
-        (text.match(/(?<=[.!?]\s+|\s)[A-Z][a-záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ]{1,}(?:\s[A-Z][a-z]{1,})?/g) || [])
-        .filter(w => !['I','The','A','An','In','On','At','To','Of','For','And','But','Or','So','Yet','Nor','Because','When','If','That','This','These','Those','He','She','It','We','They','My','Your','His','Her','Its','Our','Their'].includes(w))
-      )];
-      const properNounNote = properNouns.length
-        ? `\nPROPER NOUNS in this text — treat ALL of these as correct, never mark them: ${properNouns.join(', ')}`
-        : '';
-
-      const r = await callAI(
-        `You are a strict English proofreader. Fix ERRORS ONLY — do NOT improve style, word choice, or sentence structure.${viNote}${properNounNote}
+  const r = await callAI(
+    `You are a strict English proofreader. Fix ERRORS ONLY — do NOT improve style, word choice, or sentence structure.${viNote}${properNounNote}
 
 user text:
 """
@@ -236,118 +276,118 @@ STRICT RULES — failure to follow these makes the output useless:
 - data-fix = the corrected text only (no explanation)
 - Zero errors → return the text exactly as-is, character for character
 - Return ONLY the corrected HTML string. No explanation, no markdown, no code blocks.`,
-        null, true, true
-      );
-      if (btnEl) btnEl.classList.remove('loading');
-      if (!r) return;
-      setCooldown('btn-grammar');
-      let clean = strip(r);
-      // Strip triple-quote delimiters AI sometimes echoes back
-      clean = clean.replace(/^"""\s*/m, '').replace(/\s*"""$/m, '').trim();
-      // Remove spans where data-fix is identical to the wrapped text (AI hallucination)
-      clean = clean.replace(/<span class="ge" data-fix="([^"]*)"[^>]*>([^<]*)<\/span>/g, (match, fix, orig) => {
-        return fix.trim().toLowerCase() === orig.trim().toLowerCase() ? orig : match;
-      });
-      // Save original HTML for undo before overwriting
-      editor.innerHTML = clean;
-      const n = (clean.match(/<span class="ge"/g) || []).length;
-      if (n <= 0) toast(t('grammar-clean'), 's');
-    }
+    null, true, true
+  );
+  if (btnEl) btnEl.classList.remove('loading');
+  if (!r) return;
+  setCooldown('btn-grammar');
+  let clean = strip(r);
+  // Strip triple-quote delimiters AI sometimes echoes back
+  clean = clean.replace(/^"""\s*/m, '').replace(/\s*"""$/m, '').trim();
+  // Remove spans where data-fix is identical to the wrapped text (AI hallucination)
+  clean = clean.replace(/<span class="ge" data-fix="([^"]*)"[^>]*>([^<]*)<\/span>/g, (match, fix, orig) => {
+    return fix.trim().toLowerCase() === orig.trim().toLowerCase() ? orig : match;
+  });
+  // Save original HTML for undo before overwriting
+  editor.innerHTML = clean;
+  const n = (clean.match(/<span class="ge"/g) || []).length;
+  if (n <= 0) toast(t('grammar-clean'), 's');
+}
 
-    window.applyFix = el => {
-      tooltip.style.display = 'none';
-      el.parentNode.replaceChild(document.createTextNode(el.getAttribute('data-fix')), el);
-      editor.dispatchEvent(new Event('input'));
-      // Update count in action bar if present
-      const bar = document.querySelector('.grammar-action-bar');
-      if (bar) {
-        const remaining = editor.querySelectorAll('span.ge').length;
-        if (remaining === 0) { bar.remove(); toast(uiLang === 'en' ? 'All errors fixed!' : 'Đã sửa hết lỗi!', 's'); }
-        else bar.querySelector('span').textContent = (uiLang !== 'en' ? `${remaining} lỗi còn lại` : `${remaining} error${remaining > 1 ? 's' : ''} remaining`);
+window.applyFix = el => {
+  tooltip.style.display = 'none';
+  el.parentNode.replaceChild(document.createTextNode(el.getAttribute('data-fix')), el);
+  editor.dispatchEvent(new Event('input'));
+  // Update count in action bar if present
+  const bar = document.querySelector('.grammar-action-bar');
+  if (bar) {
+    const remaining = editor.querySelectorAll('span.ge').length;
+    if (remaining === 0) { bar.remove(); toast(uiLang === 'en' ? 'All errors fixed!' : 'Đã sửa hết lỗi!', 's'); }
+    else bar.querySelector('span').textContent = (uiLang !== 'en' ? `${remaining} lỗi còn lại` : `${remaining} error${remaining > 1 ? 's' : ''} remaining`);
+  }
+};
+
+window.fixAllErrors = () => {
+  editor.querySelectorAll('span.ge').forEach(s => {
+    s.parentNode.replaceChild(document.createTextNode(s.getAttribute('data-fix')), s);
+  });
+  editor.dispatchEvent(new Event('input'));
+  document.querySelector('.grammar-action-bar')?.remove();
+  toast(uiLang === 'en' ? 'All errors fixed!' : 'Đã sửa tất cả lỗi!', 's');
+};
+
+window.dismissAllErrors = () => {
+  editor.querySelectorAll('span.ge').forEach(s => {
+    s.parentNode.replaceChild(document.createTextNode(s.textContent), s);
+  });
+  editor.dispatchEvent(new Event('input'));
+  document.querySelector('.grammar-action-bar')?.remove();
+};
+
+
+async function callImprove() {
+  if (!await guardTopic('btn-improve')) return;
+  const raw = _cleanEditorText().trim();
+  if (!raw) return toast(t('no-text'));
+  const { text, viNote } = _prepText(raw, 1200, uiLang === 'en' ? 'Improve' : 'Nâng cấp');
+
+  // lưu bản gốc lần đầu; reset nếu user đã sửa đáng kể so với bản gốc
+  if (!improveOriginalText) {
+    improveOriginalText = text;
+  } else {
+    const sim = text.length > 0 ? Math.min(improveOriginalText.length, text.length) / Math.max(improveOriginalText.length, text.length) : 0;
+    if (sim < 0.6) improveOriginalText = text;
+  }
+
+  const isFirstImprove = improveOriginalText === text;
+  const baseText = improveOriginalText;
+
+  // Giải pháp 2: cảnh báo nếu đã improve rồi (text hiện tại khác bản gốc)
+  if (!isFirstImprove) {
+    const vi = uiLang !== 'en';
+    const confirmed = await new Promise(resolve => {
+      const modal = document.getElementById('regenModal');
+      document.getElementById('regenModalTitle').textContent = vi ? 'Nâng cấp thêm?' : 'Improve again?';
+      document.getElementById('regenModalDesc').textContent = vi
+        ? 'Bài viết của bạn đã được nâng cấp. Nâng cấp thêm có thể làm thay đổi văn phong gốc của bạn.'
+        : 'Your writing has already been improved. Improving again may drift further from your original voice.';
+      const cancelBtn = modal.querySelector('.regen-modal-cancel');
+      cancelBtn.textContent = vi ? 'Thôi' : 'Cancel';
+      const labelEl = document.getElementById('regenModalBtnLabel');
+      if (labelEl) labelEl.textContent = vi ? 'Nâng cấp thêm' : 'Improve anyway';
+      modal.classList.add('open');
+      // temporarily override global handlers
+      const origConfirm = window.confirmRegen;
+      const origClose = window.closeRegenModal;
+      function cleanup() {
+        modal.classList.remove('open');
+        window.confirmRegen = origConfirm;
+        window.closeRegenModal = origClose;
       }
-    };
+      window.confirmRegen = () => { cleanup(); resolve(true); };
+      window.closeRegenModal = () => { cleanup(); resolve(false); };
+    });
+    if (!confirmed) return;
+  }
 
-    window.fixAllErrors = () => {
-      editor.querySelectorAll('span.ge').forEach(s => {
-        s.parentNode.replaceChild(document.createTextNode(s.getAttribute('data-fix')), s);
-      });
-      editor.dispatchEvent(new Event('input'));
-      document.querySelector('.grammar-action-bar')?.remove();
-      toast(uiLang === 'en' ? 'All errors fixed!' : 'Đã sửa tất cả lỗi!', 's');
-    };
+  setPanelTitle('panel-improve');
 
-    window.dismissAllErrors = () => {
-      editor.querySelectorAll('span.ge').forEach(s => {
-        s.parentNode.replaceChild(document.createTextNode(s.textContent), s);
-      });
-      editor.dispatchEvent(new Event('input'));
-      document.querySelector('.grammar-action-bar')?.remove();
-    };
+  const { lvlCode: improveLevel, lvlStd, toneStd } = typeof getStandards === 'function' ? getStandards() : { lvlCode: (lvlSel.value.match(/^[ABC]/) || ['B'])[0], lvlStd: null, toneStd: null };
+  const improveRule = improveLevel === 'A'
+    ? 'Fix unnatural phrasing → more natural simple expressions; add a basic connector where missing; correct word order issues'
+    : improveLevel === 'C'
+      ? 'Elevate to sophisticated vocabulary; vary sentence structures; add discourse markers; improve cohesion and coherence'
+      : 'Replace repetitive/weak words with more precise vocabulary; combine short choppy sentences; add transitional phrases';
+  const styleRules = [
+    'NEVER use em dash (—) — use comma or "and/but" instead',
+    lvlStd ? `Sentences: ${lvlStd.sentences}` : '',
+    lvlStd ? `Connectors: use ${lvlStd.connectors}` : '',
+    toneStd && !toneStd.contractions ? 'No contractions' : '',
+    toneStd && !toneStd.firstPerson ? 'No first person ("I")' : '',
+  ].filter(Boolean).join('; ');
 
-
-    async function callImprove() {
-      if (!await guardTopic('btn-improve')) return;
-      const raw = _cleanEditorText().trim();
-      if (!raw) return toast(t('no-text'));
-      const { text, viNote } = _prepText(raw, 1200, uiLang === 'en' ? 'Improve' : 'Nâng cấp');
-
-      // lưu bản gốc lần đầu; reset nếu user đã sửa đáng kể so với bản gốc
-      if (!improveOriginalText) {
-        improveOriginalText = text;
-      } else {
-        const sim = text.length > 0 ? Math.min(improveOriginalText.length, text.length) / Math.max(improveOriginalText.length, text.length) : 0;
-        if (sim < 0.6) improveOriginalText = text;
-      }
-
-      const isFirstImprove = improveOriginalText === text;
-      const baseText = improveOriginalText;
-
-      // Giải pháp 2: cảnh báo nếu đã improve rồi (text hiện tại khác bản gốc)
-      if (!isFirstImprove) {
-        const vi = uiLang !== 'en';
-        const confirmed = await new Promise(resolve => {
-          const modal = document.getElementById('regenModal');
-          document.getElementById('regenModalTitle').textContent = vi ? 'Nâng cấp thêm?' : 'Improve again?';
-          document.getElementById('regenModalDesc').textContent = vi
-            ? 'Bài viết của bạn đã được nâng cấp. Nâng cấp thêm có thể làm thay đổi văn phong gốc của bạn.'
-            : 'Your writing has already been improved. Improving again may drift further from your original voice.';
-          const cancelBtn = modal.querySelector('.regen-modal-cancel');
-          cancelBtn.textContent = vi ? 'Thôi' : 'Cancel';
-          const labelEl = document.getElementById('regenModalBtnLabel');
-          if (labelEl) labelEl.textContent = vi ? 'Nâng cấp thêm' : 'Improve anyway';
-          modal.classList.add('open');
-          // temporarily override global handlers
-          const origConfirm = window.confirmRegen;
-          const origClose = window.closeRegenModal;
-          function cleanup() {
-            modal.classList.remove('open');
-            window.confirmRegen = origConfirm;
-            window.closeRegenModal = origClose;
-          }
-          window.confirmRegen = () => { cleanup(); resolve(true); };
-          window.closeRegenModal = () => { cleanup(); resolve(false); };
-        });
-        if (!confirmed) return;
-      }
-
-      setPanelTitle('panel-improve');
-
-      const { lvlCode: improveLevel, lvlStd, toneStd } = typeof getStandards === 'function' ? getStandards() : { lvlCode: (lvlSel.value.match(/^[ABC]/) || ['B'])[0], lvlStd: null, toneStd: null };
-      const improveRule = improveLevel === 'A'
-        ? 'Fix unnatural phrasing → more natural simple expressions; add a basic connector where missing; correct word order issues'
-        : improveLevel === 'C'
-          ? 'Elevate to sophisticated vocabulary; vary sentence structures; add discourse markers; improve cohesion and coherence'
-          : 'Replace repetitive/weak words with more precise vocabulary; combine short choppy sentences; add transitional phrases';
-      const styleRules = [
-        'NEVER use em dash (—) — use comma or "and/but" instead',
-        lvlStd ? `Sentences: ${lvlStd.sentences}` : '',
-        lvlStd ? `Connectors: use ${lvlStd.connectors}` : '',
-        toneStd && !toneStd.contractions ? 'No contractions' : '',
-        toneStd && !toneStd.firstPerson ? 'No first person ("I")' : '',
-      ].filter(Boolean).join('; ');
-
-      const r = await callAI(
-        `You are an expert English editor and ESL writing coach. IMPROVE the user's writing — do not rewrite or replace their ideas.${viNote}
+  const r = await callAI(
+    `You are an expert English editor and ESL writing coach. IMPROVE the user's writing — do not rewrite or replace their ideas.${viNote}
 
 user's ORIGINAL text:
 """
@@ -389,119 +429,119 @@ Output format — follow EXACTLY:
 
 ## 💡 ${uiLang === 'en' ? 'Practice tips' : 'Mẹo luyện tập'}
 *(${uiLang === 'en' ? '1–2 practical tips based on the changes above' : '1–2 mẹo thực dụng dựa trên những thay đổi trên'})*`,
-        'btn-improve'
-      );
-      if (!r) return;
+    'btn-improve'
+  );
+  if (!r) return;
 
-      // extract improved text — try marker first, fallback to first paragraph block
-      let improvedText = null;
-      const markerMatch = r.match(/%%S%%\s*([\s\S]*?)\s*%%E%%/);
-      if (markerMatch) {
-        improvedText = markerMatch[1].trim();
-      } else {
-        // fallback: grab text between the "✨" heading and the next "##" section
-        const fallback = r.match(/##\s*✨[^\n]*\n(?:\*[^\n]*\*\n)?\n?([\s\S]*?)(?:\n##|\n\|)/);
-        if (fallback) improvedText = fallback[1].trim();
-        // last resort: first non-empty paragraph that isn't a heading or table
-        if (!improvedText) {
-          const paras = r.split(/\n{2,}/);
-          const plain = paras.find(p => p.trim() && !p.startsWith('#') && !p.startsWith('|') && !p.startsWith('*'));
-          if (plain) improvedText = plain.trim();
-        }
-      }
-
-      // strip markers from displayed markdown
-      const displayMd = r.replace(/%%S%%[\s\S]*?%%E%%/,
-        improvedText ? improvedText : '');
-
-      openPanel(t('panel-improve'), displayMd, null);
-      setCooldown('btn-improve');
-
-      // inject "use this version" button at top of panel body
-      if (improvedText) {
-        const pContent = document.getElementById('pContent');
-
-        // friendly inline confirm bar — no browser dialog
-        const confirmBar = document.createElement('div');
-        confirmBar.className = 'improve-confirm-bar';
-        confirmBar.innerHTML =
-          `<span class="improve-confirm-msg">` +
-          `<i class="bi bi-stars"></i> ` +
-          (uiLang === 'en'
-            ? 'Apply this version to your document?'
-            : 'Áp dụng bản nâng cấp vào bài viết?') +
-          `</span>` +
-          `<div class="improve-confirm-btns">` +
-          `<button class="improve-yes"><i class="bi bi-check-lg"></i> ${uiLang === 'en' ? 'Yes, apply' : 'Áp dụng'}</button>` +
-          `<button class="improve-no">${uiLang === 'en' ? 'Keep original' : 'Giữ bản gốc'}</button>` +
-          `</div>`;
-
-        const btn = document.createElement('button');
-        btn.className = 'btn-use-improved';
-        btn.innerHTML = `<i class="bi bi-arrow-left-circle-fill"></i> ${uiLang === 'en' ? 'Use this version' : 'Dùng bản này'}`;
-
-        btn.onclick = () => {
-          // toggle confirm bar
-          const showing = confirmBar.classList.toggle('show');
-          btn.style.display = showing ? 'none' : '';
-        };
-
-        confirmBar.querySelector('.improve-yes').onclick = () => {
-          const plain = improvedText.replace(/\*\*(.*?)\*\*/g, '$1');
-          // Convert plain text paragraphs to HTML — contenteditable uses <div> per paragraph
-          const paras = plain.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
-          editor.innerHTML = paras.length > 1
-            ? paras.map(p => `<div>${p.replace(/\n/g, '<br>')}</div>`).join('')
-            : plain.replace(/\n/g, '<br>');
-          editor.dispatchEvent(new Event('input'));
-          if (typeof writingSource !== 'undefined') writingSource = 'improve';
-          confirmBar.classList.remove('show');
-          btn.style.display = '';
-          closePanel();
-          toast(uiLang === 'en' ? '✨ Applied! Keep writing.' : '✨ Đã áp dụng! Tiếp tục viết nhé.', 's');
-        };
-
-        confirmBar.querySelector('.improve-no').onclick = () => {
-          confirmBar.classList.remove('show');
-          btn.style.display = '';
-        };
-
-        pContent.insertBefore(confirmBar, pContent.firstChild);
-        pContent.insertBefore(btn, pContent.firstChild);
-      }
+  // extract improved text — try marker first, fallback to first paragraph block
+  let improvedText = null;
+  const markerMatch = r.match(/%%S%%\s*([\s\S]*?)\s*%%E%%/);
+  if (markerMatch) {
+    improvedText = markerMatch[1].trim();
+  } else {
+    // fallback: grab text between the "✨" heading and the next "##" section
+    const fallback = r.match(/##\s*✨[^\n]*\n(?:\*[^\n]*\*\n)?\n?([\s\S]*?)(?:\n##|\n\|)/);
+    if (fallback) improvedText = fallback[1].trim();
+    // last resort: first non-empty paragraph that isn't a heading or table
+    if (!improvedText) {
+      const paras = r.split(/\n{2,}/);
+      const plain = paras.find(p => p.trim() && !p.startsWith('#') && !p.startsWith('|') && !p.startsWith('*'));
+      if (plain) improvedText = plain.trim();
     }
+  }
 
-    async function callReview() {
-      if (!await guardTopic('btn-review')) return;
-      const raw = _cleanEditorText().trim();
-      if (!raw) return toast(t('no-text-review'));
-      const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Review' : 'Nhận xét');
-      setPanelTitle('panel-review');
-      const tp = topic();
-      const wc = text.trim().split(/\s+/).filter(Boolean).length;
-      const vi = uiLang !== 'en';
+  // strip markers from displayed markdown
+  const displayMd = r.replace(/%%S%%[\s\S]*?%%E%%/,
+    improvedText ? improvedText : '');
 
-      // Guard: reject gibberish / too-short input before calling AI
-      if (wc < 8) {
-        return toast(vi ? 'Viết ít nhất 8 từ để nhận nhận xét.' : 'Write at least 8 words to get feedback.', '');
-      }
-      // Detect gibberish: ratio of real word characters vs total is too low
-      const alphaRatio = (text.match(/[a-zA-ZÀ-ỹ]/g) || []).length / text.length;
-      if (alphaRatio < 0.5) {
-        return toast(vi ? 'Nội dung không hợp lệ. Hãy viết bằng tiếng Anh.' : 'Text does not look like real writing. Please write in English.', '');
-      }
-      // Detect repeated characters / keyboard mashing (e.g. "asdfasdf", "aaaaaaa")
-      const uniqueWords = new Set(text.toLowerCase().match(/[a-z]{2,}/g) || []);
-      const totalWords = (text.toLowerCase().match(/[a-z]{2,}/g) || []).length;
-      if (totalWords > 3 && uniqueWords.size / totalWords < 0.25) {
-        return toast(vi ? 'Nội dung có vẻ không phải văn bản thật. Hãy viết một đoạn văn thực sự.' : 'Text looks like random input. Please write a real paragraph.', '');
-      }
+  openPanel(t('panel-improve'), displayMd, null);
+  setCooldown('btn-improve');
 
-      let reviewPrompt;
+  // inject "use this version" button at top of panel body
+  if (improvedText) {
+    const pContent = document.getElementById('pContent');
 
-      if (wc < 60) {
-        // short text — lightweight feedback proportional to length
-        reviewPrompt = `You are a supportive but honest ESL writing teacher. The student wrote a short piece (${wc} word${wc === 1 ? '' : 's'}).${viNote}
+    // friendly inline confirm bar — no browser dialog
+    const confirmBar = document.createElement('div');
+    confirmBar.className = 'improve-confirm-bar';
+    confirmBar.innerHTML =
+      `<span class="improve-confirm-msg">` +
+      `<i class="bi bi-stars"></i> ` +
+      (uiLang === 'en'
+        ? 'Apply this version to your document?'
+        : 'Áp dụng bản nâng cấp vào bài viết?') +
+      `</span>` +
+      `<div class="improve-confirm-btns">` +
+      `<button class="improve-yes"><i class="bi bi-check-lg"></i> ${uiLang === 'en' ? 'Yes, apply' : 'Áp dụng'}</button>` +
+      `<button class="improve-no">${uiLang === 'en' ? 'Keep original' : 'Giữ bản gốc'}</button>` +
+      `</div>`;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-use-improved';
+    btn.innerHTML = `<i class="bi bi-arrow-left-circle-fill"></i> ${uiLang === 'en' ? 'Use this version' : 'Dùng bản này'}`;
+
+    btn.onclick = () => {
+      // toggle confirm bar
+      const showing = confirmBar.classList.toggle('show');
+      btn.style.display = showing ? 'none' : '';
+    };
+
+    confirmBar.querySelector('.improve-yes').onclick = () => {
+      const plain = improvedText.replace(/\*\*(.*?)\*\*/g, '$1');
+      // Convert plain text paragraphs to HTML — contenteditable uses <div> per paragraph
+      const paras = plain.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+      editor.innerHTML = paras.length > 1
+        ? paras.map(p => `<div>${p.replace(/\n/g, '<br>')}</div>`).join('')
+        : plain.replace(/\n/g, '<br>');
+      editor.dispatchEvent(new Event('input'));
+      if (typeof writingSource !== 'undefined') writingSource = 'improve';
+      confirmBar.classList.remove('show');
+      btn.style.display = '';
+      closePanel();
+      toast(uiLang === 'en' ? '✨ Applied! Keep writing.' : '✨ Đã áp dụng! Tiếp tục viết nhé.', 's');
+    };
+
+    confirmBar.querySelector('.improve-no').onclick = () => {
+      confirmBar.classList.remove('show');
+      btn.style.display = '';
+    };
+
+    pContent.insertBefore(confirmBar, pContent.firstChild);
+    pContent.insertBefore(btn, pContent.firstChild);
+  }
+}
+
+async function callReview() {
+  if (!await guardTopic('btn-review')) return;
+  const raw = _cleanEditorText().trim();
+  if (!raw) return toast(t('no-text-review'));
+  const { text, viNote } = _prepText(raw, 1500, uiLang === 'en' ? 'Review' : 'Nhận xét');
+  setPanelTitle('panel-review');
+  const tp = topic();
+  const wc = text.trim().split(/\s+/).filter(Boolean).length;
+  const vi = uiLang !== 'en';
+
+  // Guard: reject gibberish / too-short input before calling AI
+  if (wc < 8) {
+    return toast(vi ? 'Viết ít nhất 8 từ để nhận nhận xét.' : 'Write at least 8 words to get feedback.', '');
+  }
+  // Detect gibberish: ratio of real word characters vs total is too low
+  const alphaRatio = (text.match(/[a-zA-ZÀ-ỹ]/g) || []).length / text.length;
+  if (alphaRatio < 0.5) {
+    return toast(vi ? 'Nội dung không hợp lệ. Hãy viết bằng tiếng Anh.' : 'Text does not look like real writing. Please write in English.', '');
+  }
+  // Detect repeated characters / keyboard mashing (e.g. "asdfasdf", "aaaaaaa")
+  const uniqueWords = new Set(text.toLowerCase().match(/[a-z]{2,}/g) || []);
+  const totalWords = (text.toLowerCase().match(/[a-z]{2,}/g) || []).length;
+  if (totalWords > 3 && uniqueWords.size / totalWords < 0.25) {
+    return toast(vi ? 'Nội dung có vẻ không phải văn bản thật. Hãy viết một đoạn văn thực sự.' : 'Text looks like random input. Please write a real paragraph.', '');
+  }
+
+  let reviewPrompt;
+
+  if (wc < 60) {
+    // short text — lightweight feedback proportional to length
+    reviewPrompt = `You are a supportive but honest ESL writing teacher. The student wrote a short piece (${wc} word${wc === 1 ? '' : 's'}).${viNote}
 
 Topic: "${tp || 'not specified'}"
 Text:
@@ -523,20 +563,20 @@ Give brief pedagogical feedback. Use 2 sections only:
 ## ${vi ? '💡 Gợi ý cải thiện' : '💡 How to improve'}
 *(${vi ? 'Chỉ nêu vấn đề thực sự — trích dẫn → viết lại → giải thích ngắn. Nếu không có vấn đề, nói thẳng bài viết tốt.' : 'Only real issues — quote → rewrite → brief reason. If there are none, say the writing is good.'})*`;
 
-      } else {
-        // full review for substantial text
-        const srcCtx = typeof writingSource !== 'undefined' && writingSource;
-        const srcInstruction = srcCtx === 'sample'
-          ? (vi
-            ? '\nLƯU Ý: Bài này được chèn từ bài mẫu AI. Đánh giá như bài học mẫu — chỉ ra điểm hay để học theo, gợi ý cách người học tự viết lại theo phong cách riêng.'
-            : '\nNOTE: This is an AI-generated sample essay the user is studying. Evaluate it as a model text — highlight what makes it effective and suggest how the learner could adapt it in their own voice.')
-          : srcCtx === 'improve'
-          ? (vi
-            ? '\nLƯU Ý: Bài này đã được AI nâng cấp. Tập trung vào những gì đã tốt, chỉ nêu những điểm còn có thể tinh chỉnh — không nhắc lại lỗi đã được sửa.'
-            : '\nNOTE: This text has been refined by AI. Focus on what works well, only flag what could still be improved — do not re-flag issues already addressed.')
-          : '';
+  } else {
+    // full review for substantial text
+    const srcCtx = typeof writingSource !== 'undefined' && writingSource;
+    const srcInstruction = srcCtx === 'sample'
+      ? (vi
+        ? '\nLƯU Ý: Bài này được chèn từ bài mẫu AI. Đánh giá như bài học mẫu — chỉ ra điểm hay để học theo, gợi ý cách người học tự viết lại theo phong cách riêng.'
+        : '\nNOTE: This is an AI-generated sample essay the user is studying. Evaluate it as a model text — highlight what makes it effective and suggest how the learner could adapt it in their own voice.')
+      : srcCtx === 'improve'
+        ? (vi
+          ? '\nLƯU Ý: Bài này đã được AI nâng cấp. Tập trung vào những gì đã tốt, chỉ nêu những điểm còn có thể tinh chỉnh — không nhắc lại lỗi đã được sửa.'
+          : '\nNOTE: This text has been refined by AI. Focus on what works well, only flag what could still be improved — do not re-flag issues already addressed.')
+        : '';
 
-        reviewPrompt = `You are a supportive but rigorous English writing teacher and language pedagogy specialist.${viNote}
+    reviewPrompt = `You are a supportive but rigorous English writing teacher and language pedagogy specialist.${viNote}
 
 CALIBRATION RULES — follow strictly:
 1. Only praise what genuinely works — quote the specific sentence or phrase and explain WHY it is effective
@@ -561,70 +601,71 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}. IMPORTANT: 
 
 ## ✅ ${vi ? 'Điểm làm tốt' : 'What works well'}
 *(${vi
-  ? 'Chỉ nêu những điểm thực sự tốt — trích dẫn câu/từ cụ thể → giải thích tại sao hiệu quả. Khen nếu câu/từ phù hợp đúng trình độ đang chọn.'
-  : 'Only genuinely strong points — quote specific sentence or phrase → explain why it works. Praise when vocabulary and sentence length match the selected level.'})*
+        ? 'Chỉ nêu những điểm thực sự tốt — trích dẫn câu/từ cụ thể → giải thích tại sao hiệu quả. Khen nếu câu/từ phù hợp đúng trình độ đang chọn.'
+        : 'Only genuinely strong points — quote specific sentence or phrase → explain why it works. Praise when vocabulary and sentence length match the selected level.'})*
 
 ## ⚠️ ${vi ? 'Cần cải thiện' : 'Areas to improve'}
 *(${vi
-  ? `Chỉ nêu vấn đề thực sự: lỗi ngữ pháp, từ dùng sai, câu không tự nhiên. KHÔNG yêu cầu người dùng viết đơn giản hơn nếu bài đang viết tốt hơn trình độ ${lvlSel.value} — đó là điều đáng khen, không phải lỗi. Với mỗi vấn đề: trích dẫn câu gốc → viết lại → giải thích ngắn.`
-  : `Only flag real issues: grammar errors, wrong word choice, unnatural phrasing. Do NOT ask the student to simplify writing that exceeds ${lvlSel.value} level — that is growth, not a mistake. For each issue: quote original → rewrite → brief explanation.`})*
+        ? `Chỉ nêu vấn đề thực sự: lỗi ngữ pháp, từ dùng sai, câu không tự nhiên. KHÔNG yêu cầu người dùng viết đơn giản hơn nếu bài đang viết tốt hơn trình độ ${lvlSel.value} — đó là điều đáng khen, không phải lỗi. Với mỗi vấn đề: trích dẫn câu gốc → viết lại → giải thích ngắn.`
+        : `Only flag real issues: grammar errors, wrong word choice, unnatural phrasing. Do NOT ask the student to simplify writing that exceeds ${lvlSel.value} level — that is growth, not a mistake. For each issue: quote original → rewrite → brief explanation.`})*
 
 ## 🎯 ${vi ? 'Nội dung & mạch văn' : 'Content & flow'}
 *(${vi
-  ? '2–3 câu thẳng thắn: Bài có đủ ý không? Các đoạn/câu có liên kết tự nhiên không? Có phù hợp với độc giả và văn phong đã chọn không? Chỉ nhận xét những gì thực sự đúng với bài này.'
-  : '2–3 honest sentences: Does the essay cover the topic adequately? Do paragraphs connect naturally? Is it consistent with the selected tone and audience? Only comment on what actually applies.'})*
+        ? '2–3 câu thẳng thắn: Bài có đủ ý không? Các đoạn/câu có liên kết tự nhiên không? Có phù hợp với độc giả và văn phong đã chọn không? Chỉ nhận xét những gì thực sự đúng với bài này.'
+        : '2–3 honest sentences: Does the essay cover the topic adequately? Do paragraphs connect naturally? Is it consistent with the selected tone and audience? Only comment on what actually applies.'})*
 
 ## 📊 ${vi ? 'Trình độ & định hướng' : 'Level & next step'}
 *(${vi
-  ? `Đánh giá trình độ CEFR thực tế của bài dựa trên bằng chứng cụ thể. Nếu bài vượt trình độ ${lvlSel.value} đang chọn thì nói rõ — đây là tín hiệu tích cực. Đề xuất 1 kỹ năng cụ thể để tiếp tục phát triển.`
-  : `Assess the actual CEFR level based on specific evidence. If the writing exceeds the selected ${lvlSel.value} level, say so clearly — that is a positive sign. Suggest 1 concrete skill to keep growing.`})*`;
+        ? `Đánh giá trình độ CEFR thực tế của bài dựa trên bằng chứng cụ thể. Nếu bài vượt trình độ ${lvlSel.value} đang chọn thì nói rõ — đây là tín hiệu tích cực. Đề xuất 1 kỹ năng cụ thể để tiếp tục phát triển.`
+        : `Assess the actual CEFR level based on specific evidence. If the writing exceeds the selected ${lvlSel.value} level, say so clearly — that is a positive sign. Suggest 1 concrete skill to keep growing.`})*`;
+  }
+
+  const r = await callAI(reviewPrompt, 'btn-review');
+  if (r) { setCooldown('btn-review'); openPanel(t('panel-review'), r, null); }
+}
+
+async function callVocab(forceRegen = false) {
+  if (!await guardTopic('btn-vocab')) return;
+  const tp = topic(); const text = editor.innerText.trim();
+  if (!tp && !text) return toast(t('no-text-vocab'));
+  setPanelTitle('panel-vocab');
+
+  const d = getDoc(currentId);
+  const vocabKey = `${tp}|${lvlSel.value}|${uiLang}`;
+  const lsVocabKey = `vocab3|${vocabKey}`;
+
+  function _clearVocabCache() {
+    if (d) { delete d.vocab; delete d.vocabKey; saveDocs(); }
+    try { localStorage.removeItem(lsVocabKey); } catch (_) { }
+  }
+
+  function _openVocabPanel(md) {
+    openPanel(t('panel-vocab'), md, null);
+    _addTtsButtonsToPanel();
+    _setRegenFn(() => { _clearVocabCache(); callVocab(true); });
+    const hint = document.createElement('p');
+    hint.className = 'panel-regen-hint';
+    hint.innerHTML = uiLang === 'en'
+      ? `Not satisfied? <button class="panel-regen-link" onclick="regenPanel()">↻ Regenerate</button>`
+      : `Chưa ưng? <button class="panel-regen-link" onclick="regenPanel()">↻ Tạo lại</button>`;
+    document.getElementById('pContent').appendChild(hint);
+  }
+
+  if (!forceRegen) {
+    if (d && d.vocab && d.vocabKey === vocabKey) { _openVocabPanel(d.vocab); return; }
+    try {
+      const lsCached = localStorage.getItem(lsVocabKey);
+      if (lsCached) {
+        if (d) { d.vocab = lsCached; d.vocabKey = vocabKey; saveDocs(); }
+        _openVocabPanel(lsCached);
+        return;
       }
+    } catch (_) { }
+  } else {
+    _clearVocabCache();
+  }
 
-      const r = await callAI(reviewPrompt, 'btn-review');
-      if (r) { setCooldown('btn-review'); openPanel(t('panel-review'), r, null); }
-    }
-
-    async function callVocab(forceRegen = false) {
-      if (!await guardTopic('btn-vocab')) return;
-      const tp = topic(); const text = editor.innerText.trim();
-      if (!tp && !text) return toast(t('no-text-vocab'));
-      setPanelTitle('panel-vocab');
-
-      const d = getDoc(currentId);
-      const vocabKey = `${tp}|${lvlSel.value}|${uiLang}`;
-      const lsVocabKey = `vocab3|${vocabKey}`;
-
-      function _clearVocabCache() {
-        if (d) { delete d.vocab; delete d.vocabKey; saveDocs(); }
-        try { localStorage.removeItem(lsVocabKey); } catch (_) {}
-      }
-
-      function _openVocabPanel(md) {
-        openPanel(t('panel-vocab'), md, null);
-        _setRegenFn(() => { _clearVocabCache(); callVocab(true); });
-        const hint = document.createElement('p');
-        hint.className = 'panel-regen-hint';
-        hint.innerHTML = uiLang === 'en'
-          ? `Not satisfied? <button class="panel-regen-link" onclick="regenPanel()">↻ Regenerate</button>`
-          : `Chưa ưng? <button class="panel-regen-link" onclick="regenPanel()">↻ Tạo lại</button>`;
-        document.getElementById('pContent').appendChild(hint);
-      }
-
-      if (!forceRegen) {
-        if (d && d.vocab && d.vocabKey === vocabKey) { _openVocabPanel(d.vocab); return; }
-        try {
-          const lsCached = localStorage.getItem(lsVocabKey);
-          if (lsCached) {
-            if (d) { d.vocab = lsCached; d.vocabKey = vocabKey; saveDocs(); }
-            _openVocabPanel(lsCached);
-            return;
-          }
-        } catch (_) {}
-      } else {
-        _clearVocabCache();
-      }
-
-      const commonRules = `
+  const commonRules = `
 Rules:
 - Focus entirely on the TOPIC — suggest words the student will need to write about it
 - Silently match ALL examples to the level above — never mention the level in the output
@@ -635,8 +676,8 @@ Rules:
 - NATURALNESS: every example sentence must sound like something a real person would actually say — specific, vivid, connected to the topic.
 - TRANSLATION: translate MEANING not words — use natural ${uiLang === 'en' ? 'English' : 'Vietnamese'} equivalents.`;
 
-      const vocabPrompt1 =
-        `You are an ESL vocabulary teacher. Give key vocabulary for a student about to write on this topic.
+  const vocabPrompt1 =
+    `You are an ESL vocabulary teacher. Give key vocabulary for a student about to write on this topic.
 
 ${tp ? `Topic: "${tp}"` : ''}
 Level: ${lvlSel.value}
@@ -660,63 +701,64 @@ Give 4–6 connectors. Use this EXACT format for each:
 
 - **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *example.*`;
 
-      setBusy('btn-vocab', true, true, t('panel-vocab'));
-      const r1 = await callAI(vocabPrompt1, null, true, true, 1200);
-      setBusy('btn-vocab', false, false);
-      if (!r1) return;
+  setBusy('btn-vocab', true, true, t('panel-vocab'));
+  const r1 = await callAI(vocabPrompt1, null, true, true, 1200);
+  setBusy('btn-vocab', false, false);
+  if (!r1) return;
 
-      setCooldown('btn-vocab', 10000);
-      if (d) { d.vocab = r1; d.vocabKey = vocabKey; saveDocs(); }
-      try { localStorage.setItem(lsVocabKey, r1); } catch (_) {}
-      _openVocabPanel(r1);
-    }
+  setCooldown('btn-vocab', 10000);
+  if (d) { d.vocab = r1; d.vocabKey = vocabKey; saveDocs(); }
+  try { localStorage.setItem(lsVocabKey, r1); } catch (_) { }
+  _openVocabPanel(r1);
+}
 
-    async function callPhrases(forceRegen = false) {
-      if (!await guardTopic('btn-phrases')) return;
-      const tp = topic(); const text = editor.innerText.trim();
-      if (!tp && !text) return toast(t('no-text-vocab'));
+async function callPhrases(forceRegen = false) {
+  if (!await guardTopic('btn-phrases')) return;
+  const tp = topic(); const text = editor.innerText.trim();
+  if (!tp && !text) return toast(t('no-text-vocab'));
 
-      const d = getDoc(currentId);
-      const phrasesKey = `${tp}|${lvlSel.value}|${uiLang}`;
-      const lsPhrasesKey = `phrases1|${phrasesKey}`;
-      const panelTitle = uiLang === 'en' ? 'Phrases' : 'Cụm Từ';
+  const d = getDoc(currentId);
+  const phrasesKey = `${tp}|${lvlSel.value}|${uiLang}`;
+  const lsPhrasesKey = `phrases1|${phrasesKey}`;
+  const panelTitle = uiLang === 'en' ? 'Phrases' : 'Cụm Từ';
 
-      function _clearPhrasesCache() {
-        if (d) { delete d.phrases; delete d.phrasesKey; saveDocs(); }
-        try { localStorage.removeItem(lsPhrasesKey); } catch (_) {}
+  function _clearPhrasesCache() {
+    if (d) { delete d.phrases; delete d.phrasesKey; saveDocs(); }
+    try { localStorage.removeItem(lsPhrasesKey); } catch (_) { }
+  }
+
+  function _openPhrasesPanel(md) {
+    document.getElementById('panelTitle').textContent = panelTitle;
+    document.getElementById('pContent').innerHTML = _renderVocab2(md);
+    _addTtsButtonsToPanel();
+    document.getElementById('pCards').style.display = 'none';
+    document.getElementById('lbar').classList.add('hidden');
+    document.getElementById('resultPanel').classList.add('open');
+    document.getElementById('editorPane').classList.add('shifted');
+    _setRegenFn(() => { _clearPhrasesCache(); callPhrases(true); });
+    const hint = document.createElement('p');
+    hint.className = 'panel-regen-hint';
+    hint.innerHTML = uiLang === 'en'
+      ? `Not satisfied? <button class="panel-regen-link" onclick="regenPanel()">↻ Regenerate</button>`
+      : `Chưa ưng? <button class="panel-regen-link" onclick="regenPanel()">↻ Tạo lại</button>`;
+    document.getElementById('pContent').appendChild(hint);
+  }
+
+  if (!forceRegen) {
+    if (d && d.phrases && d.phrasesKey === phrasesKey) { _openPhrasesPanel(d.phrases); return; }
+    try {
+      const lsCached = localStorage.getItem(lsPhrasesKey);
+      if (lsCached) {
+        if (d) { d.phrases = lsCached; d.phrasesKey = phrasesKey; saveDocs(); }
+        _openPhrasesPanel(lsCached);
+        return;
       }
+    } catch (_) { }
+  } else {
+    _clearPhrasesCache();
+  }
 
-      function _openPhrasesPanel(md) {
-        document.getElementById('panelTitle').textContent = panelTitle;
-        document.getElementById('pContent').innerHTML = _renderVocab2(md);
-        document.getElementById('pCards').style.display = 'none';
-        document.getElementById('lbar').classList.add('hidden');
-        document.getElementById('resultPanel').classList.add('open');
-        document.getElementById('editorPane').classList.add('shifted');
-        _setRegenFn(() => { _clearPhrasesCache(); callPhrases(true); });
-        const hint = document.createElement('p');
-        hint.className = 'panel-regen-hint';
-        hint.innerHTML = uiLang === 'en'
-          ? `Not satisfied? <button class="panel-regen-link" onclick="regenPanel()">↻ Regenerate</button>`
-          : `Chưa ưng? <button class="panel-regen-link" onclick="regenPanel()">↻ Tạo lại</button>`;
-        document.getElementById('pContent').appendChild(hint);
-      }
-
-      if (!forceRegen) {
-        if (d && d.phrases && d.phrasesKey === phrasesKey) { _openPhrasesPanel(d.phrases); return; }
-        try {
-          const lsCached = localStorage.getItem(lsPhrasesKey);
-          if (lsCached) {
-            if (d) { d.phrases = lsCached; d.phrasesKey = phrasesKey; saveDocs(); }
-            _openPhrasesPanel(lsCached);
-            return;
-          }
-        } catch (_) {}
-      } else {
-        _clearPhrasesCache();
-      }
-
-      const commonRules = `
+  const commonRules = `
 Rules:
 - Focus entirely on the TOPIC — suggest words the student will need to write about it
 - Silently match ALL examples to the level above — never mention the level in the output
@@ -727,8 +769,8 @@ Rules:
 - NATURALNESS: every example sentence must sound like something a real person would actually say — specific, vivid, connected to the topic.
 - TRANSLATION: translate MEANING not words — use natural ${uiLang === 'en' ? 'English' : 'Vietnamese'} equivalents.`;
 
-      const vocabPrompt2 = uiLang === 'en'
-        ? `You are an ESL vocabulary teacher. Give the most useful idioms, phrasal verbs, and fixed expressions for this topic. Quality over quantity — only genuinely relevant expressions.
+  const vocabPrompt2 = uiLang === 'en'
+    ? `You are an ESL vocabulary teacher. Give the most useful idioms, phrasal verbs, and fixed expressions for this topic. Quality over quantity — only genuinely relevant expressions.
 
 Topic: "${tp || ''}"
 Level: ${lvlSel.value}
@@ -774,7 +816,7 @@ RULE: Every idiom/proverb MUST have a 💡 Explained line — no exceptions. The
 💡 Explained: like a loaded gun (full of bullets), a loaded person is "full" of money.
 **splurge** *(informal)* — to spend money extravagantly on something → *I splurged on a nice dinner to celebrate.*`
 
-        : `You are an ESL vocabulary teacher. Chọn các cụm từ, thành ngữ và cụm từ cố định phù hợp nhất với chủ đề — ưu tiên chất lượng hơn số lượng.
+    : `You are an ESL vocabulary teacher. Chọn các cụm từ, thành ngữ và cụm từ cố định phù hợp nhất với chủ đề — ưu tiên chất lượng hơn số lượng.
 
 Topic: "${tp || ''}"
 Level: ${lvlSel.value}
@@ -820,101 +862,101 @@ QUY TẮC: Mọi thành ngữ/tục ngữ PHẢI có dòng 💡 Giải thích �
 💡 Giải thích: như súng "loaded" (đầy đạn), người "loaded" thì "đầy" tiền.
 **splurge** *(informal)* — tiêu tiền hoang phí cho điều gì đó → *I splurged on a nice dinner to celebrate.*`;
 
-      setBusy('btn-phrases', true, true, panelTitle);
-      const r2 = await callAI(vocabPrompt2, null, true, true, 1400);
-      setBusy('btn-phrases', false, false);
-      if (!r2) return;
+  setBusy('btn-phrases', true, true, panelTitle);
+  const r2 = await callAI(vocabPrompt2, null, true, true, 1400);
+  setBusy('btn-phrases', false, false);
+  if (!r2) return;
 
-      setCooldown('btn-phrases', 10000);
-      console.log('[callPhrases] raw r2:', r2);
-      if (d) { d.phrases = r2; d.phrasesKey = phrasesKey; saveDocs(); }
-      try { localStorage.setItem(lsPhrasesKey, r2); } catch (_) {}
-      _openPhrasesPanel(r2);
-    }
+  setCooldown('btn-phrases', 10000);
+  console.log('[callPhrases] raw r2:', r2);
+  if (d) { d.phrases = r2; d.phrasesKey = phrasesKey; saveDocs(); }
+  try { localStorage.setItem(lsPhrasesKey, r2); } catch (_) { }
+  _openPhrasesPanel(r2);
+}
 
-    // Render call 2 (phrasal verbs/idioms) — normalize inline → format into cards
-    function _renderVocab2(md) {
-      const lines = md.split('\n');
-      const out = [];
-      let inItem = false;
+// Render call 2 (phrasal verbs/idioms) — normalize inline → format into cards
+function _renderVocab2(md) {
+  const lines = md.split('\n');
+  const out = [];
+  let inItem = false;
 
-      function closeItem() { if (inItem) { out.push('</div>'); inItem = false; } }
+  function closeItem() { if (inItem) { out.push('</div>'); inItem = false; } }
 
-      for (const raw of lines) {
-        const line = raw.trim();
-        if (!line) continue;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
 
-        // Section heading or divider
-        if (line.startsWith('---')) { closeItem(); out.push('<hr>'); continue; }
-        if (line.startsWith('## ')) { closeItem(); out.push(`<h2>${line.replace(/^##\s*/, '')}</h2>`); continue; }
+    // Section heading or divider
+    if (line.startsWith('---')) { closeItem(); out.push('<hr>'); continue; }
+    if (line.startsWith('## ')) { closeItem(); out.push(`<h2>${line.replace(/^##\s*/, '')}</h2>`); continue; }
 
-        // ⚠️ warning/note line (slang disclaimer)
-        if (line.startsWith('⚠️')) {
-          closeItem();
-          out.push(`<p class="vocab-warning">${escHtml(line)}</p>`);
-          continue;
-        }
-
-        // Item line: contains → separator
-        const arrowIdx = line.indexOf(' → ');
-        if (arrowIdx !== -1) {
-          closeItem();
-          const defPart = line.slice(0, arrowIdx).trim();
-          const exPart = line.slice(arrowIdx + 3).trim().replace(/^\*(.+)\*$/, '$1').replace(/^\*/, '').replace(/\*$/, '');
-
-          // Ensure term is bold for accent color
-          const normalized = /^\*\*/.test(defPart) ? defPart : defPart
-            .replace(/^([^*\-—]+?)(\s*\/[^/]+\/)?(\s*[\-—]\s*)/, (_, term, ipa, sep) =>
-              `**${term.trim()}**${ipa || ''}${sep}`);
-
-          const defHtml = marked.parse(normalized, { async: false }).replace(/^<p>|<\/p>\n?$/g, '');
-          out.push('<div class="vocab-item">');
-          out.push(`<p class="vocab-def">${defHtml}</p>`);
-          if (exPart) out.push(`<blockquote><p><em>${escHtml(exPart)}</em></p></blockquote>`);
-          inItem = true;
-          continue;
-        }
-
-        // 💡 line — inject inside current item if open, otherwise standalone
-        if (line.startsWith('💡')) {
-          out.push(`<p class="vocab-explain">${escHtml(line)}</p>`);
-          continue;
-        }
-
-        // List item (connectors)
-        if (line.startsWith('- ') || line.startsWith('* ')) {
-          closeItem();
-          out.push(marked.parse(line, { async: false }).replace(/^<ul>|<\/ul>\n?$/g, ''));
-          continue;
-        }
-
-        // Fallback
-        closeItem();
-        out.push(marked.parse(line, { async: false }));
-      }
+    // ⚠️ warning/note line (slang disclaimer)
+    if (line.startsWith('⚠️')) {
       closeItem();
-      return out.join('\n');
+      out.push(`<p class="vocab-warning">${escHtml(line)}</p>`);
+      continue;
     }
 
-    async function callTranslate() {
-      if (!await guardTopic('btn-translate')) return;
-      const text = editor.innerText.trim();
-      if (!text) return toast(t('no-text'));
-      const tp = topic();
+    // Item line: contains → separator
+    const arrowIdx = line.indexOf(' → ');
+    if (arrowIdx !== -1) {
+      closeItem();
+      const defPart = line.slice(0, arrowIdx).trim();
+      const exPart = line.slice(arrowIdx + 3).trim().replace(/^\*(.+)\*$/, '$1').replace(/^\*/, '').replace(/\*$/, '');
 
-      // Always translate to Vietnamese — this app is for Vietnamese learners of English
-      const targetLang = 'Vietnamese';
+      // Ensure term is bold for accent color
+      const normalized = /^\*\*/.test(defPart) ? defPart : defPart
+        .replace(/^([^*\-—]+?)(\s*\/[^/]+\/)?(\s*[\-—]\s*)/, (_, term, ipa, sep) =>
+          `**${term.trim()}**${ipa || ''}${sep}`);
 
-      // Count source paragraphs, cap at 12 to keep tokens manageable
-      const vi = uiLang !== 'en';
-      let srcParas = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
-      if (srcParas.length > 12) {
-        srcParas = srcParas.slice(0, 12);
-        toast(vi ? '📄 Dịch: Chỉ dịch 12 đoạn đầu để đảm bảo tốc độ.' : '📄 Translate: Only first 12 paragraphs translated for speed.', 'i');
-      }
+      const defHtml = marked.parse(normalized, { async: false }).replace(/^<p>|<\/p>\n?$/g, '');
+      out.push('<div class="vocab-item">');
+      out.push(`<p class="vocab-def">${defHtml}</p>`);
+      if (exPart) out.push(`<blockquote><p><em>${escHtml(exPart)}</em></p></blockquote>`);
+      inItem = true;
+      continue;
+    }
 
-      const r = await callAI(
-        `Translate the following English text to ${targetLang}. ${srcParas.length} paragraph(s) — output exactly ${srcParas.length} line(s), one per paragraph.
+    // 💡 line — inject inside current item if open, otherwise standalone
+    if (line.startsWith('💡')) {
+      out.push(`<p class="vocab-explain">${escHtml(line)}</p>`);
+      continue;
+    }
+
+    // List item (connectors)
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      closeItem();
+      out.push(marked.parse(line, { async: false }).replace(/^<ul>|<\/ul>\n?$/g, ''));
+      continue;
+    }
+
+    // Fallback
+    closeItem();
+    out.push(marked.parse(line, { async: false }));
+  }
+  closeItem();
+  return out.join('\n');
+}
+
+async function callTranslate() {
+  if (!await guardTopic('btn-translate')) return;
+  const text = editor.innerText.trim();
+  if (!text) return toast(t('no-text'));
+  const tp = topic();
+
+  // Always translate to Vietnamese — this app is for Vietnamese learners of English
+  const targetLang = 'Vietnamese';
+
+  // Count source paragraphs, cap at 12 to keep tokens manageable
+  const vi = uiLang !== 'en';
+  let srcParas = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+  if (srcParas.length > 12) {
+    srcParas = srcParas.slice(0, 12);
+    toast(vi ? '📄 Dịch: Chỉ dịch 12 đoạn đầu để đảm bảo tốc độ.' : '📄 Translate: Only first 12 paragraphs translated for speed.', 'i');
+  }
+
+  const r = await callAI(
+    `Translate the following English text to ${targetLang}. ${srcParas.length} paragraph(s) — output exactly ${srcParas.length} line(s), one per paragraph.
 
 TRANSLATION RULES:
 - Translate MEANING, not words — find the natural equivalent in ${targetLang}, not a word-for-word mapping
@@ -925,259 +967,259 @@ TRANSLATION RULES:
 - No explanations, no extra text — translation only
 
 ${srcParas.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
-        'btn-translate', false, false, 600, t('panel-translate')
-      );
+    'btn-translate', false, false, 600, t('panel-translate')
+  );
 
-      if (r) {
-        // Extract numbered lines, flatten each, join as paragraphs
-        const lines = r.split('\n')
-          .map(l => l.replace(/^\d+\.\s*/, '').trim())
-          .filter(Boolean);
-        // group consecutive non-empty lines that belong to same para (model may split)
-        const paras = [];
-        let buf = [];
-        for (const line of lines) {
-          if (/^\d+\./.test(line) && buf.length) { paras.push(buf.join(' ')); buf = [line.replace(/^\d+\.\s*/, '').trim()]; }
-          else buf.push(line);
-        }
-        if (buf.length) paras.push(buf.join(' '));
-        openPanel(t('panel-translate'), paras.join('\n\n'), null);
-        setCooldown('btn-translate', 8000);
-      }
+  if (r) {
+    // Extract numbered lines, flatten each, join as paragraphs
+    const lines = r.split('\n')
+      .map(l => l.replace(/^\d+\.\s*/, '').trim())
+      .filter(Boolean);
+    // group consecutive non-empty lines that belong to same para (model may split)
+    const paras = [];
+    let buf = [];
+    for (const line of lines) {
+      if (/^\d+\./.test(line) && buf.length) { paras.push(buf.join(' ')); buf = [line.replace(/^\d+\.\s*/, '').trim()]; }
+      else buf.push(line);
     }
+    if (buf.length) paras.push(buf.join(' '));
+    openPanel(t('panel-translate'), paras.join('\n\n'), null);
+    setCooldown('btn-translate', 8000);
+  }
+}
 
-    // ── NEW AI FUNCTIONS ──
+// ── NEW AI FUNCTIONS ──
 
-    // Returns a short context string for context-menu AI features
-    function _ctxContext() {
-      const topic = (typeof topicInput !== 'undefined' && topicInput.value.trim()) || '';
-      const { lvlCode, toneStd } = typeof getStandards === 'function'
-        ? getStandards()
-        : { lvlCode: 'B', toneStd: null };
-      const fullText = (typeof _cleanEditorText === 'function' ? _cleanEditorText() : editor.innerText).trim();
-      // grab up to 300 chars around the selection for surrounding context
-      const sel = window.getSelection()?.toString().trim() || '';
-      let surroundCtx = '';
-      if (sel && fullText.includes(sel)) {
-        const idx = fullText.indexOf(sel);
-        const before = fullText.slice(Math.max(0, idx - 150), idx).trim();
-        const after = fullText.slice(idx + sel.length, idx + sel.length + 150).trim();
-        if (before || after) surroundCtx = [before && `…${before}`, '[SELECTED]', after && `${after}…`].filter(Boolean).join(' ');
-      }
-      const parts = [];
-      if (topic) parts.push(`Topic: "${topic}"`);
-      parts.push(`Level: ${lvlCode}1-${lvlCode}2`);
-      if (toneStd) parts.push(`Tone: ${toneStd.contractions ? 'casual' : 'formal'}`);
-      if (surroundCtx) parts.push(`Context: ${surroundCtx}`);
-      return parts.length ? `\n[Writing context: ${parts.join(' | ')}]` : '';
-    }
+// Returns a short context string for context-menu AI features
+function _ctxContext() {
+  const topic = (typeof topicInput !== 'undefined' && topicInput.value.trim()) || '';
+  const { lvlCode, toneStd } = typeof getStandards === 'function'
+    ? getStandards()
+    : { lvlCode: 'B', toneStd: null };
+  const fullText = (typeof _cleanEditorText === 'function' ? _cleanEditorText() : editor.innerText).trim();
+  // grab up to 300 chars around the selection for surrounding context
+  const sel = window.getSelection()?.toString().trim() || '';
+  let surroundCtx = '';
+  if (sel && fullText.includes(sel)) {
+    const idx = fullText.indexOf(sel);
+    const before = fullText.slice(Math.max(0, idx - 150), idx).trim();
+    const after = fullText.slice(idx + sel.length, idx + sel.length + 150).trim();
+    if (before || after) surroundCtx = [before && `…${before}`, '[SELECTED]', after && `${after}…`].filter(Boolean).join(' ');
+  }
+  const parts = [];
+  if (topic) parts.push(`Topic: "${topic}"`);
+  parts.push(`Level: ${lvlCode}1-${lvlCode}2`);
+  if (toneStd) parts.push(`Tone: ${toneStd.contractions ? 'casual' : 'formal'}`);
+  if (surroundCtx) parts.push(`Context: ${surroundCtx}`);
+  return parts.length ? `\n[Writing context: ${parts.join(' | ')}]` : '';
+}
 
-    function openPanelWith(title) {
-      document.getElementById('pCards').style.display = 'none';
-      document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.83rem;font-style:italic">${t('processing')}</p>`;
-      document.getElementById('panelTitle').textContent = title;
-      document.getElementById('lbar').classList.remove('hidden');
-      document.getElementById('resultPanel').classList.add('open');
-      document.getElementById('editorPane').classList.add('shifted');
-    }
+function openPanelWith(title) {
+  document.getElementById('pCards').style.display = 'none';
+  document.getElementById('pContent').innerHTML = `<p style="color:var(--muted);font-size:.83rem;font-style:italic">${t('processing')}</p>`;
+  document.getElementById('panelTitle').textContent = title;
+  document.getElementById('lbar').classList.remove('hidden');
+  document.getElementById('resultPanel').classList.add('open');
+  document.getElementById('editorPane').classList.add('shifted');
+}
 
-    async function callParaphrase() {
-      if (isCooldown('ctx-paraphrase')) return;
-      const sel = window.getSelection()?.toString().trim();
-      const text = (sel || ttsGetCurrentPara()).slice(0, 400);
-      if (!text) return toast(t('no-text'));
-      const vi = uiLang !== 'en';
-      const title = vi ? 'Diễn đạt lại' : 'Paraphrase';
-      openCtxPopover(title, null);
-      const r = await callAI(
-        `You are an English writing coach. Rewrite the following text in 2 ways for an English learner:
+async function callParaphrase() {
+  if (isCooldown('ctx-paraphrase')) return;
+  const sel = window.getSelection()?.toString().trim();
+  const text = (sel || ttsGetCurrentPara()).slice(0, 400);
+  if (!text) return toast(t('no-text'));
+  const vi = uiLang !== 'en';
+  const title = vi ? 'Diễn đạt lại' : 'Paraphrase';
+  openCtxPopover(title, null);
+  const r = await callAI(
+    `You are an English writing coach. Rewrite the following text in 2 ways for an English learner:
 1) Casual: how a fluent native speaker would say it in conversation — simple words, natural flow, contractions welcome. Keep the same meaning.
 2) Formal/Academic: how it would appear in an essay, email, or report — clear structure, objective tone, no contractions. Keep the same meaning.
 ${_ctxContext()}
 Return ONLY a JSON array, no explanation, no markdown:
 [{"en": "casual version"}, {"en": "formal/academic version"}]
 Text: "${text}"`,
-        null, false, true, 300
-      );
-      if (r) {
-        try {
-          const raw = typeof r === 'string' ? r : JSON.stringify(r);
-          const clean = raw.replace(/```json|```/g, '').trim();
-          const items = JSON.parse(clean);
-          const labels = vi ? ['Thông thường', 'Trang trọng / Học thuật'] : ['Casual', 'Formal / Academic'];
-          const html = items.map((item, i) => `
+    null, false, true, 300
+  );
+  if (r) {
+    try {
+      const raw = typeof r === 'string' ? r : JSON.stringify(r);
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const items = JSON.parse(clean);
+      const labels = vi ? ['Thông thường', 'Trang trọng / Học thuật'] : ['Casual', 'Formal / Academic'];
+      const html = items.map((item, i) => `
             <div style="margin-bottom:.9rem">
               <div style="font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em">${labels[i] || ''}</div>
               <div style="background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:.5rem .75rem;color:var(--accent);font-weight:500;line-height:1.5">${item.en}</div>
             </div>`).join('');
-          updateCtxPopoverHtml(html);
-        } catch {
-          // fallback: show raw text if JSON parsing fails
-          updateCtxPopoverHtml(`<p style="line-height:1.6">${r.replace(/</g,'&lt;')}</p>`);
-        }
-        setCooldown('ctx-paraphrase', 5000);
-      }
-      else closeCtxPopover();
+      updateCtxPopoverHtml(html);
+    } catch {
+      // fallback: show raw text if JSON parsing fails
+      updateCtxPopoverHtml(`<p style="line-height:1.6">${r.replace(/</g, '&lt;')}</p>`);
     }
+    setCooldown('ctx-paraphrase', 5000);
+  }
+  else closeCtxPopover();
+}
 
-    async function callExplain() {
-      if (isCooldown('ctx-explain')) return;
-      const sel = window.getSelection()?.toString().trim();
-      const text = (sel || ttsGetCurrentPara()).slice(0, 400);
-      if (!text) return toast(t('no-text'));
-      const vi = uiLang !== 'en';
-      const title = vi ? 'Giải thích' : 'Explain';
-      openCtxPopover(title, null);
-      const r = await callAI(
-        vi
-          ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm dùng format:
+async function callExplain() {
+  if (isCooldown('ctx-explain')) return;
+  const sel = window.getSelection()?.toString().trim();
+  const text = (sel || ttsGetCurrentPara()).slice(0, 400);
+  if (!text) return toast(t('no-text'));
+  const vi = uiLang !== 'en';
+  const title = vi ? 'Giải thích' : 'Explain';
+  openCtxPopover(title, null);
+  const r = await callAI(
+    vi
+      ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm dùng format:
 **từ/cụm tiếng Anh** *(loại: nếu là idiom/slang/phrasal verb/proverb/jargon thì ghi rõ)* : nghĩa tiếng Việt
 > Câu ví dụ tiếng Anh
 Nếu là idiom, slang, phrasal verb, proverb, hoặc jargon: thêm 1 dòng giải thích ngắn tại sao nó có nghĩa đó hoặc cách dùng đặc biệt (bắt đầu bằng 💡 Giải thích:).
 Bỏ qua từ quá đơn giản (a, the, is...).
 QUAN TRỌNG: Chỉ giải thích từ/cụm có trong đoạn được chọn bên dưới — không giải thích từ trong phần ngữ cảnh xung quanh.${_ctxContext()}
 Đoạn được chọn: "${text}"`
-          : `Explain key words/phrases for an English learner. For each use format:
+      : `Explain key words/phrases for an English learner. For each use format:
 **word/phrase** *(type: label if idiom/slang/phrasal verb/proverb/jargon)* : simple meaning
 > short example sentence
 If it is an idiom, slang, phrasal verb, proverb, or jargon: add a 💡 Explained: line briefly explaining why it means that or how it's used — because the literal meaning won't help.
 Skip very basic words.
 IMPORTANT: Only explain words/phrases that appear in the selected text below — do not explain words from the surrounding context.${_ctxContext()}
 Selected text: "${text}"`,
-        null, false, true, 500
-      );
-      if (r) { updateCtxPopover(r); setCooldown('ctx-explain', 5000); }
-      else closeCtxPopover();
-    }
+    null, false, true, 500
+  );
+  if (r) { updateCtxPopover(r); setCooldown('ctx-explain', 5000); }
+  else closeCtxPopover();
+}
 
-    async function callAnalyze() {
-      if (isCooldown('ctx-analyze')) return;
-      const sel = window.getSelection()?.toString().trim();
-      const text = (sel || ttsGetCurrentPara()).slice(0, 400);
-      if (!text) return toast(t('no-text'));
-      const vi = uiLang !== 'en';
-      const title = vi ? 'Phân tích ngữ pháp' : 'Grammar Analysis';
-      openCtxPopover(title, null);
-      const r = await callAI(
-        `Grammar check: tense, structure, errors. Be concise. Only check the selected text — do not flag issues from the surrounding context.${vi ? ' Explain each issue in Vietnamese. For corrections use format:\n**lỗi** : giải thích\n> correction in English' : ' For each issue use format:\n**error** : explanation\n> correction'}${_ctxContext()}
+async function callAnalyze() {
+  if (isCooldown('ctx-analyze')) return;
+  const sel = window.getSelection()?.toString().trim();
+  const text = (sel || ttsGetCurrentPara()).slice(0, 400);
+  if (!text) return toast(t('no-text'));
+  const vi = uiLang !== 'en';
+  const title = vi ? 'Phân tích ngữ pháp' : 'Grammar Analysis';
+  openCtxPopover(title, null);
+  const r = await callAI(
+    `Grammar check: tense, structure, errors. Be concise. Only check the selected text — do not flag issues from the surrounding context.${vi ? ' Explain each issue in Vietnamese. For corrections use format:\n**lỗi** : giải thích\n> correction in English' : ' For each issue use format:\n**error** : explanation\n> correction'}${_ctxContext()}
 Selected text: "${text}"`,
-        null, false, true, 500
-      );
-      if (r) { updateCtxPopover(r); setCooldown('ctx-analyze', 5000); }
-      else closeCtxPopover();
+    null, false, true, 500
+  );
+  if (r) { updateCtxPopover(r); setCooldown('ctx-analyze', 5000); }
+  else closeCtxPopover();
+}
+
+// load IPA_DATA in background — starts immediately, non-blocking
+let _ipaPromise = null;
+function ensureIPA() {
+  if (_ipaPromise) return _ipaPromise;
+  if (typeof IPA_DATA !== 'undefined') { _ipaPromise = Promise.resolve(); return _ipaPromise; }
+  _ipaPromise = new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'ipa-data.js';
+    s.onload = resolve;
+    s.onerror = resolve; // fail silently — IPA just won't be available
+    document.head.appendChild(s);
+  });
+  return _ipaPromise;
+}
+// kick off background load right away
+ensureIPA();
+
+async function callDict() {
+  const word = window.getSelection()?.toString().trim().toLowerCase();
+  if (!word) return toast(t('no-text'));
+  const vi = uiLang !== 'en';
+  const title = vi ? `Từ điển: ${word}` : `Dictionary: ${word}`;
+  openCtxPopover(title, null);
+  const body = document.getElementById('ctxPopoverBody');
+
+  const localIpa = (typeof IPA_DATA !== 'undefined' ? IPA_DATA[word] : null) || null;
+  let dictData = null;
+  try {
+    const res = await fetch(`${WORKER_URL}/dict?word=${encodeURIComponent(word)}`);
+    if (res.ok) dictData = await res.json();
+  } catch (e) { console.error('Dict API error:', e); }
+
+  // helper to append to popover body — clears dots on first append
+  let _bodyCleared = false;
+  const app = el => {
+    if (!_bodyCleared) { body.innerHTML = ''; _bodyCleared = true; }
+    body.appendChild(el);
+  };
+
+  // header: word + IPA + speak button
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem';
+  const wordEl = document.createElement('h2');
+  wordEl.style.cssText = 'margin:0;font-size:1.4rem';
+  wordEl.textContent = word;
+  header.appendChild(wordEl);
+
+  const ipa = (!dictData || !dictData[0])
+    ? localIpa
+    : (dictData[0].phonetics?.find(p => p.text)?.text || dictData[0].phonetic || localIpa || '');
+  if (ipa) {
+    const ipaEl = document.createElement('span');
+    ipaEl.style.cssText = 'color:var(--muted);font-size:.95rem';
+    ipaEl.textContent = ipa;
+    header.appendChild(ipaEl);
+  }
+  const speakBtn = document.createElement('button');
+  speakBtn.className = 'dict-audio-btn';
+  speakBtn.title = vi ? 'Nghe phát âm' : 'Listen';
+  speakBtn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
+  speakBtn.onclick = () => speakText(word);
+  header.appendChild(speakBtn);
+  app(header);
+
+  if (!dictData || !dictData[0]) {
+    // fallback to AI
+    const aiPrompt = vi
+      ? `Tra từ tiếng Anh "${word}". Trả lời ngắn gọn bằng tiếng Việt: phiên âm IPA, loại từ, nghĩa chính (1-2 nghĩa), 1 câu ví dụ tiếng Anh (kèm dịch nghĩa tiếng Việt). Không giải thích dài dòng.`
+      : `Define the English word "${word}" briefly: IPA pronunciation, part of speech, 1-2 main meanings, 1 example sentence.`;
+    const aiResult = await callAI(aiPrompt, null, true, true, 400);
+    if (aiResult) {
+      const aiEl = document.createElement('div');
+      aiEl.innerHTML = marked.parse(aiResult, { async: false });
+      app(aiEl);
+    } else {
+      const errEl = document.createElement('p');
+      errEl.style.cssText = 'color:var(--muted);font-style:italic';
+      errEl.textContent = vi ? 'Không tìm thấy từ này.' : 'Word not found.';
+      app(errEl);
     }
+    return;
+  }
 
-    // load IPA_DATA in background — starts immediately, non-blocking
-    let _ipaPromise = null;
-    function ensureIPA() {
-      if (_ipaPromise) return _ipaPromise;
-      if (typeof IPA_DATA !== 'undefined') { _ipaPromise = Promise.resolve(); return _ipaPromise; }
-      _ipaPromise = new Promise(resolve => {
-        const s = document.createElement('script');
-        s.src = 'ipa-data.js';
-        s.onload = resolve;
-        s.onerror = resolve; // fail silently — IPA just won't be available
-        document.head.appendChild(s);
-      });
-      return _ipaPromise;
+  const entry = dictData[0];
+  for (const meaning of (entry.meanings || []).slice(0, 4)) {
+    const posEl = document.createElement('div');
+    posEl.style.cssText = 'font-weight:600;color:var(--accent);margin:.6rem 0 .3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:.04em';
+    posEl.textContent = meaning.partOfSpeech;
+    app(posEl);
+    const ul = document.createElement('ul');
+    ul.style.cssText = 'margin:0 0 .4rem;padding-left:1.2rem';
+    for (const def of (meaning.definitions || []).slice(0, 3)) {
+      const li = document.createElement('li');
+      li.style.cssText = 'margin-bottom:.35rem;font-size:.88rem';
+      li.textContent = def.definition;
+      if (def.example) {
+        const ex = document.createElement('div');
+        ex.style.cssText = 'color:var(--muted);font-style:italic;font-size:.82rem;margin-top:.15rem;padding-left:.5rem;border-left:2px solid var(--border)';
+        ex.textContent = def.example;
+        li.appendChild(ex);
+      }
+      ul.appendChild(li);
     }
-    // kick off background load right away
-    ensureIPA();
-
-    async function callDict() {
-      const word = window.getSelection()?.toString().trim().toLowerCase();
-      if (!word) return toast(t('no-text'));
-      const vi = uiLang !== 'en';
-      const title = vi ? `Từ điển: ${word}` : `Dictionary: ${word}`;
-      openCtxPopover(title, null);
-      const body = document.getElementById('ctxPopoverBody');
-
-      const localIpa = (typeof IPA_DATA !== 'undefined' ? IPA_DATA[word] : null) || null;
-      let dictData = null;
-      try {
-        const res = await fetch(`${WORKER_URL}/dict?word=${encodeURIComponent(word)}`);
-        if (res.ok) dictData = await res.json();
-      } catch (e) { console.error('Dict API error:', e); }
-
-      // helper to append to popover body — clears dots on first append
-      let _bodyCleared = false;
-      const app = el => {
-        if (!_bodyCleared) { body.innerHTML = ''; _bodyCleared = true; }
-        body.appendChild(el);
-      };
-
-      // header: word + IPA + speak button
-      const header = document.createElement('div');
-      header.style.cssText = 'display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem';
-      const wordEl = document.createElement('h2');
-      wordEl.style.cssText = 'margin:0;font-size:1.4rem';
-      wordEl.textContent = word;
-      header.appendChild(wordEl);
-
-      const ipa = (!dictData || !dictData[0])
-        ? localIpa
-        : (dictData[0].phonetics?.find(p => p.text)?.text || dictData[0].phonetic || localIpa || '');
-      if (ipa) {
-        const ipaEl = document.createElement('span');
-        ipaEl.style.cssText = 'color:var(--muted);font-size:.95rem';
-        ipaEl.textContent = ipa;
-        header.appendChild(ipaEl);
-      }
-      const speakBtn = document.createElement('button');
-      speakBtn.className = 'dict-audio-btn';
-      speakBtn.title = vi ? 'Nghe phát âm' : 'Listen';
-      speakBtn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
-      speakBtn.onclick = () => { const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); };
-      header.appendChild(speakBtn);
-      app(header);
-
-      if (!dictData || !dictData[0]) {
-        // fallback to AI
-        const aiPrompt = vi
-          ? `Tra từ tiếng Anh "${word}". Trả lời ngắn gọn bằng tiếng Việt: phiên âm IPA, loại từ, nghĩa chính (1-2 nghĩa), 1 câu ví dụ tiếng Anh (kèm dịch nghĩa tiếng Việt). Không giải thích dài dòng.`
-          : `Define the English word "${word}" briefly: IPA pronunciation, part of speech, 1-2 main meanings, 1 example sentence.`;
-        const aiResult = await callAI(aiPrompt, null, true, true, 400);
-        if (aiResult) {
-          const aiEl = document.createElement('div');
-          aiEl.innerHTML = marked.parse(aiResult, { async: false });
-          app(aiEl);
-        } else {
-          const errEl = document.createElement('p');
-          errEl.style.cssText = 'color:var(--muted);font-style:italic';
-          errEl.textContent = vi ? 'Không tìm thấy từ này.' : 'Word not found.';
-          app(errEl);
-        }
-        return;
-      }
-
-      const entry = dictData[0];
-      for (const meaning of (entry.meanings || []).slice(0, 4)) {
-        const posEl = document.createElement('div');
-        posEl.style.cssText = 'font-weight:600;color:var(--accent);margin:.6rem 0 .3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:.04em';
-        posEl.textContent = meaning.partOfSpeech;
-        app(posEl);
-        const ul = document.createElement('ul');
-        ul.style.cssText = 'margin:0 0 .4rem;padding-left:1.2rem';
-        for (const def of (meaning.definitions || []).slice(0, 3)) {
-          const li = document.createElement('li');
-          li.style.cssText = 'margin-bottom:.35rem;font-size:.88rem';
-          li.textContent = def.definition;
-          if (def.example) {
-            const ex = document.createElement('div');
-            ex.style.cssText = 'color:var(--muted);font-style:italic;font-size:.82rem;margin-top:.15rem;padding-left:.5rem;border-left:2px solid var(--border)';
-            ex.textContent = def.example;
-            li.appendChild(ex);
-          }
-          ul.appendChild(li);
-        }
-        app(ul);
-        const synonyms = (meaning.synonyms || []).slice(0, 5);
-        if (synonyms.length) {
-          const synEl = document.createElement('div');
-          synEl.style.cssText = 'font-size:.82rem;color:var(--muted);margin-bottom:.4rem';
-          synEl.innerHTML = `<span style="font-weight:600">${vi ? 'Từ đồng nghĩa:' : 'Synonyms:'}</span> ${synonyms.join(', ')}`;
-          app(synEl);
-        }
-      }
+    app(ul);
+    const synonyms = (meaning.synonyms || []).slice(0, 5);
+    if (synonyms.length) {
+      const synEl = document.createElement('div');
+      synEl.style.cssText = 'font-size:.82rem;color:var(--muted);margin-bottom:.4rem';
+      synEl.innerHTML = `<span style="font-weight:600">${vi ? 'Từ đồng nghĩa:' : 'Synonyms:'}</span> ${synonyms.join(', ')}`;
+      app(synEl);
     }
+  }
+}
 

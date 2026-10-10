@@ -59,9 +59,11 @@
       --border2: #343444;
       --text: #e8e8f0;
       --text2: #b4b4c8;
-      --muted: #70708a;
-      --muted2: #555568;
+      --muted: #d4d4e0;
+      --muted2: #b4b4bc;
       --accent-soft: #1e1b4b;
+      --accent: #9d98fb;
+      --accent-h: #9f98f2;
     }
 
     /* ── Global font scale: html font-size drives ALL rem values ── */

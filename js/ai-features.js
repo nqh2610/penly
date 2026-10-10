@@ -651,25 +651,25 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}. IMPORTANT: 
         _clearVocabCache();
       }
 
-      const vocabPrompt =
-        `You are an ESL vocabulary teacher. Give a focused, practical vocabulary guide for a student about to write on this topic.
-
-${tp ? `Topic: "${tp}"` : ''}
-Level: ${lvlSel.value}
-
-Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
-
+      const commonRules = `
 Rules:
-- Focus entirely on the TOPIC — suggest words, phrases, idioms the student will need to write about it
+- Focus entirely on the TOPIC — suggest words the student will need to write about it
 - Silently match ALL examples to the level above — never mention the level in the output
 - NO em dash (—). Use comma or and/but/so instead
 - NO markdown tables. Use the exact card format shown below.
-- Keep it practical: words the user can use TODAY in their writing
 - LANGUAGE RULE: Write ALL section headings, labels, explanations, and meanings in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
-- EXAMPLE SENTENCES: ALL example sentences (lines starting with >) must ALWAYS be written in English — never in Vietnamese, regardless of interface language.
-- For Phrasal Verbs, Idioms, and Fixed Expressions: ONLY include if genuinely relevant. If none, SKIP that section entirely.
-- NATURALNESS: every example sentence must sound like something a real person would actually say or write — specific, vivid, directly connected to the topic. No generic filler like "She uses this word." No robot-sounding sentences.
-- TRANSLATION: when writing meanings or translations in Vietnamese, translate the MEANING not the words — use natural Vietnamese equivalents and collocations. Bad: "có một nụ cười lớn". Good: "có nụ cười tươi".
+- EXAMPLE SENTENCES: ALL example sentences must ALWAYS be written in English.
+- NATURALNESS: every example sentence must sound like something a real person would actually say — specific, vivid, connected to the topic.
+- TRANSLATION: translate MEANING not words — use natural ${uiLang === 'en' ? 'English' : 'Vietnamese'} equivalents.`;
+
+      // ── CALL 1: Key vocabulary + connectors ──
+      const vocabPrompt1 =
+        `You are an ESL vocabulary teacher. Give key vocabulary for a student about to write on this topic.
+
+${tp ? `Topic: "${tp}"` : ''}
+Level: ${lvlSel.value}
+Interface language: ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+${commonRules}
 
 ---
 
@@ -690,77 +690,97 @@ Use this EXACT format for each word (no tables, no columns):
 
 ${uiLang === 'en' ? 'List 4–6 level-appropriate connectors with short examples' : 'Chỉ liệt kê 4–6 từ nối phù hợp trình độ, kèm ví dụ ngắn'}
 
-- **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *example.*
+- **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *example.*`;
+
+      // ── CALL 2: Phrasal verbs + idioms + fixed expressions ──
+      const vocabPrompt2 = uiLang === 'en'
+        ? `You are an ESL vocabulary teacher. Give idioms, phrasal verbs, and fixed expressions for this topic.
+
+Topic: "${tp || ''}"
+Level: ${lvlSel.value}
+Interface language: English
+${commonRules}
+
+Include each section below ONLY if you can find genuinely useful examples for this topic. For rich topics like money, business, travel, health — you should almost always find something. Skip a section only if truly nothing fits.
 
 ---
-
-${uiLang === 'en'
-  ? `OPTIONAL SECTIONS — include these based on the TOPIC "${tp || 'given'}", not just the user's current text. Include a section if you can find at least 1 genuinely useful example for this topic. If truly nothing fits, skip — but for rich topics like money, business, travel, health etc. you should almost always find something.
 
 ## 🔄 Phrasal verbs
 *(Phrasal verbs commonly used in the topic area. Format:)*
 **verb** /IPA/ — meaning → *example.*
-💡 Explained: ONLY add this line if the literal meaning would mislead — explain the gap between literal and actual meaning. Skip if the meaning is transparent.
-
-## 💬 Idioms & proverbs
-*(Idioms, slang, or proverbs people commonly use about this topic. Format:)*
-**idiom/proverb** — real meaning → *example.*
-💡 Explained: explain the origin or logic — must be genuinely insightful, not a restatement of the meaning. (Always include for idioms since their literal meaning is always misleading.)
-
-## 📌 Fixed expressions & useful phrases
-*(Fixed expressions or collocations frequently used in this topic area. Format:)*
-**expression** — meaning/when to use → *example.*
-*(No 💡 needed here — fixed expressions are literal enough.)*`
-  : `CÁC PHẦN TÙY CHỌN — dựa trên CHỦ ĐỀ "${tp || 'đã cho'}", không chỉ từ bài viết của user. Đưa vào nếu tìm được ít nhất 1 ví dụ thực sự hữu ích cho chủ đề này. Với các chủ đề phong phú như tiền bạc, kinh doanh, du lịch, sức khỏe... hầu như lúc nào cũng có thể tìm được.
-
-## 🔄 Cụm động từ
-*(Cụm động từ hay dùng trong chủ đề này. Định dạng:)*
-**cụm động từ** /IPA/ — nghĩa → *ví dụ.*
-💡 Giải thích: CHỈ thêm dòng này nếu nghĩa đen dễ gây hiểu nhầm — giải thích khoảng cách giữa nghĩa đen và nghĩa thực. Bỏ qua nếu nghĩa đã rõ ràng.
-
-## 💬 Thành ngữ & tục ngữ
-*(Thành ngữ, slang, hoặc tục ngữ người ta hay dùng về chủ đề này. Định dạng:)*
-**thành ngữ** — ý nghĩa thực → *ví dụ.*
-💡 Giải thích: giải thích nguồn gốc hoặc logic — phải thực sự có giá trị, không chỉ nhắc lại nghĩa. (Luôn cần với thành ngữ vì nghĩa đen luôn khác nghĩa thực.)
-
-## 📌 Cụm từ cố định & diễn đạt hay
-*(Cụm từ cố định hoặc collocation hay dùng trong chủ đề này. Định dạng:)*
-**cụm từ** — nghĩa/khi dùng → *ví dụ.*
-*(Không cần 💡 ở đây — cụm từ cố định thường đủ rõ nghĩa.)*`}
+💡 Explained: ONLY add if the literal meaning would mislead — explain the gap. Skip if transparent.
 
 ---
 
-## ✍️ ${uiLang === 'en' ? '3 sample sentences to use now' : '3 câu mẫu tiếng Anh có thể dùng ngay'}
+## 💬 Idioms & proverbs
+*(Idioms, slang, or proverbs people use about this topic. Format:)*
+**idiom/proverb** — real meaning → *example.*
+💡 Explained: explain the origin or logic — must be insightful, not a restatement. (Always include for idioms.)
 
-*(Always write these 3 sentences in English. Each sentence must be SHORT (1 sentence only), INDEPENDENT (not connected to the others — no "also", "and", "additionally"), and directly usable on its own. Do NOT write a paragraph. Do NOT connect the sentences into a story. Format exactly:)*
-> *[One standalone sentence about the topic.]*
-> *[A different standalone sentence — different vocabulary, different angle.]*
-> *[A third standalone sentence — different again.]*`;
+---
 
-      const btnEl = document.getElementById('btn-vocab');
+## 📌 Fixed expressions & useful phrases
+*(Collocations or fixed expressions used in this topic. Format:)*
+**expression** — meaning/when to use → *example.*`
+        : `You are an ESL vocabulary teacher. Give idioms, phrasal verbs, and fixed expressions for this topic.
+
+Topic: "${tp || ''}"
+Level: ${lvlSel.value}
+Interface language: Vietnamese
+${commonRules}
+
+Đưa vào mỗi section bên dưới nếu tìm được ít nhất 1 ví dụ hữu ích cho chủ đề. Với chủ đề phong phú như tiền bạc, kinh doanh, du lịch, sức khỏe... hầu như lúc nào cũng có. Bỏ qua section nếu thực sự không có gì phù hợp.
+
+---
+
+## 🔄 Cụm động từ
+*(Cụm động từ hay dùng trong chủ đề. Định dạng:)*
+**cụm động từ** /IPA/ — nghĩa → *ví dụ.*
+💡 Giải thích: CHỈ thêm nếu nghĩa đen gây hiểu nhầm. Bỏ qua nếu nghĩa rõ ràng.
+
+---
+
+## 💬 Thành ngữ & tục ngữ
+*(Thành ngữ, slang, tục ngữ hay dùng về chủ đề này. Định dạng:)*
+**thành ngữ** — ý nghĩa thực → *ví dụ.*
+💡 Giải thích: giải thích nguồn gốc hoặc logic — phải có giá trị thực sự, không chỉ nhắc lại nghĩa.
+
+---
+
+## 📌 Cụm từ cố định & diễn đạt hay
+*(Collocation hoặc cụm từ cố định hay dùng trong chủ đề. Định dạng:)*
+**cụm từ** — nghĩa/khi dùng → *ví dụ.*`;
+
       const panelTitle = t('panel-vocab');
-
       setBusy('btn-vocab', true, true, panelTitle);
 
-      async function runVocab() {
-        return await callAI(vocabPrompt, null, true, true, 1800);
-      }
-
-      const vocabBgPromise = runVocab();
-      const r = await vocabBgPromise;
-
-      if (btnEl) btnEl.classList.remove('loading');
+      // Run call 1 — show immediately when done
+      const r1 = await callAI(vocabPrompt1, null, true, true, 1200);
       setBusy('btn-vocab', false, false);
 
-      if (r) {
+      if (!r1) return;
+
+      // Show call 1 result right away
       setCooldown('btn-vocab', 10000);
-        if (d) { d.vocab = r; d.vocabKey = vocabKey; saveDocs(); }
-        try { localStorage.setItem(lsVocabKey, r); } catch (_) {}
-        if (document.getElementById('resultPanel').classList.contains('open')) {
-          _openVocabPanel(r);
-        } else {
-          toast(uiLang === 'en' ? '✅ Vocabulary ready! Tap to view.' : '✅ Từ vựng đã xong! Nhấn để xem.', 's', () => _openVocabPanel(r));
-        }
+      _openVocabPanel(r1);
+
+      // Run call 2 in background — append to panel when done
+      const r2 = await callAI(vocabPrompt2, null, true, true, 800);
+      if (!r2) return;
+
+      // Append to existing panel content
+      const combined = r1 + '\n\n---\n\n' + r2;
+      if (d) { d.vocab = combined; d.vocabKey = vocabKey; saveDocs(); }
+      try { localStorage.setItem(lsVocabKey, combined); } catch (_) {}
+
+      const pContent = document.getElementById('pContent');
+      if (pContent) {
+        // append new sections before the regen hint
+        const hint = pContent.querySelector('.panel-regen-hint');
+        const div = document.createElement('div');
+        div.innerHTML = marked.parse('\n\n---\n\n' + r2, { async: false });
+        if (hint) pContent.insertBefore(div, hint);
+        else pContent.appendChild(div);
       }
     }
 

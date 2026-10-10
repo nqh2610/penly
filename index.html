@@ -235,7 +235,8 @@
               </div>
               <div class="topic-divider"></div>
 
-              <div id="editor" contenteditable="true" spellcheck="false" data-placeholder="Bắt đầu viết tiếng Anh tại đây…"></div>
+              <div id="editor" contenteditable="true" spellcheck="false"
+                data-placeholder="Bắt đầu viết tiếng Anh tại đây…"></div>
 
             </div>
           </div>
@@ -270,32 +271,39 @@
           <div class="toolbar">
             <!-- Row 1: primary actions -->
             <div class="tb-row tb-row-1">
-              <button class="tb-btn primary" id="btn-outline" onclick="callSample()" title="Xem bài văn mẫu theo chủ đề">
+              <button class="tb-btn primary" id="btn-outline" onclick="callSample()"
+                title="Xem bài văn mẫu theo chủ đề">
                 <i class="bi bi-journal-text"></i><span class="tb-label" id="lbl-btn-outline"> Bài Mẫu</span>
               </button>
               <button class="tb-btn" id="btn-vocab" onclick="callVocab()" title="Tra từ vựng liên quan đến chủ đề">
                 <i class="bi bi-book"></i><span class="tb-label" id="lbl-btn-vocab"> Từ vựng</span>
               </button>
-              <button class="tb-btn" id="btn-phrases" onclick="callPhrases()" title="Cụm động từ, thành ngữ, cụm từ cố định">
+              <button class="tb-btn" id="btn-phrases" onclick="callPhrases()"
+                title="Cụm động từ, thành ngữ, cụm từ cố định">
                 <i class="bi bi-chat-quote"></i><span class="tb-label" id="lbl-btn-phrases"> Cụm từ</span>
               </button>
               <div class="tb-sep2"></div>
-              <button class="tb-btn c-grammar" id="btn-grammar" onclick="callGrammar()" title="Kiểm tra lỗi ngữ pháp và chính tả">
+              <button class="tb-btn c-grammar" id="btn-grammar" onclick="callGrammar()"
+                title="Kiểm tra lỗi ngữ pháp và chính tả">
                 <i class="bi bi-spellcheck"></i><span class="tb-label" id="lbl-btn-grammar"> Kiểm tra lỗi</span>
               </button>
-              <button class="tb-btn c-improve" id="btn-improve" onclick="callImprove()" title="Nâng cấp bài viết theo trình độ và văn phong">
+              <button class="tb-btn c-improve" id="btn-improve" onclick="callImprove()"
+                title="Nâng cấp bài viết theo trình độ và văn phong">
                 <i class="bi bi-magic"></i><span class="tb-label" id="lbl-btn-improve"> Nâng cấp</span>
               </button>
-              <button class="tb-btn c-review" id="btn-review" onclick="callReview()" title="Nhận xét chi tiết về bài viết">
+              <button class="tb-btn c-review" id="btn-review" onclick="callReview()"
+                title="Nhận xét chi tiết về bài viết">
                 <i class="bi bi-award"></i><span class="tb-label" id="lbl-btn-review"> Nhận xét</span>
               </button>
             </div>
             <!-- Row 2: secondary actions -->
             <div class="tb-row tb-row-2">
-              <button class="tb-btn c-express" id="btn-express" onclick="openExpressModal()" title="Tra cách diễn đạt cùng nghĩa">
+              <button class="tb-btn c-express" id="btn-express" onclick="openExpressModal()"
+                title="Tra cách diễn đạt cùng nghĩa">
                 <i class="bi bi-book-half"></i><span class="tb-label" id="lbl-btn-express"> Diễn đạt</span>
               </button>
-              <button class="tb-btn c-translate" id="btn-translate" onclick="callTranslate()" title="Dịch bài viết sang ngôn ngữ khác">
+              <button class="tb-btn c-translate" id="btn-translate" onclick="callTranslate()"
+                title="Dịch bài viết sang ngôn ngữ khác">
                 <i class="bi bi-translate"></i><span class="tb-label" id="lbl-btn-translate"> Dịch</span>
               </button>
               <div class="tb-sep2"></div>
@@ -324,7 +332,8 @@
           <div class="rz" id="rzHandle"></div>
           <div class="panel-head">
             <span class="panel-title" id="panelTitle">Kết quả AI</span>
-            <button class="phb phb-regen hidden" id="regenBtn" onclick="regenPanel()" title="Tạo lại"><i class="bi bi-arrow-clockwise"></i></button>
+            <button class="phb phb-regen hidden" id="regenBtn" onclick="regenPanel()" title="Tạo lại"><i
+                class="bi bi-arrow-clockwise"></i></button>
             <button class="phb" onclick="copyPanel()" title="Sao chép"><i class="bi bi-clipboard"></i></button>
             <button class="phb" onclick="closePanel()" title="Đóng"><i class="bi bi-x-lg"></i></button>
           </div>
@@ -515,8 +524,10 @@
 
             <!-- CLEAR CACHE -->
             <div class="sd-row" style="border-top:1px solid var(--border);padding-top:1.25rem;margin-top:0.25rem">
-              <div class="sd-label"><i class="bi bi-arrow-clockwise" style="color:var(--accent)"></i> Xóa cache & tải lại</div>
-              <p style="font-size:.78rem;color:var(--muted);margin:0.4rem 0 0.6rem">Dùng khi app không cập nhật sau khi có phiên bản mới.</p>
+              <div class="sd-label"><i class="bi bi-arrow-clockwise" style="color:var(--accent)"></i> Xóa cache & tải
+                lại</div>
+              <p style="font-size:.78rem;color:var(--muted);margin:0.4rem 0 0.6rem">Dùng khi app không cập nhật sau khi
+                có phiên bản mới.</p>
               <button class="chip" style="width:100%;justify-content:center" onclick="clearCacheAndReload()">
                 <i class="bi bi-trash3"></i> Xóa cache & tải lại
               </button>
@@ -568,18 +579,34 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked@14/marked.min.js"></script>
-  <script src="js/core.js?v=12"></script>
-  <script src="js/docs.js?v=11"></script>
-  <script src="js/editor.js?v=12"></script>
-  <script src="js/ai-core.js?v=18"></script>
-  <script src="js/outline.js?v=20"></script>
-  <script src="js/ai-features.js?v=12"></script>
-  <script src="js/file.js?v=11"></script>
-  <script src="js/settings.js?v=13"></script>
-  <script src="js/tts.js?v=11"></script>
-  <script src="js/context-menu.js?v=15"></script>
-  <script src="js/pwa.js?v=12"></script>
-  <script src="js/i18n.js?v=11"></script>
+  <script>
+    // Danh sách các file script theo đúng thứ tự phụ thuộc của bạn
+    const scriptFiles = [
+      "js/core.js",
+      "js/docs.js",
+      "js/editor.js",
+      "js/ai-core.js",
+      "js/outline.js",
+      "js/ai-features.js",
+      "js/file.js",
+      "js/settings.js",
+      "js/tts.js",
+      "js/context-menu.js",
+      "js/pwa.js",
+      "js/i18n.js"
+    ];
+
+    // Dùng timestamp hiện tại làm mã phiên bản động (hoặc thay Date.now() bằng một số version của bạn)
+    const version = Date.now();
+
+    scriptFiles.forEach(file => {
+      const script = document.createElement('script');
+      script.src = file + '?v=' + version;
+      script.async = false; // Bắt buộc để giữ đúng thứ tự chạy file
+      document.head.appendChild(script);
+    });
+  </script>
+
   <!-- ── EXPRESS MODAL ── -->
   <div class="express-modal" id="expressModal" onclick="if(event.target===this)closeExpressModal()">
     <div class="express-box">
@@ -637,28 +664,39 @@
       </div>
     </div>
   </div>
-  <div id="ctxPopover" style="display:none;position:fixed;z-index:9990;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:min(92vw,380px);max-height:min(70vh,480px);overflow:hidden;padding:0;display:none;flex-direction:column;">
-    <div id="ctxPopoverHeader" style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem .5rem;border-bottom:1px solid var(--border);background:var(--surface);cursor:move;user-select:none;flex-shrink:0;touch-action:none;">
+  <div id="ctxPopover"
+    style="display:none;position:fixed;z-index:9990;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:min(92vw,380px);max-height:min(70vh,480px);overflow:hidden;padding:0;display:none;flex-direction:column;">
+    <div id="ctxPopoverHeader"
+      style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem .5rem;border-bottom:1px solid var(--border);background:var(--surface);cursor:move;user-select:none;flex-shrink:0;touch-action:none;">
       <span id="ctxPopoverTitle" style="font-size:.9rem;font-weight:700;color:var(--text)"></span>
       <div style="display:flex;align-items:center;gap:.2rem">
-        <button id="ctxPopoverPin" onclick="togglePopoverPin()" title="Ghim — không tự đóng" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.95rem;padding:.1rem .3rem;border-radius:6px;line-height:1;opacity:.5">📌</button>
-        <button onclick="closeCtxPopover()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.1rem;padding:.1rem .3rem;border-radius:6px;line-height:1">&times;</button>
+        <button id="ctxPopoverPin" onclick="togglePopoverPin()" title="Ghim — không tự đóng"
+          style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.95rem;padding:.1rem .3rem;border-radius:6px;line-height:1;opacity:.5">📌</button>
+        <button onclick="closeCtxPopover()"
+          style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.1rem;padding:.1rem .3rem;border-radius:6px;line-height:1">&times;</button>
       </div>
     </div>
-    <div id="ctxPopoverBody" class="md" style="padding:.8rem 1rem;font-size:.88rem;line-height:1.6;color:var(--text);overflow-y:auto;flex:1"></div>
+    <div id="ctxPopoverBody" class="md"
+      style="padding:.8rem 1rem;font-size:.88rem;line-height:1.6;color:var(--text);overflow-y:auto;flex:1"></div>
   </div>
 
   <!-- TOPIC CLARIFY DIALOG -->
-  <div id="topicClarifyOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center">
-    <div style="background:var(--surface);border-radius:14px;padding:1.5rem 1.75rem;width:min(90vw,380px);box-shadow:0 8px 32px rgba(0,0,0,.25)">
+  <div id="topicClarifyOverlay"
+    style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center">
+    <div
+      style="background:var(--surface);border-radius:14px;padding:1.5rem 1.75rem;width:min(90vw,380px);box-shadow:0 8px 32px rgba(0,0,0,.25)">
       <div style="font-size:1rem;font-weight:600;margin-bottom:.5rem" id="topicClarifyTitle">Chủ đề chưa rõ</div>
-      <div style="font-size:.85rem;color:var(--muted);margin-bottom:.9rem" id="topicClarifyDesc">Bạn muốn viết về điều gì cụ thể hơn?</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:.9rem" id="topicClarifyDesc">Bạn muốn viết về điều
+        gì cụ thể hơn?</div>
       <textarea id="topicClarifyInput" rows="3"
         style="width:100%;box-sizing:border-box;padding:.55rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;background:var(--bg);color:var(--text);outline:none;resize:vertical"
         placeholder="Mô tả thêm về chủ đề…"></textarea>
       <div style="display:flex;gap:.6rem;justify-content:flex-end;margin-top:1rem">
-        <button id="topicClarifyCancel" style="padding:.45rem 1.1rem;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.88rem">Huỷ</button>
-        <button id="topicClarifyOK" style="padding:.45rem 1.2rem;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:.88rem;font-weight:600">Tiếp tục</button>
+        <button id="topicClarifyCancel"
+          style="padding:.45rem 1.1rem;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.88rem">Huỷ</button>
+        <button id="topicClarifyOK"
+          style="padding:.45rem 1.2rem;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:.88rem;font-weight:600">Tiếp
+          tục</button>
       </div>
     </div>
   </div>

@@ -1539,6 +1539,19 @@
       background: rgba(220, 38, 38, .18)
     }
 
+    /* LanguageTool realtime — amber underline to distinguish from AI grammar check */
+    .ge-lt {
+      text-decoration: underline wavy #d97706;
+      text-underline-offset: 3px;
+      background: rgba(217, 119, 6, .07);
+      cursor: pointer;
+      border-radius: 2px;
+    }
+
+    .ge-lt:hover {
+      background: rgba(217, 119, 6, .18)
+    }
+
     /* ── STATUSBAR ── */
     .statusbar {
       flex-shrink: 0;

@@ -675,20 +675,16 @@ ${commonRules}
 
 ## 🔑 ${uiLang === 'en' ? 'Key vocabulary' : 'Từ vựng cần biết'}
 
-${uiLang === 'en' ? '10–12 words/phrases — practical, level-appropriate, topic-relevant' : '10–12 từ/cụm từ — thực dụng, phù hợp trình độ, gắn chủ đề'}
-
-Use this EXACT format for each word (no tables, no columns):
+Give 10–12 words. Use this EXACT format for each (no tables, no columns):
 
 **word** /IPA/ *(part of speech)* — ${uiLang === 'en' ? 'meaning in English' : 'nghĩa tiếng Việt'}
 > *Example sentence using this word.*
-
-*(repeat for each word)*
 
 ---
 
 ## 🔗 ${uiLang === 'en' ? 'Useful connectors' : 'Từ nối hay dùng'}
 
-${uiLang === 'en' ? 'List 4–6 level-appropriate connectors with short examples' : 'Chỉ liệt kê 4–6 từ nối phù hợp trình độ, kèm ví dụ ngắn'}
+Give 4–6 connectors. Use this EXACT format for each:
 
 - **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *example.*`;
 
@@ -706,21 +702,18 @@ Include each section below ONLY if you can find genuinely useful examples for th
 ---
 
 ## 🔄 Phrasal verbs
-*(Phrasal verbs commonly used in the topic area. Format:)*
 **verb** /IPA/ — meaning → *example.*
 💡 Explained: ONLY add if the literal meaning would mislead — explain the gap. Skip if transparent.
 
 ---
 
 ## 💬 Idioms & proverbs
-*(Idioms, slang, or proverbs people use about this topic. Format:)*
 **idiom/proverb** — real meaning → *example.*
 💡 Explained: explain the origin or logic — must be insightful, not a restatement. (Always include for idioms.)
 
 ---
 
 ## 📌 Fixed expressions & useful phrases
-*(Collocations or fixed expressions used in this topic. Format:)*
 **expression** — meaning/when to use → *example.*`
         : `You are an ESL vocabulary teacher. Give idioms, phrasal verbs, and fixed expressions for this topic.
 
@@ -734,21 +727,18 @@ ${commonRules}
 ---
 
 ## 🔄 Cụm động từ
-*(Cụm động từ hay dùng trong chủ đề. Định dạng:)*
 **cụm động từ** /IPA/ — nghĩa → *ví dụ.*
 💡 Giải thích: CHỈ thêm nếu nghĩa đen gây hiểu nhầm. Bỏ qua nếu nghĩa rõ ràng.
 
 ---
 
 ## 💬 Thành ngữ & tục ngữ
-*(Thành ngữ, slang, tục ngữ hay dùng về chủ đề này. Định dạng:)*
 **thành ngữ** — ý nghĩa thực → *ví dụ.*
 💡 Giải thích: giải thích nguồn gốc hoặc logic — phải có giá trị thực sự, không chỉ nhắc lại nghĩa.
 
 ---
 
 ## 📌 Cụm từ cố định & diễn đạt hay
-*(Collocation hoặc cụm từ cố định hay dùng trong chủ đề. Định dạng:)*
 **cụm từ** — nghĩa/khi dùng → *ví dụ.*`;
 
       const panelTitle = t('panel-vocab');
@@ -791,10 +781,67 @@ ${commonRules}
       if (pContent) {
         const hint = pContent.querySelector('.panel-regen-hint');
         const div = document.createElement('div');
-        div.innerHTML = marked.parse('\n\n---\n\n' + r2, { async: false });
+        div.innerHTML = _renderVocab2(r2);
         if (hint) pContent.insertBefore(div, hint);
         else pContent.appendChild(div);
       }
+    }
+
+    // Render call 2 (phrasal verbs/idioms) — normalize inline → format into cards
+    function _renderVocab2(md) {
+      const lines = md.split('\n');
+      const out = [];
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) continue;
+
+        // Section heading
+        if (line.startsWith('## ') || line.startsWith('---')) {
+          if (line.startsWith('---')) { out.push('<hr>'); continue; }
+          out.push(`<h2>${line.replace(/^##\s*/, '')}</h2>`);
+          continue;
+        }
+
+        // Item line: **phrase** /ipa/ — meaning → *example.*  (or without ** or with - instead of —)
+        // Split on → to separate definition from example
+        const arrowIdx = line.indexOf(' → ');
+        if (arrowIdx !== -1) {
+          const defPart = line.slice(0, arrowIdx).trim();
+          const exPart = line.slice(arrowIdx + 3).trim().replace(/^\*(.+)\*$/, '$1').replace(/^\*/, '').replace(/\*$/, '');
+
+          // Normalize: ensure the term before — or - is wrapped in **…** for accent color
+          // Handles: "**word** /ipa/ — meaning", "word /ipa/ — meaning", "word - meaning"
+          const normalized = defPart
+            .replace(/^([^*\-—]+?)(\s*\/[^/]+\/)?(\s*[\-—]\s*)/, (_, term, ipa, sep) =>
+              `**${term.trim()}**${ipa || ''}${sep}`)
+            // already has **: keep as-is (no double-wrap)
+            .replace(/^\*\*\*\*(.+?)\*\*\*\*/, '**$1**');
+
+          const defHtml = marked.parse(normalized, { async: false }).replace(/^<p>|<\/p>\n?$/g, '');
+          out.push(`<div class="vocab-item">`);
+          out.push(`<p class="vocab-def">${defHtml}</p>`);
+          if (exPart) out.push(`<blockquote><p><em>${escHtml(exPart)}</em></p></blockquote>`);
+          out.push(`</div>`);
+          continue;
+        }
+
+        // 💡 Giải thích / Explained line
+        if (line.startsWith('💡')) {
+          out.push(`<p class="vocab-explain">${escHtml(line)}</p>`);
+          continue;
+        }
+
+        // List item (connectors)
+        if (line.startsWith('- ') || line.startsWith('* ')) {
+          const itemHtml = marked.parse(line, { async: false }).replace(/^<ul>|<\/ul>\n?$/g, '');
+          out.push(itemHtml);
+          continue;
+        }
+
+        // Fallback: render as markdown
+        out.push(marked.parse(line, { async: false }));
+      }
+      return out.join('\n');
     }
 
     async function callTranslate() {

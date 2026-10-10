@@ -228,10 +228,15 @@
           <div class="editor-scroll">
             <div class="editor-wrap">
 
-              <div class="doc-header">
-                <!-- Tên bài / Chủ đề AI — một ô duy nhất -->
+              <div class="doc-header" style="position:relative;">
+                <!-- Ô nhập chủ đề -->
                 <input id="topicInput" type="text" spellcheck="false" autocomplete="off"
-                  placeholder="Nhập chủ đề bài viết…" oninput="onTopicChange()">
+                  placeholder="Nhập chủ đề bài viết…" oninput="onTopicChange(); filterTopicSuggestions(this.value);"
+                  onfocus="filterTopicSuggestions(this.value)" onblur="handleTopicBlur()">
+                <!-- Khung dropdown gợi ý tối ưu cho điện thoại và PC -->
+                <div id="topicDropdown"
+                  style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);max-height:200px;overflow-y:auto;margin-top:4px;-webkit-overflow-scrolling:touch;">
+                </div>
               </div>
               <div class="topic-divider"></div>
 

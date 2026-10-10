@@ -1222,3 +1222,120 @@ async function callDict() {
   }
 }
 
+// ── AUTOCOMPLETE CHỦ ĐỀ & CỤM TỪ PHONG PHÚ ──
+let allTopicsCache = [];
+let _isSelectingTopic = false; // Cờ chống mất tiêu điểm khi chạm trên mobile
+
+function initTopicSuggestions() {
+  let docTopics = [];
+  try {
+    if (typeof docs !== 'undefined' && Array.isArray(docs)) {
+      docTopics = docs.map(d => d.topic).filter(Boolean);
+    }
+  } catch (e) {}
+
+  // Kho chủ đề và cụm từ tiếng Anh mở rộng, cực kỳ đa dạng
+  const richTopics = [
+    // 1. Cuộc sống cá nhân & Thói quen (Personal & Lifestyle)
+    "My favorite hobby", "My best friend", "My dream job and future career", 
+    "My unforgettable childhood memory", "My daily routine and morning habits", 
+    "My personal goals and ambitions", "How I spend my weekend", 
+    "The most memorable person in my life", "My favorite season of the year",
+    "How I overcome stress in daily life", "The importance of a healthy breakfast",
+    
+    // 2. Du lịch & Khám phá văn hóa (Travel & Culture)
+    "A memorable trip", "Traveling alone vs traveling with family", 
+    "My dream vacation destination", "An interesting place I have visited",
+    "The beauty of my hometown", "Exploring a new culture and traditions",
+    "Traditional food in my country", "The benefits of traveling young",
+    "My most challenging adventure", "A festival I love the most",
+
+    // 3. Công nghệ & Thế giới số (Technology & Digital Life)
+    "Technology in modern life", "Artificial intelligence and the future", 
+    "Social media and its impact on youth", "Is online learning better than traditional school?",
+    "The role of smartphones in daily communication", "Cybersecurity and online safety",
+    "Remote working and its advantages", "The future of autonomous vehicles",
+
+    // 4. Môi trường & Xã hội (Environment & Society)
+    "Environmental protection and recycling", "The importance of renewable energy",
+    "Protecting wildlife and endangered species", "Causes and solutions of global warming",
+    "Community service and volunteering", "The importance of public transportation",
+    "Urbanization and city life challenges", "Living in a multicultural society",
+
+    // 5. Học tập, Kỹ năng & Phát triển bản thân (Education & Self-Development)
+    "How to learn English effectively", "Improving communication and public speaking skills",
+    "The role of teachers in our lives", "Why reading books is essential for personal growth",
+    "The value of time management", "Overcoming failures and learning from mistakes",
+    "Habits of highly successful people", "The power of positive thinking",
+    "Critical thinking in modern education", "The importance of lifelong learning",
+
+    // 6. Nghệ thuật, Thể thao & Giải trí (Arts, Sports & Entertainment)
+    "The impact of music on human emotions", "Why physical exercise is crucial for health",
+    "My favorite book or movie and why", "The role of sports in building teamwork",
+    "Traditional arts versus modern entertainment", "Photography as a way of storytelling",
+    "The benefits of playing a musical instrument", "Extreme sports: thrill or danger?",
+
+    // 7. Tâm lý học, Cảm xúc & Triết lý cuộc sống (Psychology & Philosophy)
+    "The meaning of true happiness", "Why gratitude changes our perspective",
+    "The importance of mental health awareness", "How friendship shapes our personality",
+    "The role of patience in achieving goals", "Facing fear and stepping out of comfort zone",
+    "The impact of kindness in modern society"
+  ];
+
+  // Gộp lịch sử bài viết của bạn với kho chủ đề phong phú
+  allTopicsCache = [...new Set([...docTopics, ...richTopics])];
+}
+
+function filterTopicSuggestions(query) {
+  const dropdown = document.getElementById('topicDropdown');
+  if (!dropdown) return;
+  
+  // Giữ lại khoảng trắng để người dùng gõ có dấu cách vẫn tiếp tục nối từ
+  const q = query.toLowerCase(); 
+  if (!q.trim()) {
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  // Lọc các chủ đề bắt đầu chính xác với chuỗi ký tự đang gõ
+  const filtered = allTopicsCache.filter(t => t.toLowerCase().startsWith(q)).slice(0, 12);
+  if (filtered.length === 0) {
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  dropdown.innerHTML = filtered.map(t => 
+    `<div style="padding:11px 14px;font-size:0.92rem;cursor:pointer;color:var(--text);border-bottom:1px solid var(--border);" 
+          ontouchstart="_isSelectingTopic=true" 
+          onmousedown="_isSelectingTopic=true" 
+          onclick="selectTopicSuggestion('${t.replace(/'/g, "\\'")}')">${t}</div>`
+  ).join('');
+  dropdown.style.display = 'block';
+}
+
+function selectTopicSuggestion(val) {
+  _isSelectingTopic = false;
+  const input = document.getElementById('topicInput');
+  if (input) {
+    input.value = val;
+    input.dispatchEvent(new Event('input'));
+  }
+  hideTopicDropdown();
+}
+
+function handleTopicBlur() {
+  setTimeout(() => {
+    if (!_isSelectingTopic) {
+      hideTopicDropdown();
+    }
+    _isSelectingTopic = false;
+  }, 250);
+}
+
+function hideTopicDropdown() {
+  const dropdown = document.getElementById('topicDropdown');
+  if (dropdown) dropdown.style.display = 'none';
+}
+
+// Khởi chạy ngay lập tức
+initTopicSuggestions();

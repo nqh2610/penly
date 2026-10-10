@@ -700,12 +700,12 @@ ${uiLang === 'en'
 ## 🔄 Phrasal verbs
 *(Phrasal verbs commonly used in the topic area. Format:)*
 **verb** /IPA/ — meaning → *example.*
-💡 Why: ONLY add this line if the literal meaning would mislead — explain the gap between literal and actual meaning. Skip 💡 if the meaning is transparent.
+💡 Explained: ONLY add this line if the literal meaning would mislead — explain the gap between literal and actual meaning. Skip if the meaning is transparent.
 
 ## 💬 Idioms & proverbs
 *(Idioms, slang, or proverbs people commonly use about this topic. Format:)*
 **idiom/proverb** — real meaning → *example.*
-💡 Why: explain the origin or logic — must be genuinely insightful, not a restatement of the meaning. (Always include for idioms since their literal meaning is always misleading.)
+💡 Explained: explain the origin or logic — must be genuinely insightful, not a restatement of the meaning. (Always include for idioms since their literal meaning is always misleading.)
 
 ## 📌 Fixed expressions & useful phrases
 *(Fixed expressions or collocations frequently used in this topic area. Format:)*
@@ -716,12 +716,12 @@ ${uiLang === 'en'
 ## 🔄 Cụm động từ
 *(Cụm động từ hay dùng trong chủ đề này. Định dạng:)*
 **cụm động từ** /IPA/ — nghĩa → *ví dụ.*
-💡 Tại sao: CHỈ thêm dòng này nếu nghĩa đen dễ gây hiểu nhầm — giải thích khoảng cách giữa nghĩa đen và nghĩa thực. Bỏ qua 💡 nếu nghĩa đã rõ ràng.
+💡 Giải thích: CHỈ thêm dòng này nếu nghĩa đen dễ gây hiểu nhầm — giải thích khoảng cách giữa nghĩa đen và nghĩa thực. Bỏ qua nếu nghĩa đã rõ ràng.
 
 ## 💬 Thành ngữ & tục ngữ
 *(Thành ngữ, slang, hoặc tục ngữ người ta hay dùng về chủ đề này. Định dạng:)*
 **thành ngữ** — ý nghĩa thực → *ví dụ.*
-💡 Tại sao: giải thích nguồn gốc hoặc logic — phải thực sự có giá trị, không chỉ nhắc lại nghĩa. (Luôn cần với thành ngữ vì nghĩa đen luôn khác nghĩa thực.)
+💡 Giải thích: giải thích nguồn gốc hoặc logic — phải thực sự có giá trị, không chỉ nhắc lại nghĩa. (Luôn cần với thành ngữ vì nghĩa đen luôn khác nghĩa thực.)
 
 ## 📌 Cụm từ cố định & diễn đạt hay
 *(Cụm từ cố định hoặc collocation hay dùng trong chủ đề này. Định dạng:)*
@@ -901,14 +901,14 @@ Text: "${text}"`,
           ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm dùng format:
 **từ/cụm tiếng Anh** *(loại: nếu là idiom/slang/phrasal verb/proverb/jargon thì ghi rõ)* : nghĩa tiếng Việt
 > Câu ví dụ tiếng Anh
-Nếu là idiom, slang, phrasal verb, proverb, hoặc jargon: thêm 1 dòng giải thích ngắn tại sao nó có nghĩa đó hoặc cách dùng đặc biệt (bắt đầu bằng 💡).
+Nếu là idiom, slang, phrasal verb, proverb, hoặc jargon: thêm 1 dòng giải thích ngắn tại sao nó có nghĩa đó hoặc cách dùng đặc biệt (bắt đầu bằng 💡 Giải thích:).
 Bỏ qua từ quá đơn giản (a, the, is...).
 QUAN TRỌNG: Chỉ giải thích từ/cụm có trong đoạn được chọn bên dưới — không giải thích từ trong phần ngữ cảnh xung quanh.${_ctxContext()}
 Đoạn được chọn: "${text}"`
           : `Explain key words/phrases for an English learner. For each use format:
 **word/phrase** *(type: label if idiom/slang/phrasal verb/proverb/jargon)* : simple meaning
 > short example sentence
-If it is an idiom, slang, phrasal verb, proverb, or jargon: add a 💡 line briefly explaining why it means that or how it's used — because the literal meaning won't help.
+If it is an idiom, slang, phrasal verb, proverb, or jargon: add a 💡 Explained: line briefly explaining why it means that or how it's used — because the literal meaning won't help.
 Skip very basic words.
 IMPORTANT: Only explain words/phrases that appear in the selected text below — do not explain words from the surrounding context.${_ctxContext()}
 Selected text: "${text}"`,

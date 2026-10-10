@@ -1825,6 +1825,14 @@
       color: var(--muted);
       margin: -.1rem 0 .75rem .2rem !important;
     }
+    .vocab-warning {
+      font-size: .8rem;
+      color: var(--muted);
+      background: var(--border);
+      border-radius: 6px;
+      padding: .3rem .6rem;
+      margin: .1rem 0 .6rem !important;
+    }
     /* English terms (bold) same accent color across both vocab calls */
     .panel-body strong {
       color: var(--accent);

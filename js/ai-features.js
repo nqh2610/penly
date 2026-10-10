@@ -613,7 +613,6 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}. IMPORTANT: 
       if (!tp && !text) return toast(t('no-text-vocab'));
       setPanelTitle('panel-vocab');
 
-      // Cache check — doc-level first, then localStorage
       const d = getDoc(currentId);
       const vocabKey = `${tp}|${lvlSel.value}|${uiLang}`;
       const lsVocabKey = `vocab3|${vocabKey}`;
@@ -635,10 +634,7 @@ LANGUAGE RULE: Write ALL output in ${vi ? 'Vietnamese' : 'English'}. IMPORTANT: 
       }
 
       if (!forceRegen) {
-        if (d && d.vocab && d.vocabKey === vocabKey) {
-          _openVocabPanel(d.vocab);
-          return;
-        }
+        if (d && d.vocab && d.vocabKey === vocabKey) { _openVocabPanel(d.vocab); return; }
         try {
           const lsCached = localStorage.getItem(lsVocabKey);
           if (lsCached) {
@@ -662,7 +658,6 @@ Rules:
 - NATURALNESS: every example sentence must sound like something a real person would actually say — specific, vivid, connected to the topic.
 - TRANSLATION: translate MEANING not words — use natural ${uiLang === 'en' ? 'English' : 'Vietnamese'} equivalents.`;
 
-      // ── CALL 1: Key vocabulary + connectors ──
       const vocabPrompt1 =
         `You are an ESL vocabulary teacher. Give key vocabulary for a student about to write on this topic.
 
@@ -688,144 +683,222 @@ Give 4–6 connectors. Use this EXACT format for each:
 
 - **connector** — ${uiLang === 'en' ? 'when to use' : 'khi nào dùng'}: *example.*`;
 
-      // ── CALL 2: Phrasal verbs + idioms + fixed expressions ──
+      setBusy('btn-vocab', true, true, t('panel-vocab'));
+      const r1 = await callAI(vocabPrompt1, null, true, true, 1200);
+      setBusy('btn-vocab', false, false);
+      if (!r1) return;
+
+      setCooldown('btn-vocab', 10000);
+      if (d) { d.vocab = r1; d.vocabKey = vocabKey; saveDocs(); }
+      try { localStorage.setItem(lsVocabKey, r1); } catch (_) {}
+      _openVocabPanel(r1);
+    }
+
+    async function callPhrases(forceRegen = false) {
+      if (!await guardTopic('btn-phrases')) return;
+      const tp = topic(); const text = editor.innerText.trim();
+      if (!tp && !text) return toast(t('no-text-vocab'));
+
+      const d = getDoc(currentId);
+      const phrasesKey = `${tp}|${lvlSel.value}|${uiLang}`;
+      const lsPhrasesKey = `phrases1|${phrasesKey}`;
+      const panelTitle = uiLang === 'en' ? 'Phrases & Idioms' : 'Cụm từ & Thành ngữ';
+
+      function _clearPhrasesCache() {
+        if (d) { delete d.phrases; delete d.phrasesKey; saveDocs(); }
+        try { localStorage.removeItem(lsPhrasesKey); } catch (_) {}
+      }
+
+      function _openPhrasesPanel(md) {
+        document.getElementById('panelTitle').textContent = panelTitle;
+        document.getElementById('pContent').innerHTML = _renderVocab2(md);
+        document.getElementById('pCards').style.display = 'none';
+        document.getElementById('lbar').classList.add('hidden');
+        document.getElementById('resultPanel').classList.add('open');
+        document.getElementById('editorPane').classList.add('shifted');
+        _setRegenFn(() => { _clearPhrasesCache(); callPhrases(true); });
+        const hint = document.createElement('p');
+        hint.className = 'panel-regen-hint';
+        hint.innerHTML = uiLang === 'en'
+          ? `Not satisfied? <button class="panel-regen-link" onclick="regenPanel()">↻ Regenerate</button>`
+          : `Chưa ưng? <button class="panel-regen-link" onclick="regenPanel()">↻ Tạo lại</button>`;
+        document.getElementById('pContent').appendChild(hint);
+      }
+
+      if (!forceRegen) {
+        if (d && d.phrases && d.phrasesKey === phrasesKey) { _openPhrasesPanel(d.phrases); return; }
+        try {
+          const lsCached = localStorage.getItem(lsPhrasesKey);
+          if (lsCached) {
+            if (d) { d.phrases = lsCached; d.phrasesKey = phrasesKey; saveDocs(); }
+            _openPhrasesPanel(lsCached);
+            return;
+          }
+        } catch (_) {}
+      } else {
+        _clearPhrasesCache();
+      }
+
+      const commonRules = `
+Rules:
+- Focus entirely on the TOPIC — suggest words the student will need to write about it
+- Silently match ALL examples to the level above — never mention the level in the output
+- NO em dash (—). Use comma or and/but/so instead
+- NO markdown tables. Use the exact card format shown below.
+- LANGUAGE RULE: Write ALL section headings, labels, explanations, and meanings in ${uiLang === 'en' ? 'English' : 'Vietnamese'}
+- EXAMPLE SENTENCES: ALL example sentences must ALWAYS be written in English.
+- NATURALNESS: every example sentence must sound like something a real person would actually say — specific, vivid, connected to the topic.
+- TRANSLATION: translate MEANING not words — use natural ${uiLang === 'en' ? 'English' : 'Vietnamese'} equivalents.`;
+
       const vocabPrompt2 = uiLang === 'en'
-        ? `You are an ESL vocabulary teacher. Give idioms, phrasal verbs, and fixed expressions for this topic.
+        ? `You are an ESL vocabulary teacher. Give the most useful idioms, phrasal verbs, and fixed expressions for this topic. Quality over quantity — only genuinely relevant expressions.
 
 Topic: "${tp || ''}"
 Level: ${lvlSel.value}
 Interface language: English
 ${commonRules}
 
-Include each section below ONLY if you can find genuinely useful examples for this topic. For rich topics like money, business, travel, health — you should almost always find something. Skip a section only if truly nothing fits.
+Give exactly 3 items per section. Skip an entire section only if truly nothing fits.
 
----
+Use this EXACT format — follow the example precisely, including the 💡 line where required:
 
 ## 🔄 Phrasal verbs
-**verb** /IPA/ — meaning → *example.*
-💡 Explained: ONLY add if the literal meaning would mislead — explain the gap. Skip if transparent.
+**cash in** /kæʃ ɪn/ — to take advantage of something for profit → *He cashed in his stocks before the market dropped.*
+💡 Explained: "cash in" literally means converting chips to cash — here it means turning a situation into money or advantage.
+**bring in** /brɪŋ ɪn/ — to earn or generate income → *Her freelance work brings in extra money each month.*
+**pay off** /peɪ ɒf/ — to yield good results after effort → *Years of saving finally paid off when she bought her first home.*
 
 ---
 
 ## 💬 Idioms & proverbs
-**idiom/proverb** — real meaning → *example.*
-💡 Explained: explain the origin or logic — must be insightful, not a restatement. (Always include for idioms.)
+**break the bank** — to cost an extremely large amount of money → *Buying a new car would really break the bank right now.*
+💡 Explained: from casino gambling — if a player wins more than the house has on the table, they "break the bank." Now used for anything ruinously expensive.
+**money doesn't grow on trees** — money is not easily obtained; you must work for it → *You can't just buy everything you want; money doesn't grow on trees.*
+💡 Explained: a reminder that money requires effort — unlike fruit on a tree, it doesn't appear naturally without work.
+**strike it rich** — to suddenly become very wealthy → *He struck it rich after his app went viral.*
+💡 Explained: from gold rush era — miners who found a large gold deposit "struck it rich."
+
+RULE: Every idiom/proverb MUST have a 💡 Explained line — no exceptions. The explanation must state why the literal meaning differs from the real meaning, or give the origin.
 
 ---
 
-## 📌 Fixed expressions & useful phrases
-**expression** — meaning/when to use → *example.*`
-        : `You are an ESL vocabulary teacher. Give idioms, phrasal verbs, and fixed expressions for this topic.
+## 📌 Fixed expressions & collocations
+**earn a living** — to make enough money to support oneself → *Many freelancers struggle to earn a living during slow months.*
+**make a profit** — to gain money after costs → *The bakery managed to make a profit despite the slow season.*
+**on a tight budget** — with very limited money to spend → *We renovated the apartment on a tight budget.*
+
+---
+
+## 🗣️ Slang & informal
+⚠️ These are informal/slang expressions — natural in conversation but avoid in formal writing or professional contexts.
+**broke** *(slang)* — having no money at all → *I can't go out tonight, I'm completely broke.*
+💡 Explained: originally "broken" — like a broken machine that doesn't work, a broke person's finances have "stopped working."
+**loaded** *(slang)* — extremely rich → *Her family is loaded — they own three houses.*
+💡 Explained: like a loaded gun (full of bullets), a loaded person is "full" of money.
+**splurge** *(informal)* — to spend money extravagantly on something → *I splurged on a nice dinner to celebrate.*`
+
+        : `You are an ESL vocabulary teacher. Chọn các cụm từ, thành ngữ và cụm từ cố định phù hợp nhất với chủ đề — ưu tiên chất lượng hơn số lượng.
 
 Topic: "${tp || ''}"
 Level: ${lvlSel.value}
 Interface language: Vietnamese
 ${commonRules}
 
-Đưa vào mỗi section bên dưới nếu tìm được ít nhất 1 ví dụ hữu ích cho chủ đề. Với chủ đề phong phú như tiền bạc, kinh doanh, du lịch, sức khỏe... hầu như lúc nào cũng có. Bỏ qua section nếu thực sự không có gì phù hợp.
+Mỗi section đúng 3 items. Bỏ qua cả section nếu thực sự không có gì phù hợp.
 
----
+Dùng ĐÚNG format này — theo ví dụ mẫu chính xác, bao gồm dòng 💡 khi cần:
 
 ## 🔄 Cụm động từ
-**cụm động từ** /IPA/ — nghĩa → *ví dụ.*
-💡 Giải thích: CHỈ thêm nếu nghĩa đen gây hiểu nhầm. Bỏ qua nếu nghĩa rõ ràng.
+**cash in** /kæʃ ɪn/ — tận dụng cơ hội để kiếm lợi → *He cashed in his stocks before the market dropped.*
+💡 Giải thích: "cash in" nghĩa đen là đổi chip lấy tiền mặt — ở đây có nghĩa là biến tình huống thành lợi nhuận.
+**bring in** /brɪŋ ɪn/ — tạo ra thu nhập → *Her freelance work brings in extra money each month.*
+**pay off** /peɪ ɒf/ — mang lại kết quả tốt sau nỗ lực → *Years of saving finally paid off when she bought her first home.*
 
 ---
 
 ## 💬 Thành ngữ & tục ngữ
-**thành ngữ** — ý nghĩa thực → *ví dụ.*
-💡 Giải thích: giải thích nguồn gốc hoặc logic — phải có giá trị thực sự, không chỉ nhắc lại nghĩa.
+**break the bank** — tốn rất nhiều tiền, phá sản → *Buying a new car would really break the bank right now.*
+💡 Giải thích: xuất phát từ sòng bạc — khi người chơi thắng nhiều hơn cửa hàng có, họ "phá ngân hàng." Nay dùng cho bất cứ thứ gì cực kỳ đắt đỏ.
+**money doesn't grow on trees** — tiền không tự nhiên xuất hiện, phải làm việc mới có → *You can't just spend all your savings; money doesn't grow on trees.*
+💡 Giải thích: nhắc nhở rằng tiền cần nỗ lực — không giống trái cây trên cây, không tự nhiên xuất hiện mà không làm gì.
+**strike it rich** — đột ngột trở nên giàu có → *He struck it rich after his app went viral.*
+💡 Giải thích: từ thời đào vàng — những thợ mỏ tìm thấy mỏ vàng lớn gọi là "struck it rich."
+
+QUY TẮC: Mọi thành ngữ/tục ngữ PHẢI có dòng 💡 Giải thích — không ngoại lệ. Giải thích phải nêu tại sao nghĩa đen khác nghĩa thực, hoặc nguồn gốc của cụm từ.
 
 ---
 
 ## 📌 Cụm từ cố định & diễn đạt hay
-**cụm từ** — nghĩa/khi dùng → *ví dụ.*`;
+**earn a living** — kiếm đủ tiền để trang trải cuộc sống → *Many freelancers struggle to earn a living during slow months.*
+**make a profit** — tạo ra lợi nhuận sau chi phí → *The bakery managed to make a profit despite the slow season.*
+**on a tight budget** — với số tiền rất hạn hẹp → *We renovated the apartment on a tight budget.*
 
-      const panelTitle = t('panel-vocab');
-      setBusy('btn-vocab', true, true, panelTitle);
+---
 
-      // Run call 1 — show immediately when done
-      const r1 = await callAI(vocabPrompt1, null, true, true, 1200);
-      setBusy('btn-vocab', false, false);
+## 🗣️ Tiếng lóng
+⚠️ Đây là các từ lóng/thân mật — tự nhiên trong giao tiếp hàng ngày nhưng KHÔNG dùng trong văn viết trang trọng hay môi trường chuyên nghiệp.
+**broke** *(slang)* — không có tiền, cháy túi → *I can't go out tonight, I'm completely broke.*
+💡 Giải thích: từ "broken" — như máy móc hỏng không hoạt động, người "broke" có tài chính "hỏng."
+**loaded** *(slang)* — cực kỳ giàu có → *Her family is loaded — they own three houses.*
+💡 Giải thích: như súng "loaded" (đầy đạn), người "loaded" thì "đầy" tiền.
+**splurge** *(informal)* — tiêu tiền hoang phí cho điều gì đó → *I splurged on a nice dinner to celebrate.*`;
 
-      if (!r1) return;
-
-      // Show call 1 result right away
-      setCooldown('btn-vocab', 10000);
-      _openVocabPanel(r1);
-
-      // Run call 2 in background — append to panel when done
-      // Show a small loading hint so user knows more is coming
-      const pContent2 = document.getElementById('pContent');
-      let loadingHint = null;
-      if (pContent2) {
-        loadingHint = document.createElement('p');
-        loadingHint.className = 'panel-regen-hint';
-        loadingHint.style.opacity = '.6';
-        loadingHint.textContent = uiLang === 'en' ? '⏳ Loading idioms & phrases…' : '⏳ Đang tải cụm từ & thành ngữ…';
-        const existingHint = pContent2.querySelector('.panel-regen-hint');
-        if (existingHint) pContent2.insertBefore(loadingHint, existingHint);
-        else pContent2.appendChild(loadingHint);
-      }
-
-      const r2 = await callAI(vocabPrompt2, null, true, true, 800);
-      if (loadingHint) loadingHint.remove();
+      setBusy('btn-phrases', true, true, panelTitle);
+      const r2 = await callAI(vocabPrompt2, null, true, true, 1400);
+      setBusy('btn-phrases', false, false);
       if (!r2) return;
 
-      // Append to existing panel content
-      const combined = r1 + '\n\n---\n\n' + r2;
-      if (d) { d.vocab = combined; d.vocabKey = vocabKey; saveDocs(); }
-      try { localStorage.setItem(lsVocabKey, combined); } catch (_) {}
-
-      const pContent = document.getElementById('pContent');
-      if (pContent) {
-        const hint = pContent.querySelector('.panel-regen-hint');
-        const div = document.createElement('div');
-        div.innerHTML = _renderVocab2(r2);
-        if (hint) pContent.insertBefore(div, hint);
-        else pContent.appendChild(div);
-      }
+      setCooldown('btn-phrases', 10000);
+      console.log('[callPhrases] raw r2:', r2);
+      if (d) { d.phrases = r2; d.phrasesKey = phrasesKey; saveDocs(); }
+      try { localStorage.setItem(lsPhrasesKey, r2); } catch (_) {}
+      _openPhrasesPanel(r2);
     }
 
     // Render call 2 (phrasal verbs/idioms) — normalize inline → format into cards
     function _renderVocab2(md) {
       const lines = md.split('\n');
       const out = [];
+      let inItem = false;
+
+      function closeItem() { if (inItem) { out.push('</div>'); inItem = false; } }
+
       for (const raw of lines) {
         const line = raw.trim();
         if (!line) continue;
 
-        // Section heading
-        if (line.startsWith('## ') || line.startsWith('---')) {
-          if (line.startsWith('---')) { out.push('<hr>'); continue; }
-          out.push(`<h2>${line.replace(/^##\s*/, '')}</h2>`);
+        // Section heading or divider
+        if (line.startsWith('---')) { closeItem(); out.push('<hr>'); continue; }
+        if (line.startsWith('## ')) { closeItem(); out.push(`<h2>${line.replace(/^##\s*/, '')}</h2>`); continue; }
+
+        // ⚠️ warning/note line (slang disclaimer)
+        if (line.startsWith('⚠️')) {
+          closeItem();
+          out.push(`<p class="vocab-warning">${escHtml(line)}</p>`);
           continue;
         }
 
-        // Item line: **phrase** /ipa/ — meaning → *example.*  (or without ** or with - instead of —)
-        // Split on → to separate definition from example
+        // Item line: contains → separator
         const arrowIdx = line.indexOf(' → ');
         if (arrowIdx !== -1) {
+          closeItem();
           const defPart = line.slice(0, arrowIdx).trim();
           const exPart = line.slice(arrowIdx + 3).trim().replace(/^\*(.+)\*$/, '$1').replace(/^\*/, '').replace(/\*$/, '');
 
-          // Normalize: ensure the term before — or - is wrapped in **…** for accent color
-          // Handles: "**word** /ipa/ — meaning", "word /ipa/ — meaning", "word - meaning"
-          const normalized = defPart
+          // Ensure term is bold for accent color
+          const normalized = /^\*\*/.test(defPart) ? defPart : defPart
             .replace(/^([^*\-—]+?)(\s*\/[^/]+\/)?(\s*[\-—]\s*)/, (_, term, ipa, sep) =>
-              `**${term.trim()}**${ipa || ''}${sep}`)
-            // already has **: keep as-is (no double-wrap)
-            .replace(/^\*\*\*\*(.+?)\*\*\*\*/, '**$1**');
+              `**${term.trim()}**${ipa || ''}${sep}`);
 
           const defHtml = marked.parse(normalized, { async: false }).replace(/^<p>|<\/p>\n?$/g, '');
-          out.push(`<div class="vocab-item">`);
+          out.push('<div class="vocab-item">');
           out.push(`<p class="vocab-def">${defHtml}</p>`);
           if (exPart) out.push(`<blockquote><p><em>${escHtml(exPart)}</em></p></blockquote>`);
-          out.push(`</div>`);
+          inItem = true;
           continue;
         }
 
-        // 💡 Giải thích / Explained line
+        // 💡 line — inject inside current item if open, otherwise standalone
         if (line.startsWith('💡')) {
           out.push(`<p class="vocab-explain">${escHtml(line)}</p>`);
           continue;
@@ -833,14 +906,16 @@ ${commonRules}
 
         // List item (connectors)
         if (line.startsWith('- ') || line.startsWith('* ')) {
-          const itemHtml = marked.parse(line, { async: false }).replace(/^<ul>|<\/ul>\n?$/g, '');
-          out.push(itemHtml);
+          closeItem();
+          out.push(marked.parse(line, { async: false }).replace(/^<ul>|<\/ul>\n?$/g, ''));
           continue;
         }
 
-        // Fallback: render as markdown
+        // Fallback
+        closeItem();
         out.push(marked.parse(line, { async: false }));
       }
+      closeItem();
       return out.join('\n');
     }
 

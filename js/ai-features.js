@@ -251,30 +251,7 @@ STRICT RULES — failure to follow these makes the output useless:
       // Save original HTML for undo before overwriting
       editor.innerHTML = clean;
       const n = (clean.match(/<span class="ge"/g) || []).length;
-      if (n > 0) {
-        const vi = uiLang !== 'en';
-        const wrap = document.createElement('div');
-        wrap.className = 'ti grammar-action-bar';
-
-        const label = document.createElement('span');
-        label.textContent = t('grammar-found', { n });
-        wrap.appendChild(label);
-
-        const btnFix = document.createElement('button');
-        btnFix.textContent = vi ? 'Sửa tất cả' : 'Fix all';
-        btnFix.addEventListener('click', () => fixAllErrors());
-        wrap.appendChild(btnFix);
-
-        const btnDismiss = document.createElement('button');
-        btnDismiss.textContent = vi ? 'Bỏ qua' : 'Dismiss';
-        btnDismiss.addEventListener('click', () => dismissAllErrors());
-        wrap.appendChild(btnDismiss);
-
-        document.getElementById('toastWrap').appendChild(wrap);
-        setTimeout(() => wrap.remove(), 10000);
-      } else {
-        toast(t('grammar-clean'), 's');
-      }
+      if (n <= 0) toast(t('grammar-clean'), 's');
     }
 
     window.applyFix = el => {

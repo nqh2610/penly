@@ -765,7 +765,21 @@ ${commonRules}
       _openVocabPanel(r1);
 
       // Run call 2 in background — append to panel when done
+      // Show a small loading hint so user knows more is coming
+      const pContent2 = document.getElementById('pContent');
+      let loadingHint = null;
+      if (pContent2) {
+        loadingHint = document.createElement('p');
+        loadingHint.className = 'panel-regen-hint';
+        loadingHint.style.opacity = '.6';
+        loadingHint.textContent = uiLang === 'en' ? '⏳ Loading idioms & phrases…' : '⏳ Đang tải cụm từ & thành ngữ…';
+        const existingHint = pContent2.querySelector('.panel-regen-hint');
+        if (existingHint) pContent2.insertBefore(loadingHint, existingHint);
+        else pContent2.appendChild(loadingHint);
+      }
+
       const r2 = await callAI(vocabPrompt2, null, true, true, 800);
+      if (loadingHint) loadingHint.remove();
       if (!r2) return;
 
       // Append to existing panel content
@@ -775,7 +789,6 @@ ${commonRules}
 
       const pContent = document.getElementById('pContent');
       if (pContent) {
-        // append new sections before the regen hint
         const hint = pContent.querySelector('.panel-regen-hint');
         const div = document.createElement('div');
         div.innerHTML = marked.parse('\n\n---\n\n' + r2, { async: false });

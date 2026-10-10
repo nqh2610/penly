@@ -2,8 +2,7 @@
     function loadDocs() {
       try {
         const raw = localStorage.getItem('wc_docs') || '[]';
-        docs = JSON.parse(raw);
-        console.log('[loadDocs] loaded', docs.length, 'docs, raw length:', raw.length);
+        docs = JSON.parse(raw);       
       } catch(e) {
         console.error('[loadDocs] parse error:', e);
         docs = [];

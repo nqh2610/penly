@@ -868,7 +868,6 @@ QUY TẮC: Mọi thành ngữ/tục ngữ PHẢI có dòng 💡 Giải thích �
   if (!r2) return;
 
   setCooldown('btn-phrases', 10000);
-  console.log('[callPhrases] raw r2:', r2);
   if (d) { d.phrases = r2; d.phrasesKey = phrasesKey; saveDocs(); }
   try { localStorage.setItem(lsPhrasesKey, r2); } catch (_) { }
   _openPhrasesPanel(r2);

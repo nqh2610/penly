@@ -702,7 +702,7 @@ Give 4–6 connectors. Use this EXACT format for each:
       const d = getDoc(currentId);
       const phrasesKey = `${tp}|${lvlSel.value}|${uiLang}`;
       const lsPhrasesKey = `phrases1|${phrasesKey}`;
-      const panelTitle = uiLang === 'en' ? 'Phrases & Idioms' : 'Cụm từ & Thành ngữ';
+      const panelTitle = uiLang === 'en' ? 'Phrases' : 'Cụm Từ';
 
       function _clearPhrasesCache() {
         if (d) { delete d.phrases; delete d.phrasesKey; saveDocs(); }

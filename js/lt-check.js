@@ -53,13 +53,13 @@
     clearLtSpans(editor);
 
     // Filter: skip informational rules (no replacement), and skip any match
-    // whose source word contains Vietnamese characters (names, loanwords)
+    // whose source word contains non-basic-Latin characters (Vietnamese, CJK,
+    // Arabic, etc.) — we only want to flag errors in English words.
     const filtered = matches.filter(m => {
       if (!m.replacements || !m.replacements.length || m.replacements[0].value === undefined) return false;
       const word = text.slice(m.offset, m.offset + m.length);
-      if (VI_CHARS.test(word)) return false;
-      VI_CHARS.lastIndex = 0; // reset regex state after test()
-      return true;
+      // Allow only basic Latin + common punctuation — skip anything with accented/non-Latin chars
+      return /^[\x00-\x7FÀ-ɏ\s]+$/.test(word) && !VI_CHARS.test(word);
     });
 
     if (filtered.length === 0) return;

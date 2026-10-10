@@ -52,11 +52,15 @@
 
     clearLtSpans(editor);
 
-    // Filter: skip if replacement is empty (informational rules), skip spelling of proper nouns
-    const filtered = matches.filter(m =>
-      m.replacements && m.replacements.length > 0 &&
-      m.replacements[0].value !== undefined
-    );
+    // Filter: skip informational rules (no replacement), and skip any match
+    // whose source word contains Vietnamese characters (names, loanwords)
+    const filtered = matches.filter(m => {
+      if (!m.replacements || !m.replacements.length || m.replacements[0].value === undefined) return false;
+      const word = text.slice(m.offset, m.offset + m.length);
+      if (VI_CHARS.test(word)) return false;
+      VI_CHARS.lastIndex = 0; // reset regex state after test()
+      return true;
+    });
 
     if (filtered.length === 0) return;
 

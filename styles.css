@@ -918,7 +918,7 @@
       border: none;
       outline: none;
       background: transparent;
-      font-size: 1.75rem;
+      font-size: 1.3rem;
       font-weight: 700;
       color: var(--text);
       line-height: 1.25;
@@ -2970,11 +2970,11 @@
 
       /* doc header */
       #topicInput {
-        font-size: 1.3rem
+        font-size: 1rem
       }
 
       #topicInput::placeholder {
-        font-size: 1.1rem
+        font-size: 1rem
       }
 
       .topic-divider {

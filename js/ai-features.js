@@ -1175,7 +1175,7 @@ async function callDict() {
   if (!dictData || !dictData[0]) {
     // fallback to AI
     const aiPrompt = vi
-      ? `Tra từ tiếng Anh "${word}". Trả lời ngắn gọn bằng tiếng Việt: phiên âm IPA, loại từ, nghĩa chính (1-2 nghĩa), 1 câu ví dụ tiếng Anh (kèm dịch nghĩa tiếng Việt). Không giải thích dài dòng.`
+      ? `Tra từ tiếng Anh "${word}". Trả lời ngắn gọn bằng tiếng Việt: loại từ, nghĩa chính (1-2 nghĩa), 1 câu ví dụ tiếng Anh (kèm dịch nghĩa tiếng Việt). Không giải thích dài dòng.`
       : `Define the English word "${word}" briefly: IPA pronunciation, part of speech, 1-2 main meanings, 1 example sentence.`;
     const aiResult = await callAI(aiPrompt, null, true, true, 400);
     if (aiResult) {
@@ -1339,3 +1339,51 @@ function hideTopicDropdown() {
 
 // Khởi chạy ngay lập tức
 initTopicSuggestions();
+
+// ── DIỄN ĐẠT (Express in English) ──
+    function openExpressModal() {
+      document.getElementById('expressModal').classList.add('open');
+      setTimeout(() => document.getElementById('expressInput').focus(), 100);
+    }
+    function closeExpressModal() {
+      document.getElementById('expressModal').classList.remove('open');
+      document.getElementById('expressInput').value = '';
+    }
+    async function submitExpress() {
+  const input = document.getElementById('expressInput');
+  const vi = input.value.trim();
+  if (!vi) return;
+  const btn = document.getElementById('expressSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang tra...';
+  closeExpressModal();
+
+  const tone = document.getElementById('toneSel').value;
+  const level = document.getElementById('lvlSel').value;
+  const tp = topic();
+  const aud = document.getElementById('audSel').value;
+
+  const prompt = `Translate this ${vi} idea into 3 natural English sentences (Level: ${level}, Tone: ${tone}, Audience: ${aud}):
+"${vi}"
+
+Rules:
+- Output ONLY 3 English sentences.
+- Put EACH sentence on a NEW LINE starting with > (Blockquote).
+- No explanation or extra text.`;
+
+  let r = await callAI(prompt, 'btn-express');    
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-search"></i> Tra cứu';
+  
+  if (r) {
+    // Đảm bảo các đoạn blockquote (>) luôn được tách dòng rõ ràng
+    r = r.split('>').map(s => s.trim()).filter(Boolean).map(s => `> ${s}`).join('\n\n');
+
+    openPanel('💡 Diễn đạt tiếng Anh', r, null);
+    
+    if (typeof _addTtsButtonsToPanel === 'function') {
+      _addTtsButtonsToPanel();
+    }
+  }
+}
+

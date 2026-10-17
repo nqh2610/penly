@@ -1363,7 +1363,7 @@ initTopicSuggestions();
   const tp = topic();
   const aud = document.getElementById('audSel').value;
 
-  const prompt = `Translate this ${vi} idea into 3 natural English sentences (Level: ${level}, Tone: ${tone}, Audience: ${aud}):
+  const prompt = `Translate this ${vi} idea into 3 natural English sentences (Level: ${level}):
 "${vi}"
 
 Rules:

@@ -1069,26 +1069,49 @@ async function callExplain() {
   const vi = uiLang !== 'en';
   const title = vi ? 'Giải thích' : 'Explain';
   openCtxPopover(title, null);
-  const r = await callAI(
-    vi
-      ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm dùng format:
+
+  const prompt = vi
+    ? `Giải thích các từ/cụm từ quan trọng trong đoạn sau cho học sinh học tiếng Anh. Với mỗi từ/cụm dùng format sau:
+
 **từ/cụm tiếng Anh** *(loại: nếu là idiom/slang/phrasal verb/proverb/jargon thì ghi rõ)* : nghĩa tiếng Việt
 > Câu ví dụ tiếng Anh
-Nếu là idiom, slang, phrasal verb, proverb, hoặc jargon: thêm 1 dòng giải thích ngắn tại sao nó có nghĩa đó hoặc cách dùng đặc biệt (bắt đầu bằng 💡 Giải thích:).
+💡 Giải thích: Nếu là idiom, slang, phrasal verb, proverb, jargon hoặc từ cần làm rõ: thêm 1 dòng giải thích ngắn tại sao nó có nghĩa đó hoặc cách dùng đặc biệt trên một dòng MỚI hoàn toàn (không đưa dòng 💡 này vào trong blockquote >).
+
 Bỏ qua từ quá đơn giản (a, the, is...).
-QUAN TRỌNG: Chỉ giải thích từ/cụm có trong đoạn được chọn bên dưới — không giải thích từ trong phần ngữ cảnh xung quanh.${_ctxContext()}
+QUAN TRỌNG: Chỉ giải thích từ/cụm có trong đoạn được chọn bên dưới.${_ctxContext()}
 Đoạn được chọn: "${text}"`
-      : `Explain key words/phrases for an English learner. For each use format:
+    : `Explain key words/phrases for an English learner. For each use format:
+
 **word/phrase** *(type: label if idiom/slang/phrasal verb/proverb/jargon)* : simple meaning
 > short example sentence
-If it is an idiom, slang, phrasal verb, proverb, or jargon: add a 💡 Explained: line briefly explaining why it means that or how it's used — because the literal meaning won't help.
+💡 Explained: Briefly explain why it means that or how it's used on a NEW line below the blockquote (do NOT put the 💡 line inside the blockquote >).
+
 Skip very basic words.
-IMPORTANT: Only explain words/phrases that appear in the selected text below — do not explain words from the surrounding context.${_ctxContext()}
-Selected text: "${text}"`,
-    null, false, true, 500
-  );
-  if (r) { updateCtxPopover(r); setCooldown('ctx-explain', 5000); }
-  else closeCtxPopover();
+IMPORTANT: Only explain words/phrases that appear in the selected text below.${_ctxContext()}
+Selected text: "${text}"`;
+
+  const r = await callAI(prompt, null, false, true, 500);
+
+  if (r) {
+    // Tách dòng '💡' ra khỏi blockquote để hiển thị riêng biệt bên ngoài
+    let formattedHtml = marked.parse(r, { async: false });
+    
+    // Đảm bảo các dòng 💡 luôn nằm ở thẻ <p class="vocab-explain"> bên ngoài blockquote
+    formattedHtml = formattedHtml.replace(/<blockquote>\s*<p>(.*?)💡\s*(Giải thích|Explained):\s*(.*?)<\/p>\s*<\/blockquote>/gs, (match, ex, label, explain) => {
+      return `<blockquote><p>${ex.trim()}</p></blockquote><p class="vocab-explain" style="margin-top: 4px; color: var(--muted); font-size: 0.88rem;">💡 ${label}: ${explain.trim()}</p>`;
+    });
+
+    updateCtxPopoverHtml(formattedHtml);
+    
+    // Gắn nút phát âm TTS (chỉ đọc câu ví dụ tiếng Anh trong blockquote)
+    if (typeof _addTtsButtonsToPanel === 'function') {
+      _addTtsButtonsToPanel();
+    }
+
+    setCooldown('ctx-explain', 5000);
+  } else {
+    closeCtxPopover();
+  }
 }
 
 async function callAnalyze() {
@@ -1369,7 +1392,7 @@ async function submitExpress() {
 Rules:
 1. Provide enough (not too much) examples of the most practical English options/vocabulary/phrases/sentences.
 2. Structure EACH item EXACTLY like this (do NOT change the symbols):
-- **[English vocabulary/Phrase/Sentence]** — ${isVi ? 'Nghĩa tiếng Việt' : 'Meaning'}
+- **[English vocabulary/Phrase/Sentence]** — ${isVi ? 'Nghĩa tiếng Việt CHÍNH XÁC của từ/cụm từ đó trong câu ví dụ' : 'Specific meaning of this option in context'}
 > *[Natural English example sentence]*
 
 3. CRITICAL:

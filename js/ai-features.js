@@ -1349,7 +1349,7 @@ initTopicSuggestions();
       document.getElementById('expressModal').classList.remove('open');
       document.getElementById('expressInput').value = '';
     }
-    async function submitExpress() {
+async function submitExpress() {
   const input = document.getElementById('expressInput');
   const vi = input.value.trim();
   if (!vi) return;
@@ -1362,25 +1362,30 @@ initTopicSuggestions();
   const level = document.getElementById('lvlSel').value;
   const tp = topic();
   const aud = document.getElementById('audSel').value;
+  const isVi = uiLang !== 'en';
 
-  const prompt = `Translate this ${vi} idea into 3 natural English sentences (Level: ${level}):
-"${vi}"
-
+  // Prompt được thiết kế theo đúng định dạng Markdown của hàm Từ vựng / Cụm từ
+  const prompt = `Translate or provide natural English expressions for: "${vi}" Level: ${level} | Tone: ${tone} | Audience: ${aud}
 Rules:
-- Output ONLY 3 English sentences.
-- Put EACH sentence on a NEW LINE starting with > (Blockquote).
-- No explanation or extra text.`;
+1. Provide enough (not too much) examples of the most practical English options/vocabulary/phrases/sentences.
+2. Structure EACH item EXACTLY like this (do NOT change the symbols):
+- **[English vocabulary/Phrase/Sentence]** — ${isVi ? 'Nghĩa tiếng Việt' : 'Meaning'}
+> *[Natural English example sentence]*
+
+3. CRITICAL:
+- Keep the English vocabulary/phrase/sentence in bold (**...**).
+- Keep the example sentence inside a blockquote (>).
+- The example sentence MUST be in English ONLY.
+- No long explanations or extra commentary.`;
 
   let r = await callAI(prompt, 'btn-express');    
   btn.disabled = false;
   btn.innerHTML = '<i class="bi bi-search"></i> Tra cứu';
   
   if (r) {
-    // Đảm bảo các đoạn blockquote (>) luôn được tách dòng rõ ràng
-    r = r.split('>').map(s => s.trim()).filter(Boolean).map(s => `> ${s}`).join('\n\n');
-
-    openPanel('💡 Diễn đạt tiếng Anh', r, null);
+    openPanel(isVi ? '💡 Diễn đạt tiếng Anh' : '💡 English Expressions', r, null);    
     
+    // Gọi hàm có sẵn của hệ thống để tự động gắn nút phát âm
     if (typeof _addTtsButtonsToPanel === 'function') {
       _addTtsButtonsToPanel();
     }

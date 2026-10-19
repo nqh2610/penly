@@ -1392,13 +1392,17 @@ async function submitExpress() {
 Rules:
 1. Provide enough (not too much) examples of the most practical English options/vocabulary/phrases/sentences.
 2. Structure EACH item EXACTLY like this (do NOT change the symbols):
-- **[English vocabulary/Phrase/Sentence]** — ${isVi ? 'Nghĩa tiếng Việt CHÍNH XÁC của từ/cụm từ đó trong câu ví dụ' : 'Specific meaning of this option in context'}
-> *[Natural English example sentence]*
+- **[English vocabulary/Phrase/Sentence]** — ${isVi ? '[Nghĩa cụ thể] ([Ngữ cảnh/Cách dùng ngắn gọn])' : '[Specific meaning] ([Short usage context])'}
+> *[Natural English example sentence]* 
 
 3. CRITICAL:
-- Keep the English vocabulary/phrase/sentence in bold (**...**).
+- NEVER repeat the generic input "${vi}" for all items.
+- Clearly explain WHEN or HOW to use each option so the user knows which one to pick.
+  * Example for "Hit the books": — cày sách/ôn thi (thân mật, dùng khi sắp có kỳ thi)
+  * Example for "Get an education": — tiếp thu giáo dục (trang trọng, nói về quá trình học tập dài hạn)
+- Keep the English option in bold (**...**).
 - Keep the example sentence inside a blockquote (>).
-- The example sentence MUST be in English ONLY.
+- Example sentences MUST be in English ONLY.
 - No long explanations or extra commentary.`;
 
   let r = await callAI(prompt, 'btn-express');    

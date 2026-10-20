@@ -1,14 +1,14 @@
 // callSample is defined in outline.js
 // Hàm phát âm dùng chung, đồng bộ với setting giọng đọc và tốc độ
-window.speakText = function(text) {
+window.speakText = function (text) {
   if (!text) return;
   const clean = text.replace(/<[^>]*>?/gm, '').replace(/[*_`]/g, '').trim();
   const u = new SpeechSynthesisUtterance(clean);
   u.lang = 'en-US';
-  
+
   // Lấy tốc độ chuẩn từ cài đặt (giống tts.js)
   u.rate = typeof ttsGetRate === 'function' ? ttsGetRate() : +(localStorage.getItem('tts_rate') || 1);
-  
+
   // Lấy đúng giọng đọc đang được chọn trong setting (giống tts.js)
   const voice = typeof ttsGetVoice === 'function' ? ttsGetVoice() : null;
   if (voice) u.voice = voice;
@@ -34,7 +34,7 @@ function _addTtsButtonsToPanel() {
     btn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
     btn.onclick = (e) => {
       e.stopPropagation();
-      speakText(text); 
+      speakText(text);
     };
     el.appendChild(btn);
   });
@@ -1095,14 +1095,14 @@ Selected text: "${text}"`;
   if (r) {
     // Tách dòng '💡' ra khỏi blockquote để hiển thị riêng biệt bên ngoài
     let formattedHtml = marked.parse(r, { async: false });
-    
+
     // Đảm bảo các dòng 💡 luôn nằm ở thẻ <p class="vocab-explain"> bên ngoài blockquote
     formattedHtml = formattedHtml.replace(/<blockquote>\s*<p>(.*?)💡\s*(Giải thích|Explained):\s*(.*?)<\/p>\s*<\/blockquote>/gs, (match, ex, label, explain) => {
       return `<blockquote><p>${ex.trim()}</p></blockquote><p class="vocab-explain" style="margin-top: 4px; color: var(--muted); font-size: 0.88rem;">💡 ${label}: ${explain.trim()}</p>`;
     });
 
     updateCtxPopoverHtml(formattedHtml);
-    
+
     // Gắn nút phát âm TTS (chỉ đọc câu ví dụ tiếng Anh trong blockquote)
     if (typeof _addTtsButtonsToPanel === 'function') {
       _addTtsButtonsToPanel();
@@ -1255,26 +1255,26 @@ function initTopicSuggestions() {
     if (typeof docs !== 'undefined' && Array.isArray(docs)) {
       docTopics = docs.map(d => d.topic).filter(Boolean);
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // Kho chủ đề và cụm từ tiếng Anh mở rộng, cực kỳ đa dạng
   const richTopics = [
     // 1. Cuộc sống cá nhân & Thói quen (Personal & Lifestyle)
-    "My favorite hobby", "My best friend", "My dream job and future career", 
-    "My unforgettable childhood memory", "My daily routine and morning habits", 
-    "My personal goals and ambitions", "How I spend my weekend", 
+    "My favorite hobby", "My best friend", "My dream job and future career",
+    "My unforgettable childhood memory", "My daily routine and morning habits",
+    "My personal goals and ambitions", "How I spend my weekend",
     "The most memorable person in my life", "My favorite season of the year",
     "How I overcome stress in daily life", "The importance of a healthy breakfast",
-    
+
     // 2. Du lịch & Khám phá văn hóa (Travel & Culture)
-    "A memorable trip", "Traveling alone vs traveling with family", 
+    "A memorable trip", "Traveling alone vs traveling with family",
     "My dream vacation destination", "An interesting place I have visited",
     "The beauty of my hometown", "Exploring a new culture and traditions",
     "Traditional food in my country", "The benefits of traveling young",
     "My most challenging adventure", "A festival I love the most",
 
     // 3. Công nghệ & Thế giới số (Technology & Digital Life)
-    "Technology in modern life", "Artificial intelligence and the future", 
+    "Technology in modern life", "Artificial intelligence and the future",
     "Social media and its impact on youth", "Is online learning better than traditional school?",
     "The role of smartphones in daily communication", "Cybersecurity and online safety",
     "Remote working and its advantages", "The future of autonomous vehicles",
@@ -1312,9 +1312,9 @@ function initTopicSuggestions() {
 function filterTopicSuggestions(query) {
   const dropdown = document.getElementById('topicDropdown');
   if (!dropdown) return;
-  
+
   // Giữ lại khoảng trắng để người dùng gõ có dấu cách vẫn tiếp tục nối từ
-  const q = query.toLowerCase(); 
+  const q = query.toLowerCase();
   if (!q.trim()) {
     dropdown.style.display = 'none';
     return;
@@ -1327,7 +1327,7 @@ function filterTopicSuggestions(query) {
     return;
   }
 
-  dropdown.innerHTML = filtered.map(t => 
+  dropdown.innerHTML = filtered.map(t =>
     `<div style="padding:11px 14px;font-size:0.92rem;cursor:pointer;color:var(--text);border-bottom:1px solid var(--border);" 
           ontouchstart="_isSelectingTopic=true" 
           onmousedown="_isSelectingTopic=true" 
@@ -1364,14 +1364,14 @@ function hideTopicDropdown() {
 initTopicSuggestions();
 
 // ── DIỄN ĐẠT (Express in English) ──
-    function openExpressModal() {
-      document.getElementById('expressModal').classList.add('open');
-      setTimeout(() => document.getElementById('expressInput').focus(), 100);
-    }
-    function closeExpressModal() {
-      document.getElementById('expressModal').classList.remove('open');
-      document.getElementById('expressInput').value = '';
-    }
+function openExpressModal() {
+  document.getElementById('expressModal').classList.add('open');
+  setTimeout(() => document.getElementById('expressInput').focus(), 100);
+}
+function closeExpressModal() {
+  document.getElementById('expressModal').classList.remove('open');
+  document.getElementById('expressInput').value = '';
+}
 async function submitExpress() {
   const input = document.getElementById('expressInput');
   const vi = input.value.trim();
@@ -1388,30 +1388,41 @@ async function submitExpress() {
   const isVi = uiLang !== 'en';
 
   // Prompt được thiết kế theo đúng định dạng Markdown của hàm Từ vựng / Cụm từ
-  const prompt = `Translate or provide natural English expressions for: "${vi}" Level: ${level} | Tone: ${tone} | Audience: ${aud}
+  const prompt = `Translate or provide natural English expressions for: "${vi}"${tp ? ` | Topic: "${tp}"` : ''} | Level: ${level} | Tone: ${tone} | Audience: ${aud}
 Rules:
 1. Provide enough (not too much) examples of the most practical English options/vocabulary/phrases/sentences.
 2. Structure EACH item EXACTLY like this (do NOT change the symbols):
-- **[English vocabulary/Phrase/Sentence]** — ${isVi ? '[Nghĩa cụ thể] ([Ngữ cảnh/Cách dùng ngắn gọn])' : '[Specific meaning] ([Short usage context])'}
+- **[English Option]** /[IPA phonetic transcription]/ *([word type or phrase category])* — ${isVi ? '[Nghĩa cụ thể] ([Ngữ cảnh/Cách dùng ngắn gọn])' : '[Specific meaning] ([Short usage context])'}
 > *[Natural English example sentence]* 
 
 3. CRITICAL:
+- ALWAYS include accurate International Phonetic Alphabet (IPA) in slashes (e.g. /kræm/, /hɪt ðə bʊks/).
+- ALWAYS include the word type or phrase category in parentheses and italics (e.g. *(v)*, *(n)*, *(adj)*, *(phrasal verb)*, *(idiom)*, *(collocation)*, *(sentence)*).
 - NEVER repeat the generic input "${vi}" for all items.
 - Clearly explain WHEN or HOW to use each option so the user knows which one to pick.
-  * Example for "Hit the books": — cày sách/ôn thi (thân mật, dùng khi sắp có kỳ thi)
-  * Example for "Get an education": — tiếp thu giáo dục (trang trọng, nói về quá trình học tập dài hạn)
+${isVi ? `  * Example for idiom: - **hit the books** /hɪt ðə bʊks/ *(idiom)* — cày sách/ôn thi (thân mật, dùng khi sắp có kỳ thi)
+  > *I have to hit the books tonight because the exam is tomorrow.*
+  * Example for verb: - **cram** /kræm/ *(v)* — học nhồi nhét (thân mật, học gấp trước giờ thi)
+  > *He spent the whole night cramming for the history test.*
+  * Example for collocation: - **acquire knowledge** /əˈkwaɪər ˈnɒlɪdʒ/ *(collocation)* — tiếp thu kiến thức (trang trọng, quá trình học tập dài hạn)
+  > *Reading books helps students acquire valuable knowledge.*` : `  * Example for idiom: - **hit the books** /hɪt ðə bʊks/ *(idiom)* — to study intensively (informal, used before exams)
+  > *I have to hit the books tonight because the exam is tomorrow.*
+  * Example for verb: - **cram** /kræm/ *(v)* — to study intensely in a short time (informal, before exams)
+  > *He spent the whole night cramming for the history test.*
+  * Example for collocation: - **acquire knowledge** /əˈkwaɪər ˈnɒlɪdʒ/ *(collocation)* — to gain knowledge (formal/academic)
+  > *Reading books helps students acquire valuable knowledge.*`}
 - Keep the English option in bold (**...**).
 - Keep the example sentence inside a blockquote (>).
 - Example sentences MUST be in English ONLY.
 - No long explanations or extra commentary.`;
 
-  let r = await callAI(prompt, 'btn-express');    
+  let r = await callAI(prompt, 'btn-express');
   btn.disabled = false;
   btn.innerHTML = '<i class="bi bi-search"></i> Tra cứu';
-  
+
   if (r) {
-    openPanel(isVi ? '💡 Diễn đạt tiếng Anh' : '💡 English Expressions', r, null);    
-    
+    openPanel(isVi ? '💡 Diễn đạt tiếng Anh' : '💡 English Expressions', r, null);
+
     // Gọi hàm có sẵn của hệ thống để tự động gắn nút phát âm
     if (typeof _addTtsButtonsToPanel === 'function') {
       _addTtsButtonsToPanel();

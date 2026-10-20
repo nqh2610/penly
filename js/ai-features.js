@@ -1388,7 +1388,7 @@ async function submitExpress() {
   const isVi = uiLang !== 'en';
 
   // Prompt được thiết kế theo đúng định dạng Markdown của hàm Từ vựng / Cụm từ
-  const prompt = `Translate or provide natural English expressions for: "${vi}"${tp ? ` | Topic: "${tp}"` : ''} | Level: ${level} | Tone: ${tone} | Audience: ${aud}
+  const prompt = `Translate or provide natural English expressions for: "${vi}" Level: ${level}
 Rules:
 1. Provide enough (not too much) examples of the most practical English options/vocabulary/phrases/sentences.
 2. Structure EACH item EXACTLY like this (do NOT change the symbols):

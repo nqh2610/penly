@@ -1380,11 +1380,7 @@ async function submitExpress() {
   btn.disabled = true;
   btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang tra...';
   closeExpressModal();
-
-  const tone = document.getElementById('toneSel').value;
   const level = document.getElementById('lvlSel').value;
-  const tp = topic();
-  const aud = document.getElementById('audSel').value;
   const isVi = uiLang !== 'en';
 
   // Prompt được thiết kế theo đúng định dạng Markdown của hàm Từ vựng / Cụm từ
